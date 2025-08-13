@@ -129,8 +129,9 @@ export const useAppStore = create<State & Actions>()(
 
         set({ loading: true, error: null });
         try {
-          console.log('Intentando cargar productos_local.json...');
-          const response = await fetch('/productos_local.json');
+          const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
+          console.log(`Intentando cargar catálogo desde: ${url}`);
+          const response = await fetch(url);
           console.log('Respuesta de fetch:', response);
           if (!response.ok) {
             const errorText = await response.text();
