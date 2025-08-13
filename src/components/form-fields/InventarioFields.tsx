@@ -1,6 +1,12 @@
 import React from "react";
+import type { IForm } from "../../interfaces";
 
-type Props = Record<string, never>;
+interface Props {
+    formState: IForm;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    baseInputClass: string;
+    errorDocumento: string | null;
+}
 
 export const InventarioFields: React.FC<Props> = () => {
   // Campo 'Cantidad en stock' retirado según requerimiento

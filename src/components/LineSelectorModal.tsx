@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
 
@@ -86,7 +86,7 @@ function useProductosLocal() {
         if (!res.ok) throw new Error("No se pudo cargar productos_local.json");
         const json = (await res.json()) as ProductoLocal[];
         if (!cancel) setData(json);
-      } catch (e) {
+      } catch (e: unknown) {
         const message =
           e && typeof e === "object" && "message" in e
             ? String((e as { message?: unknown }).message ?? "Error cargando datos")
@@ -105,7 +105,7 @@ function useProductosLocal() {
   return { data, error, loading };
 }
 
-function getUniqueSortedLineas(productos: ProductoLocal[]) {
+function getUniqueSortedLineas(productos: ProductoLocal[]): string[] {
   const set = new Set<string>();
   for (const p of productos) {
     const linea = (p.linea ?? "").toString().trim();
@@ -115,7 +115,7 @@ function getUniqueSortedLineas(productos: ProductoLocal[]) {
   return Array.from(set).sort((a, b) => collator.compare(a, b));
 }
 
-function sortByCodigoAsc(productos: ProductoLocal[]) {
+function sortByCodigoAsc(productos: ProductoLocal[]): ProductoLocal[] {
   const collator = new Intl.Collator("es-PE", { numeric: true, sensitivity: "base" });
   return [...productos].sort((a, b) =>
     collator.compare(String(a.codigo ?? ""), String(b.codigo ?? ""))
@@ -170,11 +170,11 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
     const ordenados = sortByCodigoAsc(base);
     if (!searchNombre.trim()) return ordenados;
     const term = normalize(searchNombre.trim());
-    return ordenados.filter((p) => normalize(p.nombre ?? "").includes(term));
+    return ordenados.filter((p: ProductoLocal) => normalize(p.nombre ?? "").includes(term));
   }, [data, selectedLinea, searchNombre]);
 
   const toggleCodigo = (codigo: string) => {
-    setSelectedCodigos((prev) => {
+    setSelectedCodigos((prev: Set<string>) => {
       const next = new Set(prev);
       if (next.has(codigo)) next.delete(codigo);
       else next.add(codigo);
@@ -190,7 +190,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
     const seleccionados = productosDeLinea.filter((p) => selectedCodigos.has(String(p.codigo)));
 
     // Evitar duplicados comparando por código contra la lista actual del módulo
-    const yaEnLista = new Set<string>((lista || []).map((p: IProducto) => String(p.codigo)));
+    const yaEnLista = new Set<string>((lista || []).map((p: IProducto): string => String(p.codigo)));
     const nuevos: IProducto[] = [];
     const duplicados: IProducto[] = [];
 
@@ -332,7 +332,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
                   </tr>
                 </thead>
                 <tbody>
-                  {productosDeLinea.map((p) => {
+                  {productosDeLinea.map((p: ProductoLocal) => {
                     const codigo = String(p.codigo);
                     return (
                       <tr key={codigo} className="hover:opacity-95">

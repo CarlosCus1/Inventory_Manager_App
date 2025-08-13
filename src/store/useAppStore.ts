@@ -30,6 +30,7 @@ interface State {
     pedido: IForm;
     inventario: IForm;
     precios: IForm;
+    planificador: IForm;
   };
   // Listas de productos para cada módulo.
   listas: {
@@ -37,6 +38,7 @@ interface State {
     pedido: IProductoEditado[];
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
+    planificador: IProductoEditado[];
   };
   // Indica si el catálogo de productos se está cargando.
   loading: boolean;
@@ -81,12 +83,14 @@ const initialState: Omit<State, keyof Actions> = {
     pedido: {},
     inventario: {},
     precios: {},
+    planificador: {},
   },
   listas: {
     devoluciones: [],
     pedido: [],
     inventario: [],
     precios: [],
+    planificador: [],
   },
   loading: false,
   error: null,

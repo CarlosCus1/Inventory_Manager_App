@@ -121,10 +121,10 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   // Se utiliza un objeto para mapear el `tipo` a su componente de campos específico.
   // Esto hace que el JSX principal sea más limpio y el componente más fácil de extender.
   const SpecificFieldsComponent: Record<Props['tipo'], React.ReactNode> = {
-    devoluciones: <DevolucionesPedidoFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
-    pedido: <DevolucionesPedidoFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
-    inventario: <InventarioFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
-    precios: <PreciosFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
+    devoluciones: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
+    pedido: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
+    inventario: <InventarioFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
+    precios: <PreciosFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
   };
 
   const fields = SpecificFieldsComponent[tipo];

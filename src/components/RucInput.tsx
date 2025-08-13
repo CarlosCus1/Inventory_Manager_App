@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { consultarRuc } from '../utils/api'; // Assuming api.ts is in src/utils
-import { mostrarToast } from '../utils/uiUtils'; // Assuming uiUtils.ts is in src/utils
 
 interface RucInputProps {
   initialRuc?: string;

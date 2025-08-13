@@ -1,6 +1,6 @@
 // src/components/RucDniInput.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 // Removed consultarRuc import as API call will be handled by parent
 
 interface RucDniInputProps {
