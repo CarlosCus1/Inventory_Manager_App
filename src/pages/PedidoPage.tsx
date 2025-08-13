@@ -13,6 +13,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
 import type { IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
 
 // --- 2. Definición del Componente de Página ---
 export const PedidoPage: React.FC = () => {
@@ -138,10 +139,11 @@ export const PedidoPage: React.FC = () => {
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-pedido">Pedidos & Disponibilidad</h1>
-        <p className="mt-2">Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario.</p>
-      </header>
+      <PageHeader
+        title="Pedidos & Disponibilidad"
+        description="Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario."
+        themeColor="pedido"
+      />
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">

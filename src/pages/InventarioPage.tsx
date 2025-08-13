@@ -12,6 +12,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
 import type { IProducto } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
 // Removed unused import
 
 // --- 2. Definición del Componente de Página ---
@@ -151,10 +152,11 @@ export const InventarioPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-inventario">Control de Inventario</h1>
-        <p className="mt-2">Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones.</p>
-      </header>
+      <PageHeader
+        title="Control de Inventario"
+        description="Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones."
+        themeColor="inventario"
+      />
 
       <section className="section-card">
         <DatosGeneralesForm tipo="inventario" />

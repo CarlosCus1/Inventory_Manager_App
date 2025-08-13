@@ -11,6 +11,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
 import type { IProducto, IForm, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
 
 // --- 2. Definición del Componente de Página ---
 export const ComparadorPage: React.FC = () => {
@@ -213,10 +214,11 @@ export const ComparadorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-comparador">Análisis Comparativo de Precios</h1>
-        <p className="mt-2">Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta.</p>
-      </header>
+      <PageHeader
+        title="Análisis Comparativo de Precios"
+        description="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta."
+        themeColor="comparador"
+      />
 
       <section className="section-card">
         <DatosGeneralesForm tipo="precios" />
