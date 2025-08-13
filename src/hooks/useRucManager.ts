@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { consultarRuc as consultarRucApi } from '../utils/api';
+import { useAppStore } from '../store/useAppStore';
 
 interface RucData {
   razonSocial: string;
@@ -20,6 +20,7 @@ interface UseRucManagerReturn {
 }
 
 export const useRucManager = (initialRuc = '', initialRazonSocial = ''): UseRucManagerReturn => {
+  const fetchRuc = useAppStore((state) => state.fetchRuc);
   const [ruc, setRuc] = useState(initialRuc);
   const [razonSocial, setRazonSocial] = useState(initialRazonSocial);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export const useRucManager = (initialRuc = '', initialRazonSocial = ''): UseRucM
     setRucResult(null);
 
     try {
-      const result = await consultarRucApi(trimmedRuc);
+      const result = await fetchRuc(trimmedRuc);
       setRucResult(result);
       if (result.razonSocial) {
         setRazonSocial(result.razonSocial);
@@ -55,7 +56,7 @@ export const useRucManager = (initialRuc = '', initialRazonSocial = ''): UseRucM
     } finally {
       setIsLoading(false);
     }
-  }, [ruc, lastSearchedRuc]);
+  }, [ruc, lastSearchedRuc, fetchRuc]);
 
   const resetRuc = useCallback(() => {
     setRuc('');
