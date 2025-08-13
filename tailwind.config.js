@@ -72,6 +72,15 @@ export default {
           'light-text': '#EA580C', // orange-600
           'dark-text': '#FFEDD5', // orange-100
         },
+        // Paleta para Planificador (azul cielo)
+        'planificador': {
+          'light-primary': '#0284C7', // sky-600
+          'light-secondary': '#E0F2FE', // sky-100
+          'dark-primary': '#38BDF8', // sky-400
+          'dark-secondary': '#0C4A6E', // sky-900
+          'light-text': '#0284C7',
+          'dark-text': '#E0F2FE',
+        },
       },
     },
   },
