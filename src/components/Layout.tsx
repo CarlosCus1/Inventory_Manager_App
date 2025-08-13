@@ -1,0 +1,110 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAppStore } from '../store/useAppStore'; // Import useAppStore
+import ThemeToggle from './ThemeToggle';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/'; // Re-added this line
+  const resetCurrentModule = useAppStore((state) => state.resetearModulo); // Get resetearModulo action
+
+  // Map pathnames to module keys and styling presets
+  const paletteMap: { [key: string]: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' } = {
+    '/devoluciones': 'devoluciones',
+    '/pedido': 'pedido',
+    '/inventario': 'inventario',
+    '/comparador': 'comparador',
+    '/planificador': 'planificador',
+  };
+
+  const currentPalette = paletteMap[location.pathname];
+
+  // Page background and button classes by module (no theme toggle)
+  const pageBgClass =
+    currentPalette === 'devoluciones' ? 'page-devoluciones' :
+    currentPalette === 'pedido' ? 'page-pedido' :
+    currentPalette === 'inventario' ? 'page-inventario' :
+    currentPalette === 'comparador' ? 'page-comparador' : '';
+
+  const clearButtonClass =
+    currentPalette === 'devoluciones' ? 'btn-module-devoluciones' :
+    currentPalette === 'pedido' ? 'btn-module-pedido' :
+    currentPalette === 'inventario' ? 'btn-module-inventario' :
+    currentPalette === 'comparador' ? 'btn-module-comparador' : 'btn';
+
+  const handleClear = () => {
+    if (!currentPalette) return;
+    if (window.confirm('¿Desea limpiar la página actual? Esta acción eliminará todos los datos ingresados.')) {
+      const mapToStoreKey: Record<typeof currentPalette, 'devoluciones' | 'pedido' | 'inventario' | 'precios'> = {
+        devoluciones: 'devoluciones',
+        pedido: 'pedido',
+        inventario: 'inventario',
+        comparador: 'precios',
+      };
+      resetCurrentModule(mapToStoreKey[currentPalette]);
+    }
+  };
+
+  return (
+    <div className={`min-h-screen relative ${pageBgClass} transition-colors duration-200`}>
+      {/* capa sutil para profundidad */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div
+          className="h-full w-full transition-colors duration-300"
+          style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.02) 30%, rgba(0,0,0,0.04) 100%)' }}
+        />
+      </div>
+
+      {/* Navbar coherente con tema global por variables */}
+      <header className="navbar">
+        <div className="navbar-inner">
+          <Link to="/" className="navbar-title">
+            Gestor de Inventario
+          </Link>
+          <nav className="navbar-actions">
+            <ThemeToggle />
+            {!isHomePage && (
+              <Link to="/" className="btn-outline-pedido">
+                Inicio
+              </Link>
+            )}
+            {currentPalette && (
+              <button
+                onClick={handleClear}
+                className={clearButtonClass}
+                title="Iniciar nuevo (limpiar datos del módulo actual)"
+              >
+                Iniciar Nuevo
+              </button>
+            )}
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        {children}
+      </main>
+
+      {/* Badge discreto de versión en esquina inferior derecha */}
+      <div className="fixed bottom-3 right-3 z-50 hidden sm:block select-none" title="Proyecto de Carlos Cusi — versión 3.0" aria-label="cc Gestor v3.0">
+        <div
+          className="rounded-full px-3 py-1 text-[11px] font-medium shadow-sm ring-1 backdrop-blur"
+          style={{
+            background: 'color-mix(in oklab, var(--panel) 78%, transparent)',
+            color: 'var(--fg)',
+            boxShadow: 'inset 0 0 0 1px var(--border)',
+            opacity: 0.9
+          }}
+        >
+          cc Gestor v3.0
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Layout;
