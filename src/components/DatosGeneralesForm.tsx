@@ -14,7 +14,6 @@ import { InventarioFields } from '../components/form-fields/InventarioFields';
 import { PreciosFields } from '../components/form-fields/PreciosFields';
 import { RucDniInput } from './RucDniInput';
 import type { IForm } from '../interfaces';
-import { consultarRuc } from '../utils/api'; // New import
 
 // --- 2. Definición de las Props del Componente ---
 interface Props {
@@ -29,6 +28,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   // Gracias a la persistencia, los datos del formulario se cargarán desde localStorage si existen.
   const formState = useAppStore((state) => state.formState[tipo]);
   const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
+  const fetchRuc = useAppStore((state) => state.fetchRuc);
 
 
   // New state for RUC/DNI functionality
@@ -76,9 +76,9 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
       setRucEstado(null);
       setRucCondicion(null);
 
-      const fetchRuc = async () => {
+      const fetchRucData = async () => {
         try {
-          const data = await consultarRuc(debouncedDocumentNumber);
+          const data = await fetchRuc(debouncedDocumentNumber);
           actualizarFormulario(tipo, 'cliente' as keyof IForm, data.razonSocial);
           setRucEstado(data.estado || null);
           setRucCondicion(data.condicion || null);
@@ -92,7 +92,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
           setIsLoadingRuc(false);
         }
       };
-      fetchRuc();
+      fetchRucData();
     } else if (formState.documentType === 'ruc' && debouncedDocumentNumber.length !== 11) {
       setRucError('El RUC debe tener 11 dígitos.');
       actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social
@@ -103,7 +103,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
       setRucEstado(null);
       setRucCondicion(null);
     }
-  }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario]); // Dependencies for RUC effect
+  }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario, fetchRuc]); // Dependencies for RUC effect
 
   // --- F. Lógica de Estilos Dinámicos ---
   // Mapeo de 'tipo' a la clase CSS del módulo para mantener la consistencia visual.

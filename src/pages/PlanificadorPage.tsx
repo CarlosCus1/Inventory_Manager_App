@@ -4,13 +4,14 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 
 import * as DateUtils from '../utils/dateUtils';
-import { calcular as calcularApi, fetchHolidays } from '../utils/api'; // Renamed calcular to calcularApi
+import { calcular as calcularApi } from '../utils/api'; // Renamed calcular to calcularApi
 import { MAX_FECHAS } from '../utils/config';
 import { FormValidator } from '../utils/formValidator';
 
 import { SummaryTable } from '../components/planner/SummaryTable';
 import { DetailTable } from '../components/planner/DetailTable';
 import { ComparisonTotals } from '../components/planner/ComparisonTotals';
+import { useAppStore } from '../store/useAppStore';
 import { SummaryChart } from '../components/planner/SummaryChart';
 import { useRucManager } from '../hooks/useRucManager';
 import './PlanificadorPage.css';
@@ -48,6 +49,7 @@ export const PlanificadorPage: React.FC = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(0); // 0: Fechas, 1: Cliente, 2: Resultados
+  const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
 
   const feriadosCargados = useRef(new Map<string, string>()); // Use useRef for mutable map
 
@@ -77,7 +79,7 @@ export const PlanificadorPage: React.FC = () => {
       const feriados = await fetchHolidays(year);
 
       feriadosCargados.current.clear();
-      feriados.forEach(feriado => {
+      feriados.forEach((feriado: { date: string, name: string }) => {
         feriadosCargados.current.set(feriado.date, feriado.name);
       });
 
@@ -86,7 +88,7 @@ export const PlanificadorPage: React.FC = () => {
       console.error('Error al cargar eventos del calendario:', error);
       failureCallback(error as Error);
     }
-  }, []);
+  }, [fetchHolidays]);
 
   const handleDateClick = useCallback((arg: { date: Date }) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
