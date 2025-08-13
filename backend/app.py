@@ -214,6 +214,151 @@ def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_da
     # Autoajuste final
     autosize_columns(ws)
 
+# --- 4.5. Lógica para Reporte del Planificador ---
+def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any]):
+    """
+    Genera un reporte detallado para el módulo planificador, basándose en la
+    lógica del prototipo original.
+    """
+    from openpyxl.chart import PieChart, Reference
+    from openpyxl.chart.label import DataLabelList
+
+    # --- Funciones de Ayuda (adaptadas de utils.py y excel_generator.py) ---
+    def _lighten_color(hex_color, factor=0.5):
+        hex_color = hex_color.lstrip('#')
+        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        new_rgb = [int(val + (255 - val) * factor) for val in rgb]
+        return f'{new_rgb[0]:02X}{new_rgb[1]:02X}{new_rgb[2]:02X}'
+
+    def format_month_year_es(date_obj: datetime) -> str:
+        MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        return f"{MONTH_NAMES_ES[date_obj.month - 1]} {date_obj.year}"
+
+    def parse_date_str(date_str: str) -> datetime:
+        return datetime.strptime(date_str, '%d/%m/%Y')
+
+    # --- Definición de Estilos ---
+    color_hex = STYLE_CONFIG['pedido']['header_color'] # Usando el color de 'pedido'
+    styles = {
+        'thin_border': Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin')),
+        'main_title_font': Font(bold=True, size=16, color="FFFFFF"),
+        'section_title_font': Font(bold=True, size=12, color="FFFFFF"),
+        'bold_font': Font(bold=True),
+        'italic_font': Font(italic=True, color="595959"),
+        'table_header_font': Font(bold=True, color="404040"),
+        'currency_format': 'S/ #,##0.00',
+        'percentage_format': '0.00%',
+        'main_color_fill': PatternFill(start_color=color_hex, fill_type="solid"),
+        'light_main_color_fill': PatternFill(start_color=_lighten_color(color_hex, 0.7), fill_type="solid"),
+        'light_gray_fill': PatternFill(start_color="D9D9D9", fill_type="solid"),
+        'center_align': Alignment(horizontal='center', vertical='center')
+    }
+
+    # --- Creación de la Hoja de Dashboard ---
+    ws = writer.book.create_sheet(title="Reporte Dashboard")
+
+    # Título Principal
+    ws.merge_cells('A1:C1')
+    cell = ws['A1']
+    cell.value = "DISTRIBUCION DE MONTOS POR FECHA"
+    cell.font = styles['main_title_font']
+    cell.fill = styles['main_color_fill']
+    cell.alignment = styles['center_align']
+    ws.row_dimensions[1].height = 25
+
+    # Sección de Información General
+    current_row = 3
+    ws.merge_cells(f'A{current_row}:B{current_row}')
+    cell = ws[f'A{current_row}']
+    cell.value = "Información General"
+    cell.font = styles['section_title_font']
+    cell.fill = styles['main_color_fill']
+    cell.alignment = styles['center_align']
+    current_row += 1
+
+    info_data = [
+        ("Cód. Cliente:", data.get('codigoCliente', '')),
+        ("RUC:", data.get('ruc', '')),
+        ("Cliente:", data.get('razonSocial', '')),
+        ("Línea:", data.get('linea', '')),
+        ("Cód. Pedido:", data.get('pedido', '')),
+        ("Monto Total:", data.get('montoOriginal', 0)),
+        ("Total Letras:", len(data.get('fechasOrdenadas', [])))
+    ]
+    for label, value in info_data:
+        ws[f'A{current_row}'].value = label
+        ws[f'B{current_row}'].value = value
+        ws[f'A{current_row}'].font = styles['bold_font']
+        if label == "Monto Total:":
+            ws[f'B{current_row}'].number_format = styles['currency_format']
+        current_row += 1
+
+    # Resumen Mensual y Gráfico
+    resumen_mensual = data.get('resumenMensual', {})
+    if resumen_mensual:
+        current_row += 2
+
+        ws.merge_cells(f'A{current_row}:C{current_row}')
+        cell = ws[f'A{current_row}']
+        cell.value = "Resumen Mensual"
+        cell.font = styles['section_title_font']
+        cell.fill = styles['main_color_fill']
+        cell.alignment = styles['center_align']
+        current_row += 1
+
+        headers = ["Mes", "Monto (S/)", "Porcentaje"]
+        for col_idx, header_text in enumerate(headers, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=header_text)
+            cell.font = styles['table_header_font']
+            cell.fill = styles['light_main_color_fill']
+            cell.border = styles['thin_border']
+            cell.alignment = styles['center_align']
+        current_row += 1
+
+        sorted_months = sorted(resumen_mensual.keys(), key=lambda x: datetime.strptime(x, "%Y-%m"))
+        summary_data_start_row = current_row
+        for mes_key in sorted_months:
+            monto_mes = resumen_mensual[mes_key]
+            porcentaje = (monto_mes / data.get('montoOriginal', 1))
+            ws.cell(row=current_row, column=1, value=format_month_year_es(datetime.strptime(mes_key, "%Y-%m"))).border = styles['thin_border']
+            ws.cell(row=current_row, column=2, value=monto_mes).number_format = styles['currency_format']
+            ws.cell(row=current_row, column=2).border = styles['thin_border']
+            ws.cell(row=current_row, column=3, value=porcentaje).number_format = styles['percentage_format']
+            ws.cell(row=current_row, column=3).border = styles['thin_border']
+            current_row += 1
+        summary_data_end_row = current_row - 1
+
+        # Pie Chart
+        pie_chart = PieChart()
+        pie_chart.title = "Distribución Porcentual Mensual"
+        labels = Reference(ws, min_col=1, min_row=summary_data_start_row, max_row=summary_data_end_row)
+        chart_data = Reference(ws, min_col=3, min_row=summary_data_start_row, max_row=summary_data_end_row)
+        pie_chart.add_data(chart_data, titles_from_data=False)
+        pie_chart.set_categories(labels)
+        pie_chart.dLbls = DataLabelList(showVal=False, showPercent=True, showCatName=True, showLeaderLines=True)
+        ws.add_chart(pie_chart, 'E3')
+
+    # --- Creación de la Hoja de Detalle de Pagos ---
+    ws_detail = writer.book.create_sheet(title="Detalle de Pagos")
+    headers = ["N°", "Fecha de Vencimiento", "Monto (S/)"]
+    for col_idx, header_text in enumerate(headers, 1):
+        cell = ws_detail.cell(row=1, column=col_idx, value=header_text)
+        cell.font = styles['bold_font']
+        cell.border = styles['thin_border']
+
+    fechas_ordenadas = data.get('fechasOrdenadas', [])
+    montos_asignados = data.get('montosAsignados', {})
+    for i, fecha_str in enumerate(fechas_ordenadas):
+        monto = montos_asignados.get(fecha_str, 0)
+        ws_detail.cell(row=i + 2, column=1, value=i + 1)
+        ws_detail.cell(row=i + 2, column=2, value=fecha_str)
+        ws_detail.cell(row=i + 2, column=3, value=monto).number_format = styles['currency_format']
+
+    # Ajuste de columnas para ambas hojas
+    for sheet in [ws, ws_detail]:
+        for col in sheet.columns:
+            sheet.column_dimensions[col[0].column_letter].width = 17
+
 
 # --- 5. Definición de Endpoints ---
 
@@ -392,14 +537,22 @@ def export_xlsx():
                 safe_colab = unicodedata.normalize('NFKD', colaborador).encode('ascii', 'ignore').decode('utf-8').strip().replace(" ", "_") or "sin_colaborador"
                 filename = f"comparacion_precios_{safe_colab}_{fecha_ddmmyy}.xlsx"
 
-            # --- Caso 2: Inventario o Pedido (lógica unificada) ---
-            elif tipo_gestion in ['inventario', 'pedido']:
-                _generate_standard_report(writer, tipo_gestion, form_data, list_data)
-                ws = writer.sheets[tipo_gestion]
+            # --- Caso 2: Inventario, Pedido o Planificador (lógica unificada) ---
+            elif tipo_gestion in ['inventario', 'pedido', 'planificador']:
+                if tipo_gestion == 'planificador':
+                    _generate_planner_report(writer, data)
+                else:
+                    _generate_standard_report(writer, tipo_gestion, form_data, list_data)
+
+                ws = writer.sheets[tipo_gestion] if tipo_gestion != 'planificador' else writer.book["Reporte Dashboard"]
                 
                 # Generación del nombre de archivo después de procesar
-                cliente = str(form_data.get('cliente', '')).strip()
-                fecha_raw = str(form_data.get('fecha', '')).strip()
+                if tipo_gestion == 'planificador':
+                    cliente = str(data.get('razonSocial', '')).strip()
+                    fecha_raw = str(data.get('fechasOrdenadas', [''])[0]).strip()
+                else:
+                    cliente = str(form_data.get('cliente', '')).strip()
+                    fecha_raw = str(form_data.get('fecha', '')).strip()
                 try:
                     dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
                     fecha_ddmmyy = dt.strftime('%d-%m-%y')
