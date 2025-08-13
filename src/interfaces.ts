@@ -69,9 +69,6 @@ export type IProductoEditado = z.infer<typeof ProductoEditadoSchema>;
  * All fields are optional to handle different forms across the application.
  */
 export const FormSchema = z.object({
-  /** Tipo de documento seleccionado (RUC o DNI). */
-  documentType: z.union([z.literal('ruc'), z.literal('dni')]).optional(),
-
   /** Nombre del cliente (usado en Devoluciones, Pedidos). */
   cliente: z.string().optional(),
 

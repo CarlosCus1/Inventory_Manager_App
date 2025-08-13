@@ -152,8 +152,8 @@ export const InventarioPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
       <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-inventario">Control de Inventario</h1>
-        <p className="mt-2">Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones.</p>
+        <h1 className="text-4xl font-extrabold title-inventario">Módulo de Inventario Físico</h1>
+        <p className="mt-2">Realice el conteo físico de los productos y genere el reporte de inventario.</p>
       </header>
 
       <section className="section-card">
@@ -190,7 +190,6 @@ export const InventarioPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
-                keywords: [],
               };
               agregarProductoToLista('inventario', newProduct);
               setSearchTerm('');
@@ -211,7 +210,8 @@ export const InventarioPage: React.FC = () => {
                   agregarProductoToLista('inventario', producto);
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
+                className="p-3 hover:opacity-90 cursor-pointer border-b"
+                style={{ borderColor: 'var(--border)' }}
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -233,7 +233,7 @@ export const InventarioPage: React.FC = () => {
           </div>
           <button
             onClick={handleExport}
-            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador_personal}
+            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador}
             className="btn-module-inventario mt-4 md:mt-0 w-full md:w-auto"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Inventario (XLSX)'}

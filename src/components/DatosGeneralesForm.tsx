@@ -6,15 +6,13 @@
 // --------------------------------------------------------------------------- #
 
 // --- 1. Importaciones necesarias ---
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { FormGroup, Label, Input, FormError } from './ui/FormControls';
 import { DevolucionesPedidoFields } from './form-fields/DevolucionesPedidoFields';
 import { InventarioFields } from '../components/form-fields/InventarioFields';
 import { PreciosFields } from '../components/form-fields/PreciosFields';
-import { RucDniInput } from './RucDniInput';
 import type { IForm } from '../interfaces';
-import { consultarRuc } from '../utils/api'; // New import
 
 // --- 2. Definición de las Props del Componente ---
 interface Props {
@@ -34,33 +32,37 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   // Se usa un estado local para gestionar los errores de validación, en este caso para el RUC/DNI.
   const [errorDocumento, setErrorDocumento] = useState<string | null>(null);
 
-  // New state for RUC/DNI functionality
-  const [rucEstado, setRucEstado] = useState<string | null>(null);
-  const [rucCondicion, setRucCondicion] = useState<string | null>(null);
-  const [isLoadingRuc, setIsLoadingRuc] = useState(false);
-  const [rucError, setRucError] = useState<string | null>(null);
-
-  // Debounced document number for RUC API calls
-  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState.documento_cliente || '');
-
   // --- C. Lógica de Manejo de Cambios y Validación ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    let valorFinal = value;
+
+    // Validaciones específicas
+    if (name === 'documento_cliente' || name === 'ruc') {
+      // Solo permitir números.
+      const valorNumerico = value.replace(/[^0-9]/g, '');
+      valorFinal = valorNumerico;
+
+      // Para documento_cliente (DNI/RUC) y ruc (inventario): mostrar error si no es 8 u 11 (documento) o 11 (ruc) cuando hay contenido
+      if (name === 'documento_cliente') {
+        if (valorNumerico.length > 0 && ![8, 11].includes(valorNumerico.length)) {
+          setErrorDocumento('Debe tener 8 (DNI) u 11 (RUC) dígitos.');
+        } else {
+          setErrorDocumento(null);
+        }
+      }
+      if (name === 'ruc') {
+        if (valorNumerico.length > 0 && valorNumerico.length !== 11) {
+          setErrorDocumento('El RUC debe tener 11 dígitos.');
+        } else {
+          setErrorDocumento(null);
+        }
+      }
+    }
+
     // Se actualiza el estado global en Zustand.
-    actualizarFormulario(tipo, name as keyof IForm, value);
+    actualizarFormulario(tipo, name as keyof IForm, valorFinal);
   };
-
-  const handleRucDniChange = useCallback((type: 'ruc' | 'dni', number: string, social: string) => {
-    actualizarFormulario(tipo, 'documentType' as keyof IForm, type);
-    actualizarFormulario(tipo, 'documento_cliente' as keyof IForm, number);
-    actualizarFormulario(tipo, 'cliente' as keyof IForm, social);
-    // Update debounced value for RUC API call
-    setDebouncedDocumentNumber(number);
-  }, [tipo, actualizarFormulario]);
-
-  const handleRazonSocialManualChange = useCallback((social: string) => {
-    actualizarFormulario(tipo, 'cliente' as keyof IForm, social);
-  }, [tipo, actualizarFormulario]);
 
   // --- D. Efecto para setear la fecha actual por defecto ---
   useEffect(() => {
@@ -70,43 +72,6 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
       actualizarFormulario(tipo, 'fecha', hoy);
     }
   }, [tipo, formState.fecha, actualizarFormulario]);
-
-  // Effect for debouncing RUC number and calling API
-  useEffect(() => {
-    if (formState.documentType === 'ruc' && debouncedDocumentNumber.length === 11) {
-      setIsLoadingRuc(true);
-      setRucError(null);
-      setRucEstado(null);
-      setRucCondicion(null);
-
-      const fetchRuc = async () => {
-        try {
-          const data = await consultarRuc(debouncedDocumentNumber);
-          actualizarFormulario(tipo, 'cliente' as keyof IForm, data.razonSocial);
-          setRucEstado(data.estado || null);
-          setRucCondicion(data.condicion || null);
-        } catch (err: any) {
-          console.error("Error fetching RUC in DatosGeneralesForm:", err);
-          setRucError(err.message || 'Error al consultar RUC.');
-          actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social on error
-          setRucEstado(null);
-          setRucCondicion(null);
-        } finally {
-          setIsLoadingRuc(false);
-        }
-      };
-      fetchRuc();
-    } else if (formState.documentType === 'ruc' && debouncedDocumentNumber.length !== 11) {
-      setRucError('El RUC debe tener 11 dígitos.');
-      actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social
-      setRucEstado(null);
-      setRucCondicion(null);
-    } else {
-      setRucError(null);
-      setRucEstado(null);
-      setRucCondicion(null);
-    }
-  }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario]); // Dependencies for RUC effect
 
   // --- F. Lógica de Estilos Dinámicos ---
   // Mapeo de 'tipo' a la clase CSS del módulo para mantener la consistencia visual.
@@ -141,18 +106,33 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
 
       {['devoluciones', 'pedido'].includes(tipo) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <RucDniInput
-            documentType={formState.documentType || 'ruc'}
-            documentNumber={formState.documento_cliente || ''}
-            razonSocial={formState.cliente || ''}
-            onDocumentChange={handleRucDniChange}
-            onRazonSocialChange={handleRazonSocialManualChange}
-            rucEstado={rucEstado}
-            rucCondicion={rucCondicion}
-            isLoading={isLoadingRuc}
-            error={rucError}
-            themeClass={baseInputClass}
-          />
+          <FormGroup>
+            <Label htmlFor="documento_cliente" className="form-label">RUC o DNI</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              id="documento_cliente"
+              name="documento_cliente"
+              value={formState.documento_cliente || ''}
+              onChange={handleChange}
+              placeholder="DNI o RUC"
+              className={`input ${baseInputClass} ${errorDocumento ? 'input-error' : ''}`}
+            />
+            {errorDocumento && <FormError>{errorDocumento}</FormError>}
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="cliente" className="form-label">Cliente</Label>
+            <Input
+              type="text"
+              id="cliente"
+              name="cliente"
+              value={formState.cliente || ''}
+              onChange={handleChange}
+              placeholder="Nombre del cliente"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
 
           <FormGroup>
             <Label htmlFor="codigo_cliente" className="form-label">Código de Cliente</Label>
@@ -209,26 +189,41 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
 
       {tipo === 'inventario' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <RucDniInput
-            documentType={formState.documentType || 'ruc'}
-            documentNumber={formState.documento_cliente || ''}
-            razonSocial={formState.cliente || ''}
-            onDocumentChange={handleRucDniChange}
-            onRazonSocialChange={handleRazonSocialManualChange}
-            rucEstado={rucEstado}
-            rucCondicion={rucCondicion}
-            isLoading={isLoadingRuc}
-            error={rucError}
-            themeClass={baseInputClass}
-          />
-
           <FormGroup>
-            <Label htmlFor="colaborador_personal" className="form-label">Colaborador / Personal</Label>
+            <Label htmlFor="documento_cliente" className="form-label">RUC o DNI</Label>
             <Input
               type="text"
-              id="colaborador_personal"
-              name="colaborador_personal"
-              value={formState.colaborador_personal || ''}
+              inputMode="numeric"
+              id="documento_cliente"
+              name="documento_cliente"
+              value={formState.documento_cliente || ''}
+              onChange={handleChange}
+              placeholder="DNI o RUC"
+              className={`input ${baseInputClass} ${errorDocumento ? 'input-error' : ''}`}
+            />
+            {errorDocumento && <FormError>{errorDocumento}</FormError>}
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="cliente" className="form-label">Cliente</Label>
+            <Input
+              type="text"
+              id="cliente"
+              name="cliente"
+              value={formState.cliente || ''}
+              onChange={handleChange}
+              placeholder="Nombre del cliente"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="colaborador" className="form-label">Colaborador / Personal</Label>
+            <Input
+              type="text"
+              id="colaborador"
+              name="colaborador"
+              value={(formState as Record<string, string>)?.colaborador || ''}
               onChange={handleChange}
               placeholder="Nombre del colaborador"
               className={`input ${baseInputClass}`}
@@ -252,12 +247,12 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
       {tipo === 'precios' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FormGroup>
-            <Label htmlFor="colaborador_personal" className="form-label">Colaborador / Personal</Label>
+            <Label htmlFor="colaborador" className="form-label">Colaborador / Personal</Label>
             <Input
               type="text"
-              id="colaborador_personal"
-              name="colaborador_personal"
-              value={formState.colaborador_personal || ''}
+              id="colaborador"
+              name="colaborador"
+              value={(formState as Record<string, string>)?.colaborador || ''}
               onChange={handleChange}
               placeholder="Nombre del colaborador"
               className={`input ${baseInputClass}`}

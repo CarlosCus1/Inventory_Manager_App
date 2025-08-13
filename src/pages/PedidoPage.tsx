@@ -139,8 +139,8 @@ export const PedidoPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
       <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-pedido">Pedidos & Disponibilidad</h1>
-        <p className="mt-2">Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario.</p>
+        <h1 className="text-4xl font-extrabold title-pedido">Módulo de Hoja de Pedido</h1>
+        <p className="mt-2">Cree una nueva hoja de pedido para un cliente y genere el reporte.</p>
       </header>
 
       {/* Sección 1: Datos Generales */}
@@ -179,7 +179,6 @@ export const PedidoPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
-                keywords: [],
               };
               agregarProductoToLista('pedido', newProduct);
               setSearchTerm('');
