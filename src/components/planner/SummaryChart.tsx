@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
+import type { TooltipItem } from 'chart.js';
 import { COLOR_PALETTES } from '../../utils/config'; // Assuming config is moved here
 
 // Register all necessary components for Chart.js
 Chart.register(...registerables);
 
 interface SummaryChartProps {
-  resumenMensual: Record<string, any>;
+  resumenMensual: Record<string, number>;
   montoTotalGeneral: number;
   linea: string;
 }
@@ -16,7 +17,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
   const chartInstanceRef = useRef<Chart | null>(null);
 
   const _getPalette = (linea: string) => {
-    const key = (linea || 'otros').toLowerCase();
+    const key = (linea || 'otros').toLowerCase() as keyof typeof COLOR_PALETTES;
     return COLOR_PALETTES[key] || COLOR_PALETTES.otros;
   };
 
@@ -79,7 +80,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
           },
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function(context: TooltipItem<'bar'>) {
                 let label = context.dataset.label || '';
                 if (label) {
                   label += ': ';

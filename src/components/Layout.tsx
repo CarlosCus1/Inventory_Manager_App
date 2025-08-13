@@ -39,13 +39,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleClear = () => {
     if (!currentPalette) return;
     if (window.confirm('¿Desea limpiar la página actual? Esta acción eliminará todos los datos ingresados.')) {
-      const mapToStoreKey: Record<typeof currentPalette, 'devoluciones' | 'pedido' | 'inventario' | 'precios'> = {
+      const mapToStoreKey: Record<string, 'devoluciones' | 'pedido' | 'inventario' | 'precios' | 'planificador'> = {
         devoluciones: 'devoluciones',
         pedido: 'pedido',
         inventario: 'inventario',
         comparador: 'precios',
+        planificador: 'planificador',
       };
-      resetCurrentModule(mapToStoreKey[currentPalette]);
+      resetCurrentModule(mapToStoreKey[currentPalette] as 'devoluciones' | 'pedido' | 'inventario' | 'precios' | 'planificador');
     }
   };
 

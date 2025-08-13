@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------------- #
 
 import React from 'react';
-import type { IForm } from '.././interfaces';
+import type { IForm } from '../../interfaces';
 
 interface Props {
   formState: IForm;

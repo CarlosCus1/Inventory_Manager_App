@@ -8,7 +8,7 @@
 // --- 1. Importaciones necesarias ---
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { FormGroup, Label, Input, FormError } from './ui/FormControls';
+import { FormGroup, Label, Input } from './ui/FormControls';
 import { DevolucionesPedidoFields } from './form-fields/DevolucionesPedidoFields';
 import { InventarioFields } from '../components/form-fields/InventarioFields';
 import { PreciosFields } from '../components/form-fields/PreciosFields';
@@ -30,9 +30,6 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   const formState = useAppStore((state) => state.formState[tipo]);
   const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
-  // --- B. Estado Local para la Validación ---
-  // Se usa un estado local para gestionar los errores de validación, en este caso para el RUC/DNI.
-  const [errorDocumento, setErrorDocumento] = useState<string | null>(null);
 
   // New state for RUC/DNI functionality
   const [rucEstado, setRucEstado] = useState<string | null>(null);
@@ -85,9 +82,9 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
           actualizarFormulario(tipo, 'cliente' as keyof IForm, data.razonSocial);
           setRucEstado(data.estado || null);
           setRucCondicion(data.condicion || null);
-        } catch (err: any) {
+        } catch (err) {
           console.error("Error fetching RUC in DatosGeneralesForm:", err);
-          setRucError(err.message || 'Error al consultar RUC.');
+          setRucError((err as Error).message || 'Error al consultar RUC.');
           actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social on error
           setRucEstado(null);
           setRucCondicion(null);
@@ -123,12 +120,14 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   // --- G. Renderizado Modular de Campos ---
   // Se utiliza un objeto para mapear el `tipo` a su componente de campos específico.
   // Esto hace que el JSX principal sea más limpio y el componente más fácil de extender.
-  const SpecificFieldsComponent = {
-    devoluciones: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    pedido: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    inventario: <InventarioFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    precios: <PreciosFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-  }[tipo];
+  const SpecificFieldsComponent: Record<Props['tipo'], React.ReactNode> = {
+    devoluciones: <DevolucionesPedidoFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
+    pedido: <DevolucionesPedidoFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
+    inventario: <InventarioFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
+    precios: <PreciosFields formState={formState as any} handleChange={handleChange} baseInputClass={baseInputClass} />,
+  };
+
+  const fields = SpecificFieldsComponent[tipo];
 
   // --- E. Renderizado del Componente ---
   // Orden de campos por módulo:
@@ -345,7 +344,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
 
       {/* Campos específicos por módulo si se requieren adicionales */}
       <div className="mt-4">
-        {SpecificFieldsComponent}
+        {fields}
       </div>
     </div>
   );
