@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import ThemeToggle from './ThemeToggle';
 
 interface PageHeaderProps {
   title: string;
@@ -42,7 +41,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, description, themeColor 
       </div>
 
       <div className="flex items-center gap-3">
-        <ThemeToggle />
         <Link
           to="/"
           className={`${btnClassByTheme[themeColor]} flex items-center gap-2`}

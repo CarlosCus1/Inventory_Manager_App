@@ -48,7 +48,6 @@ export const PlanificadorPage: React.FC = () => {
     isDataDirty: false,
   });
 
-  const [currentPage, setCurrentPage] = useState(0); // 0: Fechas, 1: Cliente, 2: Resultados
   const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
 
   const feriadosCargados = useRef(new Map<string, string>()); // Use useRef for mutable map
@@ -70,7 +69,6 @@ export const PlanificadorPage: React.FC = () => {
   const errorMontoRef = useRef<HTMLSpanElement>(null);
   const errorPedidoRef = useRef<HTMLSpanElement>(null);
   const errorDescClienteRef = useRef<HTMLSpanElement>(null);
-  const btnReiniciarTareaRef = useRef<HTMLButtonElement>(null);
 
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
@@ -96,7 +94,6 @@ export const PlanificadorPage: React.FC = () => {
     const isSunday = arg.date.getDay() === 0;
 
     if (DateUtils.esPasado(arg.date) || isSunday || isHoliday) {
-      // mostrarToast('No se pueden seleccionar domingos, feriados o días pasados.', 'info');
       return;
     }
 
@@ -106,7 +103,6 @@ export const PlanificadorPage: React.FC = () => {
         newSelectedDates.delete(dateStr);
       } else {
         if (newSelectedDates.size >= MAX_FECHAS) {
-          // mostrarToast(`Máximo ${MAX_FECHAS} fechas permitidas`, 'error');
           return prevState; // Return previous state if max dates reached
         }
         newSelectedDates.add(dateStr);
@@ -261,14 +257,13 @@ export const PlanificadorPage: React.FC = () => {
       }));
       
       // mostrarResults(); // Now handled by React rendering
-      setCurrentPage(2); // Go to results page
     } catch (error) {
       console.error('Error en cálculo:', error);
       // mostrarToast((error as Error).message || 'Error al realizar el cálculo', 'error');
     } finally {
       // mostrarLoading(false);
     }
-  }, [_getAndValidateFormData, setCurrentPage]);
+  }, [_getAndValidateFormData]);
 
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -299,7 +294,6 @@ export const PlanificadorPage: React.FC = () => {
         setRuc(data.ruc || '');
         setRazonSocial(data.descCliente || '');
         // mostrarToast('Respaldo cargado correctamente.', 'success');
-        setCurrentPage(2); // Go to results page after loading
       } else {
         // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error');
       }
@@ -312,7 +306,7 @@ export const PlanificadorPage: React.FC = () => {
     if (event.target) {
       event.target.value = '';
     }
-  }, [plannerState, setRuc, setRazonSocial, setCurrentPage]);
+  }, [plannerState, setRuc, setRazonSocial]);
 
   const handleCargarRespaldoClick = () => {
     fileInputRef.current?.click();
@@ -356,22 +350,6 @@ export const PlanificadorPage: React.FC = () => {
       </header>
 
       <main className="container mx-auto p-4">
-        <div className="flex justify-center gap-8 mb-4 pb-4 border-b border-gray-300 dark:border-gray-700">
-          {['Fechas', 'Cliente', 'Resultados'].map((step, index) => (
-            <div
-              key={index}
-              className={`flex items-center cursor-pointer ${currentPage === index ? 'text-planificador-light-primary dark:text-planificador-dark-primary' : 'text-gray-500'}`}
-              onClick={() => setCurrentPage(index)}
-              title={`Ir a ${step}`}
-            >
-              <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${currentPage === index ? 'border-planificador-light-primary dark:border-planificador-dark-primary' : 'border-gray-500'} mr-2`}>
-                {index + 1}
-              </span>
-              {step}
-            </div>
-          ))}
-        </div>
-
         <div id="loading-overlay" style={{ display: isRucLoading ? 'flex' : 'none' }}>
           <div className="spinner"></div>
           <p id="loading-message">Cargando...</p>
@@ -389,11 +367,11 @@ export const PlanificadorPage: React.FC = () => {
         />
 
         {/* Page Content */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-8">
           {/* Sección 1: Selección de Fechas */}
-          <section id="seleccion-fechas" className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md ${currentPage === 0 ? 'block' : 'hidden'}`}>
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">Selección de Fechas</h2>
-            <div id="calendario-container" ref={calendarioContainerRef} className="mb-4"></div>
+          <section id="seleccion-fechas" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">1. Selección de Fechas</h2>
+            <div id="calendario-container" ref={calendarioContainerRef} className="mb-4 w-full overflow-x-auto"></div>
             
             <div className="fechas-seleccionadas">
               <h3 className="text-lg font-semibold mb-2">Fechas Seleccionadas ({plannerState.selectedDates.size})</h3>
@@ -428,19 +406,12 @@ export const PlanificadorPage: React.FC = () => {
               >
                 Cargar Respaldo
               </button>
-              <button
-                type="button"
-                ref={btnReiniciarTareaRef}
-                className="bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg"
-              >
-                Empezar de Nuevo
-              </button>
             </div>
           </section>
 
           {/* Sección 2: Datos del Cliente */}
-          <section id="datos-cliente" className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md ${currentPage === 1 ? 'block' : 'hidden'}`}>
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">Datos del Cliente</h2>
+          <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">2. Datos del Cliente</h2>
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
               <div>
                 <label htmlFor="montoOriginal" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Monto Total (S/)</label>
@@ -500,8 +471,8 @@ export const PlanificadorPage: React.FC = () => {
           </section>
 
           {/* Sección 3: Resultados */}
-          <section id="resultados" className={`bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md ${currentPage === 2 ? 'block' : 'hidden'}`}>
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">Resultados</h2>
+          <section id="resultados" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">3. Resultados</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SummaryTable
                 resumenMensual={plannerState.resumenMensual}
