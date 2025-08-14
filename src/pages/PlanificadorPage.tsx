@@ -31,6 +31,7 @@ export const PlanificadorPage: React.FC = () => {
     isDataDirty: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
 
   const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
   const formState = useAppStore((state) => state.formState.planificador);
@@ -162,6 +163,19 @@ export const PlanificadorPage: React.FC = () => {
     setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
   };
 
+  const handleMontoAjustadoChange = (fecha: string, nuevoMonto: string) => {
+    const montoNumerico = parseFloat(nuevoMonto);
+    if (isNaN(montoNumerico)) {
+      // Si el valor no es un número, se podría manejar el error o simplemente no actualizar
+      // Por ahora, lo guardaremos como está para permitir la limpieza del campo
+    }
+    setMontosAjustados(prev => ({
+      ...prev,
+      [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
+    }));
+    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+  };
+
   const _updateActionButtonsState = useCallback(() => {
     const monto = Number(formState.montoOriginal) || 0;
     const fechas = Array.from(plannerState.selectedDates);
@@ -258,7 +272,9 @@ export const PlanificadorPage: React.FC = () => {
         resumenMensual: resultado.resumenMensual,
         isDataDirty: false
       }));
-      
+      // Initialize adjusted amounts with the calculated ones
+      setMontosAjustados(resultado.montosAsignados);
+
       // Form data is already in the global store, so no need to set it here.
 
       // mostrarResults(); // Now handled by React rendering
@@ -269,6 +285,50 @@ export const PlanificadorPage: React.FC = () => {
       // mostrarLoading(false);
     }
   }, [_getAndValidateFormData]);
+
+  const handleExportAjustado = useCallback(async () => {
+    // This function will be similar to other handleExport functions
+    // It will send the adjusted data to the backend
+    const payload = {
+      tipo: 'planificador',
+      form: formState,
+      // The backend expects a 'montosAsignados' key in the main data object
+      montosAsignados: montosAjustados,
+      fechasOrdenadas: plannerState.fechasOrdenadas,
+      resumenMensual: plannerState.resumenMensual,
+      montoOriginal: formState.montoOriginal,
+      razonSocial: formState.cliente,
+      // Pass other necessary data from formState
+      codigoCliente: formState.codigo_cliente,
+      ruc: formState.documento_cliente,
+      linea: formState.linea_planificador_color,
+      pedido: formState.pedido_planificador,
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/export-xlsx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor al exportar.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'planificador_ajustado.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Error al exportar a Excel:", error);
+      alert("No se pudo generar el archivo de Excel.");
+    }
+  }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual]);
 
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -288,6 +348,7 @@ export const PlanificadorPage: React.FC = () => {
             isDataDirty: false,
         };
         setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
+        setMontosAjustados(data.montosAsignados || {});
 
         // Also update the global form state
         const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
@@ -401,8 +462,10 @@ export const PlanificadorPage: React.FC = () => {
           <ResultadosPlanner
             resumenMensual={plannerState.resumenMensual}
             montoOriginal={Number(formState.montoOriginal) || 0}
-            montosAsignados={plannerState.montosAsignados}
+            montosAsignados={montosAjustados} // Usar los montos ajustados para la tabla
             linea={formState.linea_planificador_color || ''}
+            onMontoAjustadoChange={handleMontoAjustadoChange}
+            onExportAjustado={handleExportAjustado}
           />
         </div>
       </main>
