@@ -1,21 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 
 import * as DateUtils from '../utils/dateUtils';
 import { calcular as calcularApi } from '../utils/api'; // Renamed calcular to calcularApi
 import { MAX_FECHAS } from '../utils/config';
 import { FormValidator } from '../utils/formValidator';
 
-import { SummaryTable } from '../components/planner/SummaryTable';
-import { DetailTable } from '../components/planner/DetailTable';
-import { ComparisonTotals } from '../components/planner/ComparisonTotals';
 import { useAppStore } from '../store/useAppStore';
-import { SummaryChart } from '../components/planner/SummaryChart';
 import { useRucManager } from '../hooks/useRucManager';
-import { StyledInput } from '../components/ui/StyledInput';
-import { FormGroup, Label } from '../components/ui/FormControls';
+import { SeleccionFechas } from '../components/planner/SeleccionFechas';
+import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
+import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
 import './PlanificadorPage.css';
 
 // Define initial state interface (for better type safety)
@@ -68,7 +62,6 @@ export const PlanificadorPage: React.FC = () => {
 
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const calendarioContainerRef = useRef<HTMLDivElement>(null);
 
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
@@ -129,36 +122,6 @@ export const PlanificadorPage: React.FC = () => {
       arg.el.setAttribute('title', feriadosCargados.current.get(dateStr) || '');
     }
   }, [plannerState.selectedDates]);
-
-  // Placeholder for FullCalendar initialization
-  const initCalendar = useCallback(() => {
-    if (calendarioContainerRef.current) {
-      console.log('Initializing FullCalendar...');
-      const calendar = new (FullCalendar as any).Calendar(calendarioContainerRef.current, {
-        plugins: [dayGridPlugin, interactionPlugin],
-        locale: 'es',
-        initialView: 'dayGridMonth',
-        height: 'auto',
-        fixedWeekCount: true,
-        headerToolbar: {
-          left: 'prev,today,next',
-          center: 'title',
-          right: ''
-        },
-        buttonText: {
-          today: 'Hoy'
-        },
-        eventSources: [
-          {
-            events: fetchCalendarEvents // Use the new fetchCalendarEvents useCallback
-          }
-        ],
-        dateClick: handleDateClick, // Use the new handleDateClick useCallback
-        dayCellDidMount: handleDayCellMount // Use the new handleDayCellMount useCallback
-      });
-      calendar.render();
-    }
-  }, [feriadosCargados, fetchCalendarEvents, handleDateClick, handleDayCellMount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
@@ -350,9 +313,6 @@ export const PlanificadorPage: React.FC = () => {
       try {
         console.log('PlanificadorPage: Initializing app...');
 
-        // Migrate initComponents logic here
-        initCalendar(); // Initialize calendar
-
         // Example of migrating state from localStorage (if any)
         const cachedState = localStorage.getItem('planificadorAppData');
         if (cachedState) {
@@ -369,7 +329,7 @@ export const PlanificadorPage: React.FC = () => {
     };
 
     initializeApp();
-  }, [initCalendar]);
+  }, []);
 
 
   return (
@@ -400,140 +360,33 @@ export const PlanificadorPage: React.FC = () => {
 
         {/* Page Content */}
         <div className="mt-4 space-y-8">
-          {/* Sección 1: Selección de Fechas */}
-          <section id="seleccion-fechas" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">1. Selección de Fechas</h2>
-            <div id="calendario-container" ref={calendarioContainerRef} className="mb-4 w-full overflow-x-auto"></div>
-            
-            <div className="fechas-seleccionadas">
-              <h3 className="text-lg font-semibold mb-2">Fechas Seleccionadas ({plannerState.selectedDates.size})</h3>
-              <ul className="max-h-48 overflow-y-auto border rounded-md p-2">
-                {Array.from(plannerState.selectedDates)
-                  .sort((a, b) => DateUtils.parsearFecha(a).getTime() - DateUtils.parsearFecha(b).getTime())
-                  .map(fecha => {
-                    const diasRestantes = DateUtils.diasDesdeHoy(fecha);
-                    let textoDias = '';
-                    switch (diasRestantes) {
-                        case 0: textoDias = ' (Hoy)'; break;
-                        case 1: textoDias = ' (Mañana)'; break;
-                        case -1: textoDias = ' (Ayer)'; break;
-                        default:
-                            if (diasRestantes > 1) {
-                                textoDias = ` (en ${diasRestantes} días)`;
-                            } else {
-                                textoDias = ` (hace ${Math.abs(diasRestantes)} días)`;
-                            }
-                            break;
-                    }
-                    return <li key={fecha} className="py-1 border-b last:border-b-0">{`${fecha}${textoDias}`}</li>;
-                })}
-              </ul>
-            </div>
-            
-            <div className="flex justify-end gap-4 mt-6">
-              <button
-                type="button"
-                onClick={handleCargarRespaldoClick}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
-              >
-                Cargar Respaldo
-              </button>
-            </div>
-          </section>
+          <SeleccionFechas
+            selectedDates={plannerState.selectedDates}
+            onCargarRespaldoClick={handleCargarRespaldoClick}
+            fetchCalendarEvents={fetchCalendarEvents}
+            handleDateClick={handleDateClick}
+            handleDayCellMount={handleDayCellMount}
+          />
 
-          {/* Sección 2: Datos del Cliente */}
-          <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">2. Datos del Cliente</h2>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <FormGroup>
-                <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
-                <StyledInput
-                  id="montoOriginal"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={plannerState.montoOriginal === 0 ? '' : String(plannerState.montoOriginal)}
-                  onChange={handleInputChange}
-                  variant="planificador"
-                  className="input-module-planificador"
-                />
-                 {/* TODO: Implement error display logic if needed */}
-              </FormGroup>
+          <DatosGeneralesPlanner
+            montoOriginal={plannerState.montoOriginal}
+            ruc={ruc}
+            razonSocial={razonSocial}
+            errors={errors}
+            rucError={rucError}
+            onInputChange={handleInputChange}
+            onRucChange={handleRucChange}
+            onRazonSocialChange={handleRazonSocialChange}
+            onRucSearch={handleRucSearch}
+            onCalcular={calcular}
+          />
 
-              <FormGroup>
-                <Label htmlFor="ruc">RUC</Label>
-                <StyledInput
-                  id="ruc"
-                  type="text"
-                  maxLength={11}
-                  pattern="\d{11}"
-                  required
-                  value={ruc}
-                  onChange={handleRucChange}
-                  onBlur={handleRucSearch}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                  variant="planificador"
-                  className="input-module-planificador"
-                />
-                 {/* TODO: Implement error display logic for rucError and errors.ruc */}
-              </FormGroup>
-
-              <FormGroup>
-                <Label htmlFor="descCliente">Razón Social</Label>
-                <StyledInput
-                  id="descCliente"
-                  type="text"
-                  required
-                  value={razonSocial}
-                  onChange={handleRazonSocialChange}
-                  variant="planificador"
-                  className="input-module-planificador"
-                />
-                 {/* TODO: Implement error display logic for errors.descCliente */}
-              </FormGroup>
-
-              {/* Other form fields with similar styling */}
-
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={calcular}
-                  className="bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg"
-                >
-                  Calcular
-                </button>
-              </div>
-            </form>
-          </section>
-
-          {/* Sección 3: Resultados */}
-          <section id="resultados" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">3. Resultados</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SummaryTable
-                resumenMensual={plannerState.resumenMensual}
-                montoOriginal={plannerState.montoOriginal}
-              />
-              <ComparisonTotals
-                montoOriginal={plannerState.montoOriginal}
-                montosAsignados={plannerState.montosAsignados}
-              />
-              <div className="lg:col-span-2">
-                <DetailTable
-                  montosAsignados={plannerState.montosAsignados}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                <SummaryChart
-                    resumenMensual={plannerState.resumenMensual}
-                    montoTotalGeneral={plannerState.montoOriginal}
-                    linea={plannerState.linea}
-                />
-              </div>
-            </div>
-            {/* Recalculate and download buttons */}
-          </section>
+          <ResultadosPlanner
+            resumenMensual={plannerState.resumenMensual}
+            montoOriginal={plannerState.montoOriginal}
+            montosAsignados={plannerState.montosAsignados}
+            linea={plannerState.linea}
+          />
         </div>
       </main>
     </div>
