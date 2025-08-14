@@ -14,6 +14,8 @@ import { ComparisonTotals } from '../components/planner/ComparisonTotals';
 import { useAppStore } from '../store/useAppStore';
 import { SummaryChart } from '../components/planner/SummaryChart';
 import { useRucManager } from '../hooks/useRucManager';
+import { StyledInput } from '../components/ui/StyledInput';
+import { FormGroup, Label } from '../components/ui/FormControls';
 import './PlanificadorPage.css';
 
 // Define initial state interface (for better type safety)
@@ -47,6 +49,7 @@ export const PlanificadorPage: React.FC = () => {
     codigoCliente: '',
     isDataDirty: false,
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
 
@@ -66,9 +69,6 @@ export const PlanificadorPage: React.FC = () => {
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const calendarioContainerRef = useRef<HTMLDivElement>(null);
-  const errorMontoRef = useRef<HTMLSpanElement>(null);
-  const errorPedidoRef = useRef<HTMLSpanElement>(null);
-  const errorDescClienteRef = useRef<HTMLSpanElement>(null);
 
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
@@ -162,11 +162,28 @@ export const PlanificadorPage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
-    setPlannerState(prevState => ({
-      ...prevState,
-      [id]: value,
-    }));
+    setPlannerState(prevState => ({ ...prevState, [id]: value }));
+    if (errors[id]) {
+      setErrors(prev => ({ ...prev, [id]: '' }));
+    }
     handleFormChange();
+  };
+
+  // Specific handlers to clear validation errors on user input
+  const handleRucChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setRuc(value.replace(/\D/g, ''));
+    if (errors.ruc || rucError) {
+      setErrors(prev => ({ ...prev, ruc: '' }));
+    }
+  };
+
+  const handleRazonSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setRazonSocial(value);
+    if (errors.descCliente) {
+      setErrors(prev => ({ ...prev, descCliente: '' }));
+    }
   };
 
   const _updateActionButtonsState = useCallback(() => {
@@ -227,17 +244,32 @@ export const PlanificadorPage: React.FC = () => {
   }, [plannerState.montoOriginal, plannerState.linea, plannerState.pedido, plannerState.selectedDates, plannerState.codigoCliente, ruc, razonSocial]);
 
   const calcular = useCallback(async () => {
-    const { fieldErrors, isValid, payload, uiData } = _getAndValidateFormData();
+    const { fieldErrors, generalErrors, isValid, payload, uiData } = _getAndValidateFormData();
 
     if (!isValid) {
-      // mostrarToast(generalErrors.join(' | '), 'error');
-      // Display field errors
-      if (errorMontoRef.current) errorMontoRef.current.textContent = fieldErrors.find(e => e.field === 'monto')?.message || '';
-      if (errorDescClienteRef.current) errorDescClienteRef.current.textContent = fieldErrors.find(e => e.field === 'desc-cliente')?.message || '';
-      if (errorPedidoRef.current) errorPedidoRef.current.textContent = fieldErrors.find(e => e.field === 'pedido')?.message || '';
+      const newErrors = fieldErrors.reduce((acc, error) => {
+        // Map validator field names to component IDs
+        const fieldMap: Record<string, string> = {
+          monto: 'montoOriginal',
+          razonSocial: 'descCliente',
+          ruc: 'ruc',
+          pedido: 'pedido'
+        };
+        const componentId = fieldMap[error.field] || error.field;
+        acc[componentId] = error.message;
+        return acc;
+      }, {} as Record<string, string>);
+      setErrors(newErrors);
+
+      if (generalErrors.length > 0) {
+        // Here you might want to use a toast notification library
+        alert(`Por favor revise los siguientes puntos:\n- ${generalErrors.join('\n- ')}`);
+      }
       return;
     }
     
+    setErrors({}); // Clear errors on successful validation
+
     try {
       // mostrarLoading(true, 'Calculando distribución...');
       const resultado = await calcularApi(payload); // Renamed to avoid conflict with local function
@@ -413,48 +445,53 @@ export const PlanificadorPage: React.FC = () => {
           <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">2. Datos del Cliente</h2>
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label htmlFor="montoOriginal" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Monto Total (S/)</label>
-                <input
-                  type="number"
+              <FormGroup>
+                <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
+                <StyledInput
                   id="montoOriginal"
+                  type="number"
                   step="0.01"
                   min="0"
                   required
-                  value={plannerState.montoOriginal}
+                  value={plannerState.montoOriginal === 0 ? '' : String(plannerState.montoOriginal)}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-planificador-light-primary focus:border-planificador-light-primary sm:text-sm"
+                  variant="planificador"
+                  className="input-module-planificador"
                 />
-              </div>
+                 {/* TODO: Implement error display logic if needed */}
+              </FormGroup>
 
-              <div>
-                <label htmlFor="ruc" className="block text-sm font-medium text-gray-700 dark:text-gray-300">RUC</label>
-                <input
-                  type="text"
+              <FormGroup>
+                <Label htmlFor="ruc">RUC</Label>
+                <StyledInput
                   id="ruc"
+                  type="text"
                   maxLength={11}
                   pattern="\d{11}"
                   required
                   value={ruc}
-                  onChange={(e) => setRuc(e.target.value.replace(/\D/g, ''))}
+                  onChange={handleRucChange}
                   onBlur={handleRucSearch}
-                  onKeyDown={(e) => e.key === 'Enter' && handleRucSearch()}
-                  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-planificador-light-primary focus:border-planificador-light-primary sm:text-sm"
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                  variant="planificador"
+                  className="input-module-planificador"
                 />
-                <span className="text-red-500 text-sm">{rucError}</span>
-                {/* ... RUC loading and result display ... */}
-              </div>
+                 {/* TODO: Implement error display logic for rucError and errors.ruc */}
+              </FormGroup>
 
-              <div>
-                <label htmlFor="descCliente" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Razón Social</label>
-                <input
-                  type="text"
+              <FormGroup>
+                <Label htmlFor="descCliente">Razón Social</Label>
+                <StyledInput
                   id="descCliente"
+                  type="text"
+                  required
                   value={razonSocial}
-                  onChange={(e) => setRazonSocial(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-planificador-light-primary focus:border-planificador-light-primary sm:text-sm"
+                  onChange={handleRazonSocialChange}
+                  variant="planificador"
+                  className="input-module-planificador"
                 />
-              </div>
+                 {/* TODO: Implement error display logic for errors.descCliente */}
+              </FormGroup>
 
               {/* Other form fields with similar styling */}
 

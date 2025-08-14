@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
+import { StyledSelect } from './ui/StyledSelect';
 
 // Utilidad simple para clase condicional
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -163,6 +164,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
   const [selectedCodigos, setSelectedCodigos] = useState<Set<string>>(new Set());
 
   const lineas = useMemo(() => (data ? getUniqueSortedLineas(data) : []), [data]);
+  const variant = moduloKey === 'precios' ? 'comparador' : moduloKey;
 
   const productosDeLinea = useMemo(() => {
     if (!data || !selectedLinea) return [];
@@ -270,15 +272,15 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
             <label className="block mb-2 font-semibold" htmlFor="linea-sel">
               Línea
             </label>
-            <select
+            <StyledSelect
               id="linea-sel"
-              className="input w-full"
               value={selectedLinea ?? ""}
               onChange={(e) => {
                 setSelectedLinea(e.target.value || null);
                 // Reset selección de productos al cambiar línea
                 setSelectedCodigos(new Set());
               }}
+              variant={variant}
             >
               <option value="">Seleccione una línea</option>
               {lineas.map((l) => (
@@ -286,7 +288,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
                   {l}
                 </option>
               ))}
-            </select>
+            </StyledSelect>
           </div>
 
           {/* Paso 2: Productos de la línea */}

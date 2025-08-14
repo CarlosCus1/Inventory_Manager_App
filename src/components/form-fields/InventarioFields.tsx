@@ -4,8 +4,7 @@ import type { IForm } from "../../interfaces";
 interface Props {
     formState: IForm;
     handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    baseInputClass: string;
-    errorDocumento: string | null;
+    variant: 'inventario';
 }
 
 export const InventarioFields: React.FC<Props> = () => {

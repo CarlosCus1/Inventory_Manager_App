@@ -8,7 +8,9 @@
 // --- 1. Importaciones necesarias ---
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { FormGroup, Label, Input } from './ui/FormControls';
+import { FormGroup, Label } from './ui/FormControls';
+import { StyledInput } from './ui/StyledInput';
+import { StyledSelect } from './ui/StyledSelect';
 import { DevolucionesPedidoFields } from './form-fields/DevolucionesPedidoFields';
 import { InventarioFields } from '../components/form-fields/InventarioFields';
 import { PreciosFields } from '../components/form-fields/PreciosFields';
@@ -29,6 +31,9 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
   const formState = useAppStore((state) => state.formState[tipo]);
   const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
   const fetchRuc = useAppStore((state) => state.fetchRuc);
+
+  // Map 'precios' type to 'comparador' variant for styling consistency
+  const variant = tipo === 'precios' ? 'comparador' : tipo;
 
 
   // New state for RUC/DNI functionality
@@ -105,26 +110,15 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
     }
   }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario, fetchRuc]); // Dependencies for RUC effect
 
-  // --- F. Lógica de Estilos Dinámicos ---
-  // Mapeo de 'tipo' a la clase CSS del módulo para mantener la consistencia visual.
-  // Esto asegura que todos los inputs dentro del mismo formulario tengan el mismo color de foco.
-  const moduleInputClasses: Record<Props['tipo'], string> = {
-    devoluciones: 'input-module-devoluciones',
-    pedido: 'input-module-pedido',
-    inventario: 'input-module-inventario',
-    precios: 'input-module-comparador', // 'precios' usa el estilo del módulo comparador.
-  };
-
-  const baseInputClass = moduleInputClasses[tipo];
 
   // --- G. Renderizado Modular de Campos ---
   // Se utiliza un objeto para mapear el `tipo` a su componente de campos específico.
   // Esto hace que el JSX principal sea más limpio y el componente más fácil de extender.
   const SpecificFieldsComponent: Record<Props['tipo'], React.ReactNode> = {
-    devoluciones: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
-    pedido: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
-    inventario: <InventarioFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
-    precios: <PreciosFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={null} />,
+    devoluciones: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} variant="devoluciones" />,
+    pedido: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} variant="pedido" />,
+    inventario: <InventarioFields formState={formState} handleChange={handleChange} variant="inventario" />,
+    precios: <PreciosFields formState={formState} handleChange={handleChange} variant="comparador" />,
   };
 
   const fields = SpecificFieldsComponent[tipo];
@@ -150,19 +144,19 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
             rucCondicion={rucCondicion}
             isLoading={isLoadingRuc}
             error={rucError}
-            themeClass={baseInputClass}
+            variant={variant}
           />
 
           <FormGroup>
             <Label htmlFor="codigo_cliente" className="form-label">Código de Cliente</Label>
-            <Input
+            <StyledInput
               type="text"
               id="codigo_cliente"
               name="codigo_cliente"
               value={formState.codigo_cliente || ''}
               onChange={handleChange}
               placeholder="Código de Cliente"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
@@ -170,7 +164,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
           {tipo === 'devoluciones' && (
             <FormGroup>
               <Label htmlFor="motivo" className="form-label">Motivo de Devolución</Label>
-              <select
+              <StyledSelect
                 id="motivo"
                 name="motivo"
                 value={(formState as Record<string, string>)?.motivo ?? ''}
@@ -182,25 +176,25 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
                     actualizarFormulario('devoluciones', 'motivo' as keyof IForm, e.target.value);
                   }
                 }}
-                className={`input ${baseInputClass}`}
+                variant={variant}
                 aria-label="Motivo de devolución"
               >
                 <option value="">Seleccionar motivo...</option>
                 <option value="falla_fabrica">Falla de fábrica</option>
                 <option value="acuerdos_comerciales">Acuerdos comerciales</option>
-              </select>
+              </StyledSelect>
             </FormGroup>
           )}
 
           <FormGroup>
             <Label htmlFor="fecha" className="form-label">Fecha</Label>
-            <Input
+            <StyledInput
               type="date"
               id="fecha"
               name="fecha"
               value={formState.fecha || ''}
               onChange={handleChange}
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
         </div>
@@ -218,31 +212,31 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
             rucCondicion={rucCondicion}
             isLoading={isLoadingRuc}
             error={rucError}
-            themeClass={baseInputClass}
+            variant={variant}
           />
 
           <FormGroup>
             <Label htmlFor="colaborador_personal" className="form-label">Colaborador / Personal</Label>
-            <Input
+            <StyledInput
               type="text"
               id="colaborador_personal"
               name="colaborador_personal"
               value={formState.colaborador_personal || ''}
               onChange={handleChange}
               placeholder="Nombre del colaborador"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="fecha" className="form-label">Fecha</Label>
-            <Input
+            <StyledInput
               type="date"
               id="fecha"
               name="fecha"
               value={formState.fecha || ''}
               onChange={handleChange}
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
         </div>
@@ -252,91 +246,91 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FormGroup>
             <Label htmlFor="colaborador_personal" className="form-label">Colaborador / Personal</Label>
-            <Input
+            <StyledInput
               type="text"
               id="colaborador_personal"
               name="colaborador_personal"
               value={formState.colaborador_personal || ''}
               onChange={handleChange}
               placeholder="Nombre del colaborador"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="marca1" className="form-label">Marca 1</Label>
-            <Input
+            <StyledInput
               type="text"
               id="marca1"
               name="marca1"
               value={(formState as Record<string, string>)?.marca1 || ''}
               onChange={handleChange}
               placeholder="Marca 1"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="marca2" className="form-label">Marca 2</Label>
-            <Input
+            <StyledInput
               type="text"
               id="marca2"
               name="marca2"
               value={(formState as Record<string, string>)?.marca2 || ''}
               onChange={handleChange}
               placeholder="Marca 2"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="marca3" className="form-label">Marca 3</Label>
-            <Input
+            <StyledInput
               type="text"
               id="marca3"
               name="marca3"
               value={(formState as Record<string, string>)?.marca3 || ''}
               onChange={handleChange}
               placeholder="Marca 3"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="marca4" className="form-label">Marca 4</Label>
-            <Input
+            <StyledInput
               type="text"
               id="marca4"
               name="marca4"
               value={(formState as Record<string, string>)?.marca4 || ''}
               onChange={handleChange}
               placeholder="Marca 4"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="marca5" className="form-label">Marca 5</Label>
-            <Input
+            <StyledInput
               type="text"
               id="marca5"
               name="marca5"
               value={(formState as Record<string, string>)?.marca5 || ''}
               onChange={handleChange}
               placeholder="Marca 5"
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="fecha" className="form-label">Fecha</Label>
-            <Input
+            <StyledInput
               type="date"
               id="fecha"
               name="fecha"
               value={formState.fecha || ''}
               onChange={handleChange}
-              className={`input ${baseInputClass}`}
+              variant={variant}
             />
           </FormGroup>
         </div>
