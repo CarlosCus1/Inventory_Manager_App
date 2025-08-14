@@ -11,9 +11,11 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IForm, IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
 
 // --- 2. Definición del Componente de Página ---
 export const PedidoPage: React.FC = () => {
@@ -27,6 +29,7 @@ export const PedidoPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +55,12 @@ export const PedidoPage: React.FC = () => {
     const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
     actualizarProductoEnLista('pedido', codigo, campo, valorFinal);
   }, [actualizarProductoEnLista]);
+
+  // Handler para los campos del formulario de datos generales
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('pedido', name as keyof IForm, value);
+  };
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -147,7 +156,20 @@ export const PedidoPage: React.FC = () => {
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
-        <DatosGeneralesForm tipo="pedido" />
+        <DatosGeneralesForm tipo="pedido">
+          {/* Campos específicos para Pedido */}
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="pedido"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
       {/* Sección 2: Búsqueda y Selección de Productos */}

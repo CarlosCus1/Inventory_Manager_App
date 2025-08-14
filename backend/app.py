@@ -215,15 +215,24 @@ def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_da
     autosize_columns(ws)
 
 # --- 4.5. Lógica para Reporte del Planificador ---
-def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any]):
+def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart_color_name: Optional[str] = None):
     """
     Genera un reporte detallado para el módulo planificador, utilizando pandas
-    para la creación de hojas y openpyxl para el estilo.
+    para la creación de hojas y openpyxl para el estilo y el gráfico.
     """
-    from openpyxl.chart import PieChart, Reference
+    from openpyxl.chart import BarChart, Reference
     from openpyxl.chart.label import DataLabelList
+    from openpyxl.chart.shapes import GraphicalProperties
 
-    # --- Funciones de Ayuda ---
+    # --- Funciones de Ayuda y Mapeo de Colores ---
+    COLOR_MAP = {
+        "rojo": "FF0000",   # Viniball
+        "azul": "0070C0",   # Vinifan
+        "verde": "00B050",  # Otros
+        "default": "4472C4" # Un azul por defecto si no se especifica
+    }
+    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP["default"])
+
     def _lighten_color(hex_color, factor=0.5):
         hex_color = hex_color.lstrip('#')
         rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
@@ -284,6 +293,30 @@ def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any]):
     # Estilo Detalle
     for col in ws_detalle.columns:
         ws_detalle.column_dimensions[col[0].column_letter].width = 20
+
+    # --- Creación y Estilo del Gráfico ---
+    chart = BarChart()
+    chart.title = "Resumen de Montos por Mes"
+    chart.style = 12
+    chart.y_axis.title = 'Monto (S/)'
+    chart.x_axis.title = 'Mes'
+    chart.legend = None # Sin leyenda para un look más limpio
+
+    # Rango de datos (columna B de la tabla de resumen)
+    data_ref = Reference(ws_dashboard, min_col=2, min_row=len(df_info) + 5, max_row=len(df_info) + 5 + len(df_resumen))
+    # Rango de categorías (columna A)
+    cats_ref = Reference(ws_dashboard, min_col=1, min_row=len(df_info) + 6, max_row=len(df_info) + 5 + len(df_resumen))
+
+    chart.add_data(data_ref, titles_from_data=True)
+    chart.set_categories(cats_ref)
+
+    # Personalización del color de las barras
+    series = chart.series[0]
+    fill = PatternFill(patternType='solid', fgColor=hex_color)
+    series.graphicalProperties = GraphicalProperties(solidFill=fill)
+
+    # Añadir el gráfico a la hoja
+    ws_dashboard.add_chart(chart, "E3")
 
 
 # --- 5. Definición de Endpoints ---
@@ -466,7 +499,8 @@ def export_xlsx():
             # --- Caso 2: Inventario, Pedido o Planificador (lógica unificada) ---
             elif tipo_gestion in ['inventario', 'pedido', 'planificador']:
                 if tipo_gestion == 'planificador':
-                    _generate_planner_report(writer, data)
+                    chart_color = form_data.get('linea_planificador_color')
+                    _generate_planner_report(writer, data, chart_color_name=chart_color)
                 else:
                     _generate_standard_report(writer, tipo_gestion, form_data, list_data)
 

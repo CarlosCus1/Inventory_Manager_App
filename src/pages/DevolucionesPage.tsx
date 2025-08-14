@@ -11,9 +11,13 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IForm, IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
+import { StyledSelect } from '../components/ui/StyledSelect';
+
 
 // --- 2. Definición del Componente de Página ---
 export const DevolucionesPage: React.FC = () => {
@@ -26,6 +30,8 @@ export const DevolucionesPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
+  const setMotivoDevolucion = useAppStore((state) => state.setMotivoDevolucion);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +61,12 @@ export const DevolucionesPage: React.FC = () => {
     const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
     actualizarProductoEnLista('devoluciones', codigo, campo, valorFinal);
   }, [actualizarProductoEnLista]);
+
+  // Handler para los campos del formulario de datos generales
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('devoluciones', name as keyof IForm, value);
+  };
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -158,7 +170,34 @@ export const DevolucionesPage: React.FC = () => {
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
-        <DatosGeneralesForm tipo="devoluciones" />
+        <DatosGeneralesForm tipo="devoluciones">
+          {/* Campos específicos para Devoluciones */}
+          <FormGroup>
+            <Label htmlFor="motivo">Motivo de Devolución</Label>
+            <StyledSelect
+              id="motivo"
+              name="motivo"
+              value={formState.motivo || ''}
+              onChange={(e) => setMotivoDevolucion(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales')}
+              variant="devoluciones"
+            >
+              <option value="">Seleccionar motivo...</option>
+              <option value="falla_fabrica">Falla de fábrica</option>
+              <option value="acuerdos_comerciales">Acuerdos comerciales</option>
+            </StyledSelect>
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="devoluciones"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
 

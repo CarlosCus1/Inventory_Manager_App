@@ -6,59 +6,92 @@ import { MAX_FECHAS } from '../utils/config';
 import { FormValidator } from '../utils/formValidator';
 
 import { useAppStore } from '../store/useAppStore';
-import { useRucManager } from '../hooks/useRucManager';
+import type { IForm } from '../interfaces';
 import { SeleccionFechas } from '../components/planner/SeleccionFechas';
 import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
 import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
 import './PlanificadorPage.css';
 
 // Define initial state interface (for better type safety)
+// This local state only holds data not related to the form itself.
 interface PlannerState {
-  montoOriginal: number;
   selectedDates: Set<string>;
   fechasOrdenadas: string[];
   montosAsignados: Record<string, any>;
   resumenMensual: Record<string, any>;
-  cliente: string;
-  ruc: string;
-  descCliente: string;
-  linea: string;
-  pedido: string;
-  codigoCliente: string;
   isDataDirty: boolean;
 }
 
 export const PlanificadorPage: React.FC = () => {
   const [plannerState, setPlannerState] = useState<PlannerState>({
-    montoOriginal: 0,
     selectedDates: new Set(),
     fechasOrdenadas: [],
     montosAsignados: {},
     resumenMensual: {},
-    cliente: '',
-    ruc: '',
-    descCliente: '',
-    linea: '',
-    pedido: '',
-    codigoCliente: '',
     isDataDirty: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
+  const formState = useAppStore((state) => state.formState.planificador);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
+  const fetchRuc = useAppStore((state) => state.fetchRuc);
 
-  const feriadosCargados = useRef(new Map<string, string>()); // Use useRef for mutable map
+  const feriadosCargados = useRef(new Map<string, string>());
 
-  // Refs for DOM elements that were previously accessed by getElementById
-  const {
-    ruc,
-    setRuc,
-    razonSocial,
-    setRazonSocial,
-    error: rucError,
-    isLoading: isRucLoading,
-    handleRucSearch,
-  } = useRucManager(plannerState.ruc, plannerState.descCliente);
+  // State and handlers for RUC/DNI logic, adapted from DatosGeneralesForm
+  const [rucEstado, setRucEstado] = useState<string | null>(null);
+  const [rucCondicion, setRucCondicion] = useState<string | null>(null);
+  const [isLoadingRuc, setIsLoadingRuc] = useState(false);
+  const [rucError, setRucError] = useState<string | null>(null);
+  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState.documento_cliente || '');
+
+  const handleRucDniChange = useCallback((type: 'ruc' | 'dni', number: string, social: string) => {
+    actualizarFormulario('planificador', 'documentType' as keyof IForm, type);
+    actualizarFormulario('planificador', 'documento_cliente' as keyof IForm, number);
+    actualizarFormulario('planificador', 'cliente' as keyof IForm, social);
+    setDebouncedDocumentNumber(number);
+  }, [actualizarFormulario]);
+
+  const handleRazonSocialManualChange = useCallback((social: string) => {
+    actualizarFormulario('planificador', 'cliente' as keyof IForm, social);
+  }, [actualizarFormulario]);
+
+  useEffect(() => {
+    if (formState.documentType === 'ruc' && debouncedDocumentNumber.length === 11) {
+      setIsLoadingRuc(true);
+      setRucError(null);
+      setRucEstado(null);
+      setRucCondicion(null);
+
+      const fetchRucData = async () => {
+        try {
+          const data = await fetchRuc(debouncedDocumentNumber);
+          actualizarFormulario('planificador', 'cliente' as keyof IForm, data.razonSocial);
+          setRucEstado(data.estado || null);
+          setRucCondicion(data.condicion || null);
+        } catch (err) {
+          setRucError((err as Error).message || 'Error al consultar RUC.');
+          actualizarFormulario('planificador', 'cliente' as keyof IForm, '');
+          setRucEstado(null);
+          setRucCondicion(null);
+        } finally {
+          setIsLoadingRuc(false);
+        }
+      };
+      fetchRucData();
+    } else if (formState.documentType === 'ruc' && debouncedDocumentNumber.length !== 11) {
+      setRucError('El RUC debe tener 11 dígitos.');
+      actualizarFormulario('planificador', 'cliente' as keyof IForm, '');
+      setRucEstado(null);
+      setRucCondicion(null);
+    } else {
+      setRucError(null);
+      setRucEstado(null);
+      setRucCondicion(null);
+    }
+  }, [formState.documentType, debouncedDocumentNumber, actualizarFormulario, fetchRuc]);
+
 
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,11 +134,8 @@ export const PlanificadorPage: React.FC = () => {
         newSelectedDates.add(dateStr);
       }
       // No direct classList manipulation here, React will re-render based on state
-      return { ...prevState, selectedDates: newSelectedDates };
+      return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
-
-    // handleFormChange will be called by a useEffect that watches plannerState
-    // actualizarListaFechas will be called by a useEffect that watches plannerState.selectedDates
   }, [feriadosCargados, MAX_FECHAS]);
 
   const handleDayCellMount = useCallback((arg: { date: Date, el: HTMLElement }) => {
@@ -123,42 +153,26 @@ export const PlanificadorPage: React.FC = () => {
     }
   }, [plannerState.selectedDates]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { id, value } = e.target;
-    setPlannerState(prevState => ({ ...prevState, [id]: value }));
-    if (errors[id]) {
-      setErrors(prev => ({ ...prev, [id]: '' }));
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('planificador', name as keyof IForm, value);
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
-    handleFormChange();
-  };
-
-  // Specific handlers to clear validation errors on user input
-  const handleRucChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setRuc(value.replace(/\D/g, ''));
-    if (errors.ruc || rucError) {
-      setErrors(prev => ({ ...prev, ruc: '' }));
-    }
-  };
-
-  const handleRazonSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setRazonSocial(value);
-    if (errors.descCliente) {
-      setErrors(prev => ({ ...prev, descCliente: '' }));
-    }
+    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
   };
 
   const _updateActionButtonsState = useCallback(() => {
-    const monto = plannerState.montoOriginal;
+    const monto = Number(formState.montoOriginal) || 0;
     const fechas = Array.from(plannerState.selectedDates);
-    const pedido = plannerState.pedido.trim() || '';
+    const pedido = formState.pedido_planificador?.trim() || '';
+    const cliente = formState.cliente?.trim() || '';
 
     if (!btnCalcularRef.current) return;
 
     const isMontoValid = monto > 0;
     const areFechasValid = fechas.length > 0;
-    const isClienteValid = razonSocial.trim().length > 0;
+    const isClienteValid = cliente.length > 0;
     const isPedidoValid = pedido.length > 0;
 
     const canCalculate = isMontoValid && areFechasValid && isClienteValid && isPedidoValid;
@@ -175,26 +189,25 @@ export const PlanificadorPage: React.FC = () => {
     } else {
       btnCalcularRef.current.title = 'Realizar el cálculo de distribución';
     }
-  }, [plannerState.montoOriginal, plannerState.selectedDates, plannerState.pedido, razonSocial]);
+  }, [formState, plannerState.selectedDates]);
 
-  const handleFormChange = useCallback(() => {
-    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+  useEffect(() => {
     _updateActionButtonsState();
-  }, [_updateActionButtonsState]);
+  }, [formState, plannerState.selectedDates, _updateActionButtonsState]);
 
   const _getAndValidateFormData = useCallback(() => {
-    const monto = plannerState.montoOriginal;
-    const linea = plannerState.linea;
-    const pedido = plannerState.pedido.trim();
+    const monto = Number(formState.montoOriginal) || 0;
+    const ruc = formState.documento_cliente || '';
+    const razonSocial = formState.cliente || '';
+    const pedido = formState.pedido_planificador || '';
     const fechas = Array.from(plannerState.selectedDates);
-    const codigoCliente = plannerState.codigoCliente.trim();
 
     const { fieldErrors, generalErrors, isValid } = FormValidator.validate({
       monto,
       fechas,
       ruc: ruc.trim(),
       razonSocial: razonSocial.trim(),
-      pedido
+      pedido: pedido.trim()
     });
 
     return {
@@ -202,21 +215,21 @@ export const PlanificadorPage: React.FC = () => {
       generalErrors,
       isValid,
       payload: { montoTotal: monto, fechasValidas: fechas, razonSocial: razonSocial.trim() },
-      uiData: { linea, pedido, ruc: ruc.trim(), codigoCliente }
+      uiData: { ...formState } // Pass all form state to uiData
     };
-  }, [plannerState.montoOriginal, plannerState.linea, plannerState.pedido, plannerState.selectedDates, plannerState.codigoCliente, ruc, razonSocial]);
+  }, [formState, plannerState.selectedDates]);
 
   const calcular = useCallback(async () => {
-    const { fieldErrors, generalErrors, isValid, payload, uiData } = _getAndValidateFormData();
+    const { fieldErrors, generalErrors, isValid, payload } = _getAndValidateFormData();
 
     if (!isValid) {
       const newErrors = fieldErrors.reduce((acc, error) => {
         // Map validator field names to component IDs
         const fieldMap: Record<string, string> = {
           monto: 'montoOriginal',
-          razonSocial: 'descCliente',
-          ruc: 'ruc',
-          pedido: 'pedido'
+          razonSocial: 'cliente',
+          ruc: 'documento_cliente',
+          pedido: 'pedido_planificador'
         };
         const componentId = fieldMap[error.field] || error.field;
         acc[componentId] = error.message;
@@ -237,20 +250,17 @@ export const PlanificadorPage: React.FC = () => {
       // mostrarLoading(true, 'Calculando distribución...');
       const resultado = await calcularApi(payload); // Renamed to avoid conflict with local function
 
+      // Update local state with calculation results
       setPlannerState(prevState => ({
         ...prevState,
-        montoOriginal: payload.montoTotal,
         fechasOrdenadas: payload.fechasValidas,
         montosAsignados: resultado.montosAsignados,
         resumenMensual: resultado.resumenMensual,
-        linea: uiData.linea,
-        pedido: uiData.pedido,
-        ruc: uiData.ruc,
-        codigoCliente: uiData.codigoCliente,
-        descCliente: payload.razonSocial,
         isDataDirty: false
       }));
       
+      // Form data is already in the global store, so no need to set it here.
+
       // mostrarResults(); // Now handled by React rendering
     } catch (error) {
       console.error('Error en cálculo:', error);
@@ -270,24 +280,24 @@ export const PlanificadorPage: React.FC = () => {
 
       // Basic validation of the loaded data
       if (data && data.montosAsignados && data.selectedDates) {
-        const loadedState: PlannerState = {
-          ...plannerState,
-          montoOriginal: data.montoOriginal || 0,
-          selectedDates: new Set(data.selectedDates || []),
-          fechasOrdenadas: data.fechasOrdenadas || [],
-          montosAsignados: data.montosAsignados || {},
-          resumenMensual: data.resumenMensual || {},
-          cliente: data.cliente || '',
-          ruc: data.ruc || '',
-          descCliente: data.descCliente || '',
-          linea: data.linea || '',
-          pedido: data.pedido || '',
-          codigoCliente: data.codigoCliente || '',
-          isDataDirty: false, // Loaded state is considered not dirty
+        const localPlannerUpdate: Partial<PlannerState> = {
+            selectedDates: new Set(data.selectedDates || []),
+            fechasOrdenadas: data.fechasOrdenadas || [],
+            montosAsignados: data.montosAsignados || {},
+            resumenMensual: data.resumenMensual || {},
+            isDataDirty: false,
         };
-        setPlannerState(loadedState);
-        setRuc(data.ruc || '');
-        setRazonSocial(data.descCliente || '');
+        setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
+
+        // Also update the global form state
+        const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+        formFieldsToUpdate.forEach(field => {
+            const value = data[field];
+            if (value !== undefined) {
+                actualizarFormulario('planificador', field, value);
+            }
+        });
+
         // mostrarToast('Respaldo cargado correctamente.', 'success');
       } else {
         // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error');
@@ -301,7 +311,7 @@ export const PlanificadorPage: React.FC = () => {
     if (event.target) {
       event.target.value = '';
     }
-  }, [plannerState, setRuc, setRazonSocial]);
+  }, [actualizarFormulario]);
 
   const handleCargarRespaldoClick = () => {
     fileInputRef.current?.click();
@@ -316,11 +326,19 @@ export const PlanificadorPage: React.FC = () => {
         // Example of migrating state from localStorage (if any)
         const cachedState = localStorage.getItem('planificadorAppData');
         if (cachedState) {
-          const parsedState: PlannerState = JSON.parse(cachedState);
-          if (Array.isArray(parsedState.selectedDates)) {
-            parsedState.selectedDates = new Set(parsedState.selectedDates);
+          const parsedState = JSON.parse(cachedState) as { plannerState: PlannerState, formState: { planificador: IForm } };
+          if (parsedState.plannerState && Array.isArray(parsedState.plannerState.selectedDates)) {
+            parsedState.plannerState.selectedDates = new Set(parsedState.plannerState.selectedDates);
           }
-          setPlannerState(parsedState);
+          setPlannerState(prevState => ({...prevState, ...parsedState.plannerState}));
+
+          const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+          formFieldsToUpdate.forEach(field => {
+              const value = parsedState.formState?.planificador?.[field];
+              if (value !== undefined) {
+                  actualizarFormulario('planificador', field, value);
+              }
+          });
         }
       } catch (error) {
         console.error('Error initializing PlanificadorPage:', error);
@@ -329,7 +347,7 @@ export const PlanificadorPage: React.FC = () => {
     };
 
     initializeApp();
-  }, []);
+  }, [actualizarFormulario]);
 
 
   return (
@@ -342,7 +360,7 @@ export const PlanificadorPage: React.FC = () => {
       </header>
 
       <main className="container mx-auto p-4">
-        <div id="loading-overlay" style={{ display: isRucLoading ? 'flex' : 'none' }}>
+        <div id="loading-overlay" style={{ display: isLoadingRuc ? 'flex' : 'none' }}>
           <div className="spinner"></div>
           <p id="loading-message">Cargando...</p>
         </div>
@@ -369,23 +387,22 @@ export const PlanificadorPage: React.FC = () => {
           />
 
           <DatosGeneralesPlanner
-            montoOriginal={plannerState.montoOriginal}
-            ruc={ruc}
-            razonSocial={razonSocial}
-            errors={errors}
+            formState={formState}
+            onFormChange={handleFormChange}
+            onRucDniChange={handleRucDniChange}
+            onRazonSocialManualChange={handleRazonSocialManualChange}
+            rucEstado={rucEstado}
+            rucCondicion={rucCondicion}
+            isLoadingRuc={isLoadingRuc}
             rucError={rucError}
-            onInputChange={handleInputChange}
-            onRucChange={handleRucChange}
-            onRazonSocialChange={handleRazonSocialChange}
-            onRucSearch={handleRucSearch}
             onCalcular={calcular}
           />
 
           <ResultadosPlanner
             resumenMensual={plannerState.resumenMensual}
-            montoOriginal={plannerState.montoOriginal}
+            montoOriginal={Number(formState.montoOriginal) || 0}
             montosAsignados={plannerState.montosAsignados}
-            linea={plannerState.linea}
+            linea={formState.linea_planificador_color || ''}
           />
         </div>
       </main>

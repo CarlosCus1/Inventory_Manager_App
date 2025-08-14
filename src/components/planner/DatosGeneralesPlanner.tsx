@@ -1,85 +1,116 @@
 import React from 'react';
 import { StyledInput } from '../ui/StyledInput';
+import { StyledSelect } from '../ui/StyledSelect';
 import { FormGroup, Label } from '../ui/FormControls';
+import { RucDniInput } from '../RucDniInput';
+import { SucursalInput } from '../ui/SucursalInput';
+import type { IForm } from '../../interfaces';
 
-// Define a more specific type for the props
 interface Props {
-  montoOriginal: number;
-  ruc: string;
-  razonSocial: string;
-  errors: Record<string, string>;
+  formState: IForm; // Pass the whole form state for simplicity
+  onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onRucDniChange: (type: 'ruc' | 'dni', number: string, social: string) => void;
+  onRazonSocialManualChange: (social: string) => void;
+  rucEstado: string | null;
+  rucCondicion: string | null;
+  isLoadingRuc: boolean;
   rucError: string | null;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onRucChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRazonSocialChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRucSearch: () => void;
   onCalcular: () => void;
 }
 
 export const DatosGeneralesPlanner: React.FC<Props> = ({
-  montoOriginal,
-  ruc,
-  razonSocial,
-  errors,
+  formState,
+  onFormChange,
+  onRucDniChange,
+  onRazonSocialManualChange,
+  rucEstado,
+  rucCondicion,
+  isLoadingRuc,
   rucError,
-  onInputChange,
-  onRucChange,
-  onRazonSocialChange,
-  onRucSearch,
   onCalcular
 }) => {
   return (
     <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">2. Datos del Cliente</h2>
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-        <FormGroup>
-          <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
-          <StyledInput
-            id="montoOriginal"
-            name="montoOriginal" // Add name for handler
-            type="number"
-            step="0.01"
-            min="0"
-            required
-            value={montoOriginal === 0 ? '' : String(montoOriginal)}
-            onChange={onInputChange}
+      <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">1. Datos Generales</h2>
+      <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={(e) => e.preventDefault()}>
+
+        <RucDniInput
+            documentType={formState.documentType || 'ruc'}
+            documentNumber={formState.documento_cliente || ''}
+            razonSocial={formState.cliente || ''}
+            onDocumentChange={onRucDniChange}
+            onRazonSocialChange={onRazonSocialManualChange}
+            rucEstado={rucEstado}
+            rucCondicion={rucCondicion}
+            isLoading={isLoadingRuc}
+            error={rucError}
             variant="planificador"
-          />
-          {errors.montoOriginal && <p className="text-sm text-red-500 mt-1">{errors.montoOriginal}</p>}
+        />
+
+        <FormGroup>
+            <Label htmlFor="codigo_cliente">Código de Cliente</Label>
+            <StyledInput
+                type="text"
+                id="codigo_cliente"
+                name="codigo_cliente"
+                value={formState.codigo_cliente || ''}
+                onChange={onFormChange}
+                placeholder="Opcional"
+                variant="planificador"
+            />
+        </FormGroup>
+
+        <SucursalInput
+            value={formState.sucursal || ''}
+            onChange={onFormChange}
+            variant="planificador"
+        />
+
+        <FormGroup>
+            <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
+            <StyledInput
+                id="montoOriginal"
+                name="montoOriginal"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formState.montoOriginal || ''}
+                onChange={onFormChange}
+                variant="planificador"
+            />
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="ruc">RUC</Label>
-          <StyledInput
-            id="ruc"
-            type="text"
-            maxLength={11}
-            pattern="\d{11}"
-            required
-            value={ruc}
-            onChange={onRucChange}
-            onBlur={onRucSearch}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            variant="planificador"
-          />
-           {(errors.ruc || rucError) && <p className="text-sm text-red-500 mt-1">{errors.ruc || rucError}</p>}
+            <Label htmlFor="pedido_planificador">Pedido</Label>
+            <StyledInput
+                type="text"
+                id="pedido_planificador"
+                name="pedido_planificador"
+                value={formState.pedido_planificador || ''}
+                onChange={onFormChange}
+                placeholder="Ej: Pedido de campaña"
+                variant="planificador"
+            />
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="descCliente">Razón Social</Label>
-          <StyledInput
-            id="descCliente"
-            name="descCliente" // Add name for handler
-            type="text"
-            required
-            value={razonSocial}
-            onChange={onRazonSocialChange}
-            variant="planificador"
-          />
-           {errors.descCliente && <p className="text-sm text-red-500 mt-1">{errors.descCliente}</p>}
+            <Label htmlFor="linea_planificador_color">Línea para Reporte</Label>
+            <StyledSelect
+                id="linea_planificador_color"
+                name="linea_planificador_color"
+                value={formState.linea_planificador_color || ''}
+                onChange={onFormChange}
+                variant="planificador"
+            >
+                <option value="">Seleccionar color...</option>
+                <option value="rojo">Viniball (Rojo)</option>
+                <option value="azul">Vinifan (Azul)</option>
+                <option value="verde">Otros (Verde)</option>
+            </StyledSelect>
         </FormGroup>
 
-        <div className="flex justify-end gap-4">
+        <div className="lg:col-span-3 flex justify-end gap-4">
           <button
             type="button"
             onClick={onCalcular}

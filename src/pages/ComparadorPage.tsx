@@ -14,6 +14,8 @@ import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { calculateDataWithPercentages, calculateSummary } from '../utils/comparisonUtils';
 import { ComparisonTable } from '../components/comparador/ComparisonTable';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
 
 // --- 2. Definición del Componente de Página ---
 export const ComparadorPage: React.FC = () => {
@@ -26,6 +28,7 @@ export const ComparadorPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +73,11 @@ export const ComparadorPage: React.FC = () => {
     }
 
     actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('precios', name as keyof IForm, value);
   };
 
 
@@ -138,7 +146,46 @@ export const ComparadorPage: React.FC = () => {
       />
 
       <section className="section-card">
-        <DatosGeneralesForm tipo="precios" />
+        <DatosGeneralesForm tipo="precios">
+          <FormGroup>
+            <Label htmlFor="colaborador_personal">Colaborador / Personal</Label>
+            <StyledInput
+              type="text"
+              id="colaborador_personal"
+              name="colaborador_personal"
+              value={formState.colaborador_personal || ''}
+              onChange={handleFormChange}
+              placeholder="Nombre del colaborador"
+              variant="comparador"
+            />
+          </FormGroup>
+          {/* Loop to generate Marca inputs */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <FormGroup key={i}>
+              <Label htmlFor={`marca${i + 1}`}>{`Marca ${i + 1}`}</Label>
+              <StyledInput
+                type="text"
+                id={`marca${i + 1}`}
+                name={`marca${i + 1}`}
+                value={formState[`marca${i + 1}` as keyof IForm] as string || ''}
+                onChange={handleFormChange}
+                placeholder={`Marca ${i + 1}`}
+                variant="comparador"
+              />
+            </FormGroup>
+          ))}
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="comparador"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
       <section className="section-card">

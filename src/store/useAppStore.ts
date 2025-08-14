@@ -58,7 +58,7 @@ interface Actions {
   // Carga el catálogo de productos desde un archivo JSON.
   cargarCatalogo: () => Promise<void>;
   // Actualiza un campo específico en el estado de un formulario.
-  actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string) => void;
+  actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string | number) => void;
   // Setter específico para motivo de devoluciones
   setMotivoDevolucion: (motivo: MotivoDevolucion) => void;
   // Añade un producto a una lista específica.
