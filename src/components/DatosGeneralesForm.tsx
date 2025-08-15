@@ -6,12 +6,18 @@
 // --------------------------------------------------------------------------- #
 
 // --- 1. Importaciones necesarias ---
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+
 import { FormGroup, Label } from './ui/FormControls';
 import { StyledInput } from './ui/StyledInput';
 import { RucDniInput } from './RucDniInput';
 import { SucursalInput } from './ui/SucursalInput';
+import { FormGroup, Label, Input, FormError } from './ui/FormControls';
+import { DevolucionesPedidoFields } from './form-fields/DevolucionesPedidoFields';
+import { InventarioFields } from '../components/form-fields/InventarioFields';
+import { PreciosFields } from '../components/form-fields/PreciosFields';
+
 import type { IForm } from '../interfaces';
 
 // --- 2. Definición de las Props del Componente ---
@@ -35,33 +41,37 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
   const variant = tipo === 'precios' ? 'comparador' : tipo;
 
 
-  // New state for RUC/DNI functionality
-  const [rucEstado, setRucEstado] = useState<string | null>(null);
-  const [rucCondicion, setRucCondicion] = useState<string | null>(null);
-  const [isLoadingRuc, setIsLoadingRuc] = useState(false);
-  const [rucError, setRucError] = useState<string | null>(null);
-
-  // Debounced document number for RUC API calls
-  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState.documento_cliente || '');
-
   // --- C. Lógica de Manejo de Cambios y Validación ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    let valorFinal = value;
+
+    // Validaciones específicas
+    if (name === 'documento_cliente' || name === 'ruc') {
+      // Solo permitir números.
+      const valorNumerico = value.replace(/[^0-9]/g, '');
+      valorFinal = valorNumerico;
+
+      // Para documento_cliente (DNI/RUC) y ruc (inventario): mostrar error si no es 8 u 11 (documento) o 11 (ruc) cuando hay contenido
+      if (name === 'documento_cliente') {
+        if (valorNumerico.length > 0 && ![8, 11].includes(valorNumerico.length)) {
+          setErrorDocumento('Debe tener 8 (DNI) u 11 (RUC) dígitos.');
+        } else {
+          setErrorDocumento(null);
+        }
+      }
+      if (name === 'ruc') {
+        if (valorNumerico.length > 0 && valorNumerico.length !== 11) {
+          setErrorDocumento('El RUC debe tener 11 dígitos.');
+        } else {
+          setErrorDocumento(null);
+        }
+      }
+    }
+
     // Se actualiza el estado global en Zustand.
-    actualizarFormulario(tipo, name as keyof IForm, value);
+    actualizarFormulario(tipo, name as keyof IForm, valorFinal);
   };
-
-  const handleRucDniChange = useCallback((type: 'ruc' | 'dni', number: string, social: string) => {
-    actualizarFormulario(tipo, 'documentType' as keyof IForm, type);
-    actualizarFormulario(tipo, 'documento_cliente' as keyof IForm, number);
-    actualizarFormulario(tipo, 'cliente' as keyof IForm, social);
-    // Update debounced value for RUC API call
-    setDebouncedDocumentNumber(number);
-  }, [tipo, actualizarFormulario]);
-
-  const handleRazonSocialManualChange = useCallback((social: string) => {
-    actualizarFormulario(tipo, 'cliente' as keyof IForm, social);
-  }, [tipo, actualizarFormulario]);
 
   // --- D. Efecto para setear la fecha actual por defecto ---
   useEffect(() => {
@@ -71,6 +81,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
       actualizarFormulario(tipo, 'fecha', hoy);
     }
   }, [tipo, formState.fecha, actualizarFormulario]);
+
 
   // Effect for debouncing RUC number and calling API
   useEffect(() => {
@@ -109,11 +120,23 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
     }
   }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario, fetchRuc]); // Dependencies for RUC effect
 
+  // --- F. Lógica de Estilos Dinámicos ---
+  // Mapeo de 'tipo' a la clase CSS del módulo para mantener la consistencia visual.
+  // Esto asegura que todos los inputs dentro del mismo formulario tengan el mismo color de foco.
+  const moduleInputClasses: Record<Props['tipo'], string> = {
+    devoluciones: 'input-module-devoluciones',
+    pedido: 'input-module-pedido',
+    inventario: 'input-module-inventario',
+    precios: 'input-module-comparador', // 'precios' usa el estilo del módulo comparador.
+  };
+
+
 
   // --- E. Renderizado del Componente ---
   return (
     <div className="card">
       <h2 className="text-2xl font-bold mb-4 form-section-title">Datos Generales</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* --- Campos Comunes --- */}
         <RucDniInput
@@ -148,6 +171,240 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
           onChange={handleChange}
           variant={variant}
         />
+
+      {['devoluciones', 'pedido'].includes(tipo) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormGroup>
+            <Label htmlFor="documento_cliente" className="form-label">RUC o DNI</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              id="documento_cliente"
+              name="documento_cliente"
+              value={formState.documento_cliente || ''}
+              onChange={handleChange}
+              placeholder="DNI o RUC"
+              className={`input ${baseInputClass} ${errorDocumento ? 'input-error' : ''}`}
+            />
+            {errorDocumento && <FormError>{errorDocumento}</FormError>}
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="cliente" className="form-label">Cliente</Label>
+            <Input
+              type="text"
+              id="cliente"
+              name="cliente"
+              value={formState.cliente || ''}
+              onChange={handleChange}
+              placeholder="Nombre del cliente"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="codigo_cliente" className="form-label">Código de Cliente</Label>
+            <Input
+              type="text"
+              id="codigo_cliente"
+              name="codigo_cliente"
+              value={formState.codigo_cliente || ''}
+              onChange={handleChange}
+              placeholder="Código de Cliente"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          {/* Motivo de Devolución (solo cuando tipo = devoluciones) */}
+          {tipo === 'devoluciones' && (
+            <FormGroup>
+              <Label htmlFor="motivo" className="form-label">Motivo de Devolución</Label>
+              <select
+                id="motivo"
+                name="motivo"
+                value={(formState as Record<string, string>)?.motivo ?? ''}
+                onChange={(e) => {
+                  const setMotivo = (useAppStore.getState() as { setMotivoDevolucion?: (m: 'falla_fabrica' | 'acuerdos_comerciales') => void }).setMotivoDevolucion;
+                  if (setMotivo) {
+                    setMotivo(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales');
+                  } else {
+                    actualizarFormulario('devoluciones', 'motivo' as keyof IForm, e.target.value);
+                  }
+                }}
+                className={`input ${baseInputClass}`}
+                aria-label="Motivo de devolución"
+              >
+                <option value="">Seleccionar motivo...</option>
+                <option value="falla_fabrica">Falla de fábrica</option>
+                <option value="acuerdos_comerciales">Acuerdos comerciales</option>
+              </select>
+            </FormGroup>
+          )}
+
+          <FormGroup>
+            <Label htmlFor="fecha" className="form-label">Fecha</Label>
+            <Input
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleChange}
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+        </div>
+      )}
+
+      {tipo === 'inventario' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormGroup>
+            <Label htmlFor="documento_cliente" className="form-label">RUC o DNI</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              id="documento_cliente"
+              name="documento_cliente"
+              value={formState.documento_cliente || ''}
+              onChange={handleChange}
+              placeholder="DNI o RUC"
+              className={`input ${baseInputClass} ${errorDocumento ? 'input-error' : ''}`}
+            />
+            {errorDocumento && <FormError>{errorDocumento}</FormError>}
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="cliente" className="form-label">Cliente</Label>
+            <Input
+              type="text"
+              id="cliente"
+              name="cliente"
+              value={formState.cliente || ''}
+              onChange={handleChange}
+              placeholder="Nombre del cliente"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="colaborador" className="form-label">Colaborador / Personal</Label>
+            <Input
+              type="text"
+              id="colaborador"
+              name="colaborador"
+              value={(formState as Record<string, string>)?.colaborador || ''}
+              onChange={handleChange}
+              placeholder="Nombre del colaborador"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="fecha" className="form-label">Fecha</Label>
+            <Input
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleChange}
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+        </div>
+      )}
+
+      {tipo === 'precios' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <FormGroup>
+            <Label htmlFor="colaborador" className="form-label">Colaborador / Personal</Label>
+            <Input
+              type="text"
+              id="colaborador"
+              name="colaborador"
+              value={(formState as Record<string, string>)?.colaborador || ''}
+              onChange={handleChange}
+              placeholder="Nombre del colaborador"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="marca1" className="form-label">Marca 1</Label>
+            <Input
+              type="text"
+              id="marca1"
+              name="marca1"
+              value={(formState as Record<string, string>)?.marca1 || ''}
+              onChange={handleChange}
+              placeholder="Marca 1"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="marca2" className="form-label">Marca 2</Label>
+            <Input
+              type="text"
+              id="marca2"
+              name="marca2"
+              value={(formState as Record<string, string>)?.marca2 || ''}
+              onChange={handleChange}
+              placeholder="Marca 2"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="marca3" className="form-label">Marca 3</Label>
+            <Input
+              type="text"
+              id="marca3"
+              name="marca3"
+              value={(formState as Record<string, string>)?.marca3 || ''}
+              onChange={handleChange}
+              placeholder="Marca 3"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="marca4" className="form-label">Marca 4</Label>
+            <Input
+              type="text"
+              id="marca4"
+              name="marca4"
+              value={(formState as Record<string, string>)?.marca4 || ''}
+              onChange={handleChange}
+              placeholder="Marca 4"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="marca5" className="form-label">Marca 5</Label>
+            <Input
+              type="text"
+              id="marca5"
+              name="marca5"
+              value={(formState as Record<string, string>)?.marca5 || ''}
+              onChange={handleChange}
+              placeholder="Marca 5"
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="fecha" className="form-label">Fecha</Label>
+            <Input
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleChange}
+              className={`input ${baseInputClass}`}
+            />
+          </FormGroup>
+        </div>
+      )}
 
         {/* --- Campos Específicos del Módulo (Inyectados) --- */}
         {children}

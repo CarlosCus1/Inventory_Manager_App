@@ -162,11 +162,17 @@ export const DevolucionesPage: React.FC = () => {
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+
       <PageHeader
         title="Devoluciones & Logística Inversa"
         description="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados."
         themeColor="devoluciones"
       />
+
+      <header className="mb-6 section-card">
+        <h1 className="text-4xl font-extrabold title-devoluciones">Módulo de Devoluciones</h1>
+        <p className="mt-2">Registre los productos devueltos por un cliente y genere el reporte correspondiente.</p>
+      </header>
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
@@ -233,7 +239,6 @@ export const DevolucionesPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
-                keywords: [],
               };
               agregarProductoToLista('devoluciones', newProduct);
               setSearchTerm('');

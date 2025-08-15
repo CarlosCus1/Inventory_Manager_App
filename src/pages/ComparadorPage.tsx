@@ -139,11 +139,17 @@ export const ComparadorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+
       <PageHeader
         title="Análisis Comparativo de Precios"
         description="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta."
         themeColor="comparador"
       />
+
+      <header className="mb-6 section-card">
+        <h1 className="text-4xl font-extrabold title-comparador">Módulo Comparador de Precios</h1>
+        <p className="mt-2">Compare los precios de sus productos con los de la competencia.</p>
+      </header>
 
       <section className="section-card">
         <DatosGeneralesForm tipo="precios">
@@ -219,7 +225,6 @@ export const ComparadorPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
-                keywords: [],
               };
               agregarProductoToLista('precios', newProduct);
               setSearchTerm('');
@@ -239,7 +244,8 @@ export const ComparadorPage: React.FC = () => {
                   agregarProductoToLista('precios', producto); 
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
+                className="p-3 hover:opacity-90 cursor-pointer border-b"
+                style={{ borderColor: 'var(--border)' }}
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -268,7 +274,7 @@ export const ComparadorPage: React.FC = () => {
           <div className="flex gap-2 mt-4 md:mt-0">
             <button
               onClick={handleExport}
-              disabled={isSubmitting || lista.length === 0 || !formState.colaborador_personal}
+              disabled={isSubmitting || lista.length === 0 || !formState.colaborador}
               className="btn-module-comparador w-full md:w-auto"
             >
               {isSubmitting ? 'Generando...' : 'Descargar Comparación (XLSX)'}

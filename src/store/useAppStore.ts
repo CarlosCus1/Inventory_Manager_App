@@ -106,6 +106,8 @@ const initialState: Omit<State, keyof Actions> = {
 };
 
 // --- 5. Creación del Store con Zustand ---
+// --- 4. Creación del Store con Zustand ---
+
 // Se combina `State` y `Actions` para crear el tipo completo del store.
 // `create` es la función principal de Zustand para crear el hook del store.
 // `persist` es el middleware que envolverá nuestro store para guardar datos.
@@ -114,7 +116,23 @@ export const useAppStore = create<State & Actions>()(
     // La función `set` es la única forma de modificar el estado.
     // La función `get` permite acceder al estado actual dentro de una acción.
     (set, get) => ({
-      ...initialState,
+      // --- Estado Inicial ---
+      theme: 'light',
+      catalogo: [],
+      formState: {
+        devoluciones: { motivo: 'falla_fabrica' },
+        pedido: {},
+        inventario: {},
+        precios: {},
+      },
+      listas: {
+        devoluciones: [],
+        pedido: [],
+        inventario: [],
+        precios: [],
+      },
+      loading: false,
+      error: null,
 
       // --- Implementación de las Acciones ---
       toggleTheme: () => {
@@ -223,16 +241,15 @@ export const useAppStore = create<State & Actions>()(
 
       resetearModulo: (tipo) => {
         set((state) => ({
-          // Restablecemos la lista correspondiente a su estado inicial (vacío).
+          // Limpiamos la lista correspondiente.
           listas: {
             ...state.listas,
-            [tipo]: initialState.listas[tipo],
+            [tipo]: [],
           },
-          // Restablecemos el formulario al estado inicial definido en `initialState`.
-          // Esto asegura que los valores por defecto (como el motivo en devoluciones) se restauren correctamente.
+          // Limpiamos el formulario correspondiente.
           formState: {
             ...state.formState,
-            [tipo]: initialState.formState[tipo],
+            [tipo]: {},
           }
         }));
       },
