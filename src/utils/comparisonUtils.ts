@@ -3,7 +3,7 @@ import type { IProductoEditado } from '../interfaces';
 export function calculateDataWithPercentages(
   lista: IProductoEditado[],
   competidores: string[]
-) {
+): (IProductoEditado & Record<string, string | number | undefined>)[] {
   return lista.map(producto => {
     const precios = producto.precios || {};
     const p1 = precios[competidores[0]] || 0;
@@ -25,12 +25,12 @@ export function calculateDataWithPercentages(
       }
     }
 
-    return { ...producto, ...porcentajes };
+    return { ...producto, ...porcentajes } as (IProductoEditado & Record<string, string | number | undefined>);
   });
 }
 
 export function calculateSummary(
-  dataWithPercentages: any[],
+  dataWithPercentages: (IProductoEditado & Record<string, string | number | undefined>)[],
   competidores: string[]
 ) {
   const pctHeaders = competidores.slice(1).map((comp) => `% vs ${comp}`);

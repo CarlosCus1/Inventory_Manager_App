@@ -11,7 +11,8 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IForm, IProducto, IProductoEditado } from '../interfaces';
+import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
+import type { IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
@@ -29,7 +30,6 @@ export const PedidoPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
-  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,10 +57,7 @@ export const PedidoPage: React.FC = () => {
   }, [actualizarProductoEnLista]);
 
   // Handler para los campos del formulario de datos generales
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    actualizarFormulario('pedido', name as keyof IForm, value);
-  };
+  const handleFormChange = useFormChangeHandler('pedido');
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -148,18 +145,11 @@ export const PedidoPage: React.FC = () => {
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-
       <PageHeader
         title="Pedidos & Disponibilidad"
         description="Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario."
         themeColor="pedido"
       />
-
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-pedido">Módulo de Hoja de Pedido</h1>
-        <p className="mt-2">Cree una nueva hoja de pedido para un cliente y genere el reporte.</p>
-      </header>
-
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
@@ -210,6 +200,7 @@ export const PedidoPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
+                keywords: [],
               };
               agregarProductoToLista('pedido', newProduct);
               setSearchTerm('');

@@ -13,11 +13,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const resetCurrentModule = useAppStore((state) => state.resetearModulo); // Get resetearModulo action
 
   // Map pathnames to module keys and styling presets
-  const paletteMap: { [key: string]: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' } = {
+  const paletteMap: { [key: string]: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' } = {
     '/devoluciones': 'devoluciones',
     '/pedido': 'pedido',
     '/inventario': 'inventario',
     '/comparador': 'comparador',
+    '/planificador': 'planificador',
   };
 
   const currentPalette = paletteMap[location.pathname];
@@ -57,7 +58,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="navbar">
         <div className="navbar-inner">
           <Link to="/" className="navbar-title">
-            Stock Manager
+            Gestor de Inventario
           </Link>
           <nav className="navbar-actions">
             {!isHomePage && (

@@ -3,13 +3,15 @@ import * as DateUtils from '../../utils/dateUtils';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { type DateClickArg } from '@fullcalendar/interaction';
+import { type DayCellContentArg } from '@fullcalendar/core';
 
 interface Props {
   selectedDates: Set<string>;
   onCargarRespaldoClick: () => void;
-  fetchCalendarEvents: (info: any, success: any, failure: any) => void;
-  handleDateClick: (arg: any) => void;
-  handleDayCellMount: (arg: any) => void;
+  fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
+  handleDateClick: (arg: DateClickArg) => void;
+  handleDayCellMount: (arg: DayCellContentArg) => void;
 }
 
 export const SeleccionFechas: React.FC<Props> = ({

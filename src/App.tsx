@@ -11,6 +11,7 @@ import { DevolucionesPage } from './pages/DevolucionesPage';
 import { PedidoPage } from './pages/PedidoPage';
 import { InventarioPage } from './pages/InventarioPage';
 import { ComparadorPage } from './pages/ComparadorPage';
+import { PlanificadorPage } from './pages/PlanificadorPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/pedido" element={<PedidoPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/comparador" element={<ComparadorPage />} />
+        <Route path="/planificador" element={<PlanificadorPage />} />
       </Routes>
     </Layout>
   );

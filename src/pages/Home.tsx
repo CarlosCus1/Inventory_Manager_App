@@ -1,4 +1,3 @@
-
 // --------------------------------------------------------------------------- #
 //                                                                             #
 //                               src/pages/Home.tsx                            #
@@ -17,36 +16,14 @@ const Card: React.FC<{
     | "devoluciones"
     | "pedido"
     | "inventario"
-    | "comparador";
+    | "comparador"
+    | "planificador";
 }> = ({ to, title, desc, variant }) => {
-  const titleClass =
-    variant === "devoluciones"
-      ? "title-devoluciones"
-      : variant === "pedido"
-      ? "title-pedido"
-      : variant === "inventario"
-      ? "title-inventario"
-      : "title-comparador";
-
-  const btnClass =
-    variant === "devoluciones"
-      ? "btn-module-devoluciones"
-      : variant === "pedido"
-      ? "btn-module-pedido"
-      : variant === "inventario"
-      ? "btn-module-inventario"
-      : "btn-module-comparador";
-
-  // Botón outline eliminado según nueva pauta (solo CTA principal)
-
-  const cardMod =
-    variant === "devoluciones"
-      ? "reel-card reel-card--devoluciones"
-      : variant === "pedido"
-      ? "reel-card reel-card--pedido"
-      : variant === "inventario"
-      ? "reel-card reel-card--inventario"
-      : "reel-card reel-card--comparador";
+  // Simplificación de clases dinámicas usando template literals.
+  // Esto es más limpio y mantenible que las cadenas de ternarios.
+  const titleClass = `title-${variant}`;
+  const btnClass = `btn-module-${variant}`;
+  const cardMod = `reel-card reel-card--${variant}`;
 
   return (
     <div className={`${cardMod} surface surface-border p-6 ring-1 ring-[var(--border)]`}>
@@ -63,10 +40,11 @@ const Card: React.FC<{
 
 const Home: React.FC = () => {
   const items = [
-    <Card key="dev" to="/devoluciones" title="Devoluciones" desc="Gestión de devoluciones por cliente." variant="devoluciones" />,
-    <Card key="ped" to="/pedido" title="Pedido" desc="Ingreso y control de pedidos." variant="pedido" />,
-    <Card key="inv" to="/inventario" title="Inventario" desc="Gestión de stock y movimientos." variant="inventario" />,
-    <Card key="cmp" to="/comparador" title="Comparación" desc="Comparación de precios por marcas." variant="comparador" />,
+    <Card key="dev" to="/devoluciones" title="Devoluciones & Logística Inversa" desc="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados." variant="devoluciones" />,
+    <Card key="ped" to="/pedido" title="Pedidos & Disponibilidad" desc="Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario." variant="pedido" />,
+    <Card key="inv" to="/inventario" title="Control de Inventario" desc="Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones." variant="inventario" />,
+    <Card key="cmp" to="/comparador" title="Análisis Comparativo de Precios" desc="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta." variant="comparador" />,
+    <Card key="pln" to="/planificador" title="Distribución Equitativa de Montos" desc="Selecciona un rango de fechas, ingresa un monto total y distribúyelo equitativamente con opción de ajuste manual para una asignación precisa según tus parámetros. Ideal para presupuestos, pagos o asignaciones de costos." variant="planificador" />,
   ];
 
   return (
@@ -82,10 +60,10 @@ const Home: React.FC = () => {
             {/* Header */}
             <header className="text-center mb-10 section-card">
               <h1 className="text-4xl md:text-5xl font-extrabold mb-3 heading">
-                Gestor de Inventario
+                Panel de control general
               </h1>
               <p className="text-base md:text-lg muted">
-                Seleccione el módulo que desea utilizar
+                Acceso rápido a todos los módulos de gestión de operaciones, con indicadores clave y atajos para generación de reportes.
               </p>
             </header>
 
@@ -101,10 +79,10 @@ const Home: React.FC = () => {
                   ))}
                 </div>
               </div>
-              {/* Desktop: grid horizontal sin overflow/carrusel (muestra las 4 cards) */}
+              {/* Desktop: grid horizontal adaptable para mostrar las 5 cards */}
               <div className="hidden md:block">
                 <div className="px-[clamp(12px,4vw,40px)]">
-                  <div className="grid grid-cols-3 xl:grid-cols-4 gap-x-[clamp(12px,3vw,28px)] gap-y-6 justify-items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-x-[clamp(12px,3vw,28px)] gap-y-6 justify-items-center">
                     {items.map((node, i) => (
                       <div key={`d-${i}`} className="w-full max-w-[320px] [transform-style:preserve-3d] will-change-transform card-bg-gradient">
                         <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)]">

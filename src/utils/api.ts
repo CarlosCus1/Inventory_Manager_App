@@ -1,8 +1,10 @@
+import type { RucData } from '../interfaces';
+
 class ApiError extends Error {
     statusCode: number;
-    data: any;
+    data: unknown;
 
-    constructor(message: string, statusCode: number, data: any = null) {
+    constructor(message: string, statusCode: number, data: unknown = null) {
         super(message);
         this.name = 'ApiError';
         this.statusCode = statusCode;
@@ -18,7 +20,7 @@ class ApiError extends Error {
  * @returns {Promise<Response>} Respuesta de la API
  */
 export async function fetchWithRetry(url: string, options: RequestInit = {}, retries: number = 3): Promise<Response> {
-    let lastError: any;
+    let lastError: unknown;
     
     const fetchOptions: RequestInit = { ...options };
     
@@ -39,7 +41,7 @@ export async function fetchWithRetry(url: string, options: RequestInit = {}, ret
                 try {
                     const errorData = await response.json();
                     throw new ApiError(errorData.message || `Error en el servidor: ${response.status}`, response.status, errorData);
-                } catch (e: any) {
+                } catch (e: unknown) {
                     if (e instanceof ApiError) throw e;
                     throw new ApiError(`Error en la comunicación con el servidor: ${response.status}`, response.status);
                 }
@@ -75,13 +77,6 @@ export async function fetchHolidays(year: number): Promise<Holiday[]> {
         console.error('Error al obtener los feriados:', error);
         throw error; // Relanzar el error para que el llamador pueda manejarlo.
     }
-}
-
-interface RucData {
-    razonSocial: string;
-    estado: string;
-    condicion: string;
-    allowManual?: boolean;
 }
 
 /**
@@ -120,10 +115,10 @@ export async function calcular(data: CalculationData): Promise<CalculationResult
 
 /**
  * Genera el reporte en formato Excel.
- * @param {any} data - Datos para el reporte.
+ * @param {Record<string, unknown>} data - Datos para el reporte.
  * @returns {Promise<Blob>} Un blob con el contenido del archivo .xlsx.
  */
-export async function generarReporte(data: any): Promise<Blob> {
+export async function generarReporte(data: Record<string, unknown>): Promise<Blob> {
     const response = await fetchWithRetry('/api/generate-excel', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -133,10 +128,10 @@ export async function generarReporte(data: any): Promise<Blob> {
 
 /**
  * Genera el reporte en formato JSON.
- * @param {any} data - Datos para el reporte.
+ * @param {Record<string, unknown>} data - Datos para el reporte.
  * @returns {Promise<Blob>} Un blob con el contenido del archivo .json.
  */
-export async function generarReporteJson(data: any): Promise<Blob> {
+export async function generarReporteJson(data: Record<string, unknown>): Promise<Blob> {
     const response = await fetchWithRetry('/api/generate-json', {
         method: 'POST',
         body: JSON.stringify(data)

@@ -65,7 +65,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Sincronizar multi-pestaña: notificar el cambio explícitamente
       window.localStorage.setItem(`${THEME_STORAGE_KEY}_last_change`, String(Date.now()));
       // Log de depuración
-      // eslint-disable-next-line no-console
       console.debug("[theme][provider] set theme =", theme, "html.dark?", root.classList.contains("dark"));
     } catch {
       // ignore
@@ -78,7 +77,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!e.key) return;
       if (e.key === THEME_STORAGE_KEY) {
         const newTheme = (e.newValue === "dark" ? "dark" : "light") as Theme;
-        // eslint-disable-next-line no-console
         console.debug("[theme][storage] detected change to", newTheme);
         setThemeState((prev) => (prev !== newTheme ? newTheme : prev));
       }
@@ -100,7 +98,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const hasDark = root.classList.contains("dark");
       const expected = theme === "dark";
       if (hasDark !== expected) {
-        // eslint-disable-next-line no-console
         console.warn("[theme][observer] html.dark changed externally. expected:", expected, "got:", hasDark);
         // Reaplicar nuestro estado como fuente de verdad
         if (expected) root.classList.add("dark");

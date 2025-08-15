@@ -2,6 +2,28 @@
 
 Aplicación SPA en React + Vite + TypeScript con Tailwind CSS v4. Incluye módulos para la gestión de inventario, pedidos, devoluciones y comparación de precios, cada uno con su propia identidad visual y funcionalidad específica.
 
+## Getting Started
+
+To get a local copy up and running, follow these simple steps.
+
+### Prerequisites
+
+*   Node.js (LTS recommended)
+*   Python 3.x
+*   npm (usually comes with Node.js)
+
+### Installation
+
+1.  Clone the repo
+    ```bash
+    git clone https://github.com/CarlosCus1/Inventory_Manager_App.git
+    ```
+2.  Navigate to the project directory
+    ```bash
+    cd Inventory_Manager_App
+    ```
+3.  Follow the instructions in the [Execution](#ejecución) section to set up and run the Frontend and Backend.
+
 ## Módulos y Funcionalidades
 
 Esta aplicación se compone de los siguientes módulos principales, cada uno diseñado para optimizar un aspecto específico de la gestión de stock:
