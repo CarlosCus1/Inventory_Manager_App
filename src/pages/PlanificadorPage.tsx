@@ -7,6 +7,9 @@ import { FormValidator } from '../utils/formValidator';
 
 import { useAppStore } from '../store/useAppStore';
 import type { IForm } from '../interfaces';
+import { useRucDni } from '../hooks/useRucDni';
+import { type DateClickArg } from '@fullcalendar/interaction';
+import { type DayCellContentArg } from '@fullcalendar/core';
 import { SeleccionFechas } from '../components/planner/SeleccionFechas';
 import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
 import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
@@ -17,8 +20,8 @@ import './PlanificadorPage.css';
 interface PlannerState {
   selectedDates: Set<string>;
   fechasOrdenadas: string[];
-  montosAsignados: Record<string, any>;
-  resumenMensual: Record<string, any>;
+  montosAsignados: Record<string, number>;
+  resumenMensual: Record<string, number>;
   isDataDirty: boolean;
 }
 
@@ -33,78 +36,33 @@ export const PlanificadorPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
 
-  const fetchHolidays = useAppStore((state: any) => state.fetchHolidays);
-  const formState = useAppStore((state) => state.formState.planificador);
-  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
-  const fetchRuc = useAppStore((state) => state.fetchRuc);
+  const fetchHolidays = useAppStore(state => state.fetchHolidays);
+  const formState = useAppStore(state => state.formState.planificador);
+  const actualizarFormulario = useAppStore(state => state.actualizarFormulario);
+
+  const {
+    rucEstado,
+    rucCondicion,
+    isLoadingRuc,
+    rucError,
+    handleRucDniChange,
+    handleRazonSocialManualChange,
+  } = useRucDni('planificador');
 
   const feriadosCargados = useRef(new Map<string, string>());
-
-  // State and handlers for RUC/DNI logic, adapted from DatosGeneralesForm
-  const [rucEstado, setRucEstado] = useState<string | null>(null);
-  const [rucCondicion, setRucCondicion] = useState<string | null>(null);
-  const [isLoadingRuc, setIsLoadingRuc] = useState(false);
-  const [rucError, setRucError] = useState<string | null>(null);
-  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState.documento_cliente || '');
-
-  const handleRucDniChange = useCallback((type: 'ruc' | 'dni', number: string, social: string) => {
-    actualizarFormulario('planificador', 'documentType' as keyof IForm, type);
-    actualizarFormulario('planificador', 'documento_cliente' as keyof IForm, number);
-    actualizarFormulario('planificador', 'cliente' as keyof IForm, social);
-    setDebouncedDocumentNumber(number);
-  }, [actualizarFormulario]);
-
-  const handleRazonSocialManualChange = useCallback((social: string) => {
-    actualizarFormulario('planificador', 'cliente' as keyof IForm, social);
-  }, [actualizarFormulario]);
-
-  useEffect(() => {
-    if (formState.documentType === 'ruc' && debouncedDocumentNumber.length === 11) {
-      setIsLoadingRuc(true);
-      setRucError(null);
-      setRucEstado(null);
-      setRucCondicion(null);
-
-      const fetchRucData = async () => {
-        try {
-          const data = await fetchRuc(debouncedDocumentNumber);
-          actualizarFormulario('planificador', 'cliente' as keyof IForm, data.razonSocial);
-          setRucEstado(data.estado || null);
-          setRucCondicion(data.condicion || null);
-        } catch (err) {
-          setRucError((err as Error).message || 'Error al consultar RUC.');
-          actualizarFormulario('planificador', 'cliente' as keyof IForm, '');
-          setRucEstado(null);
-          setRucCondicion(null);
-        } finally {
-          setIsLoadingRuc(false);
-        }
-      };
-      fetchRucData();
-    } else if (formState.documentType === 'ruc' && debouncedDocumentNumber.length !== 11) {
-      setRucError('El RUC debe tener 11 dígitos.');
-      actualizarFormulario('planificador', 'cliente' as keyof IForm, '');
-      setRucEstado(null);
-      setRucCondicion(null);
-    } else {
-      setRucError(null);
-      setRucEstado(null);
-      setRucCondicion(null);
-    }
-  }, [formState.documentType, debouncedDocumentNumber, actualizarFormulario, fetchRuc]);
 
 
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to fetch calendar events (holidays)
-  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
+  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
     try {
       const year = fetchInfo.start.getFullYear();
-      const feriados = await fetchHolidays(year);
+      const feriados = await fetchHolidays(year) as Array<{ date: string; name: string }>;
 
       feriadosCargados.current.clear();
-      feriados.forEach((feriado: { date: string, name: string }) => {
+      feriados.forEach((feriado) => {
         feriadosCargados.current.set(feriado.date, feriado.name);
       });
 
@@ -115,7 +73,7 @@ export const PlanificadorPage: React.FC = () => {
     }
   }, [fetchHolidays]);
 
-  const handleDateClick = useCallback((arg: { date: Date }) => {
+  const handleDateClick = useCallback((arg: DateClickArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
     const isHoliday = feriadosCargados.current.has(dateStr);
     const isSunday = arg.date.getDay() === 0;
@@ -137,9 +95,9 @@ export const PlanificadorPage: React.FC = () => {
       // No direct classList manipulation here, React will re-render based on state
       return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
-  }, [feriadosCargados, MAX_FECHAS]);
+  }, [feriadosCargados]);
 
-  const handleDayCellMount = useCallback((arg: { date: Date, el: HTMLElement }) => {
+  const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
     
     // Apply class if the date is selected

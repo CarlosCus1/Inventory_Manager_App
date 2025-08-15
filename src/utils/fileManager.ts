@@ -1,7 +1,7 @@
 import { mostrarToast } from './uiUtils'; // Assuming uiUtils.ts is in src/utils
 
 export class FileManager {
-    static async loadJsonFile(file: File): Promise<any> {
+    static async loadJsonFile(file: File): Promise<unknown> {
         return new Promise((resolve, reject) => {
             if (!file) {
                 return reject(new Error('No se seleccionó ningún archivo.'));

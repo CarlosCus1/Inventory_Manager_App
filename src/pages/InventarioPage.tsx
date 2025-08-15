@@ -10,7 +10,8 @@ import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IForm, IProducto } from '../interfaces';
+import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
+import type { IProducto } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
@@ -27,7 +28,6 @@ export const InventarioPage: React.FC = () => {
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
-  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,10 +108,7 @@ export const InventarioPage: React.FC = () => {
   }, [actualizarProductoEnLista]);
 
   // Handler para los campos del formulario de datos generales
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    actualizarFormulario('inventario', name as keyof IForm, value);
-  };
+  const handleFormChange = useFormChangeHandler('inventario');
 
   const columns: IColumn<RowInv>[] = [
     { header: 'Código', accessor: 'codigo' },
@@ -161,17 +158,11 @@ export const InventarioPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-
       <PageHeader
         title="Control de Inventario"
         description="Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones."
         themeColor="inventario"
       />
-
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-inventario">Módulo de Inventario Físico</h1>
-        <p className="mt-2">Realice el conteo físico de los productos y genere el reporte de inventario.</p>
-      </header>
 
       <section className="section-card">
         <DatosGeneralesForm tipo="inventario">
@@ -232,6 +223,7 @@ export const InventarioPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
+                keywords: [],
               };
               agregarProductoToLista('inventario', newProduct);
               setSearchTerm('');
@@ -252,8 +244,7 @@ export const InventarioPage: React.FC = () => {
                   agregarProductoToLista('inventario', producto);
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b"
-                style={{ borderColor: 'var(--border)' }}
+                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -275,7 +266,7 @@ export const InventarioPage: React.FC = () => {
           </div>
           <button
             onClick={handleExport}
-            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador}
+            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador_personal}
             className="btn-module-inventario mt-4 md:mt-0 w-full md:w-auto"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Inventario (XLSX)'}

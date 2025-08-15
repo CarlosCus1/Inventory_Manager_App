@@ -11,7 +11,8 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IForm, IProducto, IProductoEditado } from '../interfaces';
+import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
+import type { IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
@@ -30,7 +31,6 @@ export const DevolucionesPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
-  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
   const setMotivoDevolucion = useAppStore((state) => state.setMotivoDevolucion);
 
   // --- B. Estado Local del Componente ---
@@ -63,10 +63,7 @@ export const DevolucionesPage: React.FC = () => {
   }, [actualizarProductoEnLista]);
 
   // Handler para los campos del formulario de datos generales
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    actualizarFormulario('devoluciones', name as keyof IForm, value);
-  };
+  const handleFormChange = useFormChangeHandler('devoluciones');
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -162,17 +159,11 @@ export const DevolucionesPage: React.FC = () => {
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-
       <PageHeader
         title="Devoluciones & Logística Inversa"
         description="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados."
         themeColor="devoluciones"
       />
-
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-devoluciones">Módulo de Devoluciones</h1>
-        <p className="mt-2">Registre los productos devueltos por un cliente y genere el reporte correspondiente.</p>
-      </header>
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
@@ -239,6 +230,7 @@ export const DevolucionesPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
+                keywords: [],
               };
               agregarProductoToLista('devoluciones', newProduct);
               setSearchTerm('');

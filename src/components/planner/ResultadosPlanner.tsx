@@ -5,7 +5,7 @@ import { ComparisonTotals } from './ComparisonTotals';
 import { SummaryChart } from './SummaryChart';
 
 interface Props {
-  resumenMensual: Record<string, any>;
+  resumenMensual: Record<string, number>;
   montoOriginal: number;
   montosAsignados: Record<string, number>;
   linea: string;

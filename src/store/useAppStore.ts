@@ -10,7 +10,7 @@ import { create } from 'zustand';
 // Middleware de Zustand para persistir parte del estado en un almacenamiento.
 import { persist, createJSONStorage } from 'zustand/middleware';
 // Interfaces de datos que hemos definido.
-import type { IForm, IProducto, IProductoEditado } from '../interfaces';
+import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
 import { consultarRuc, fetchHolidays } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 
@@ -46,8 +46,8 @@ interface State {
   // Para almacenar cualquier error que pueda ocurrir.
   error: string | null;
   // Cache para RUC y Feriados
-  rucCache: Record<string, any>;
-  holidays: any[];
+  rucCache: Record<string, unknown>;
+  holidays: Array<{ date: string; name: string }>;
 }
 
 // --- 3. Definición de las Acciones (Actions) ---
@@ -75,8 +75,8 @@ interface Actions {
   // Limpia una lista y el formulario asociado.
   resetearModulo: (tipo: keyof State['listas']) => void;
   // Nuevas acciones para cache
-  fetchRuc: (ruc: string) => Promise<any>;
-  fetchHolidays: (year: number) => Promise<any[]>;
+  fetchRuc: (ruc: string) => Promise<RucData>;
+  fetchHolidays: (year: number) => Promise<Array<{ date: string; name: string }>>;
 }
 
 // --- 4. Estado Inicial ---
@@ -106,8 +106,6 @@ const initialState: Omit<State, keyof Actions> = {
 };
 
 // --- 5. Creación del Store con Zustand ---
-// --- 4. Creación del Store con Zustand ---
-
 // Se combina `State` y `Actions` para crear el tipo completo del store.
 // `create` es la función principal de Zustand para crear el hook del store.
 // `persist` es el middleware que envolverá nuestro store para guardar datos.
@@ -116,23 +114,7 @@ export const useAppStore = create<State & Actions>()(
     // La función `set` es la única forma de modificar el estado.
     // La función `get` permite acceder al estado actual dentro de una acción.
     (set, get) => ({
-      // --- Estado Inicial ---
-      theme: 'light',
-      catalogo: [],
-      formState: {
-        devoluciones: { motivo: 'falla_fabrica' },
-        pedido: {},
-        inventario: {},
-        precios: {},
-      },
-      listas: {
-        devoluciones: [],
-        pedido: [],
-        inventario: [],
-        precios: [],
-      },
-      loading: false,
-      error: null,
+      ...initialState,
 
       // --- Implementación de las Acciones ---
       toggleTheme: () => {
@@ -241,15 +223,16 @@ export const useAppStore = create<State & Actions>()(
 
       resetearModulo: (tipo) => {
         set((state) => ({
-          // Limpiamos la lista correspondiente.
+          // Restablecemos la lista correspondiente a su estado inicial (vacío).
           listas: {
             ...state.listas,
-            [tipo]: [],
+            [tipo]: initialState.listas[tipo],
           },
-          // Limpiamos el formulario correspondiente.
+          // Restablecemos el formulario al estado inicial definido en `initialState`.
+          // Esto asegura que los valores por defecto (como el motivo en devoluciones) se restauren correctamente.
           formState: {
             ...state.formState,
-            [tipo]: {},
+            [tipo]: initialState.formState[tipo],
           }
         }));
       },
@@ -257,7 +240,7 @@ export const useAppStore = create<State & Actions>()(
       fetchRuc: async (ruc) => {
         const cache = get().rucCache;
         if (cache[ruc]) {
-          return cache[ruc];
+          return cache[ruc] as RucData;
         }
         const data = await consultarRuc(ruc);
         set(state => ({

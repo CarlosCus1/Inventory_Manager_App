@@ -9,6 +9,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
+import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
 import type { IProducto, IForm } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
@@ -28,7 +29,6 @@ export const ComparadorPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
-  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,10 +75,7 @@ export const ComparadorPage: React.FC = () => {
     actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    actualizarFormulario('precios', name as keyof IForm, value);
-  };
+  const handleFormChange = useFormChangeHandler('precios');
 
 
   const dataConPorcentajes = useMemo(() => {
@@ -139,17 +136,11 @@ export const ComparadorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-
       <PageHeader
         title="Análisis Comparativo de Precios"
         description="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta."
         themeColor="comparador"
       />
-
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-comparador">Módulo Comparador de Precios</h1>
-        <p className="mt-2">Compare los precios de sus productos con los de la competencia.</p>
-      </header>
 
       <section className="section-card">
         <DatosGeneralesForm tipo="precios">
@@ -225,6 +216,7 @@ export const ComparadorPage: React.FC = () => {
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
+                keywords: [],
               };
               agregarProductoToLista('precios', newProduct);
               setSearchTerm('');
@@ -244,8 +236,7 @@ export const ComparadorPage: React.FC = () => {
                   agregarProductoToLista('precios', producto); 
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b"
-                style={{ borderColor: 'var(--border)' }}
+                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -274,7 +265,7 @@ export const ComparadorPage: React.FC = () => {
           <div className="flex gap-2 mt-4 md:mt-0">
             <button
               onClick={handleExport}
-              disabled={isSubmitting || lista.length === 0 || !formState.colaborador}
+              disabled={isSubmitting || lista.length === 0 || !formState.colaborador_personal}
               className="btn-module-comparador w-full md:w-auto"
             >
               {isSubmitting ? 'Generando...' : 'Descargar Comparación (XLSX)'}

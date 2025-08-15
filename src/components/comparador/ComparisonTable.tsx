@@ -2,8 +2,10 @@ import React from 'react';
 import type { IProductoEditado } from '../../interfaces';
 import { PriceInput } from './PriceInput';
 
+type ComparisonTableRow = IProductoEditado & Record<string, string | number | undefined>;
+
 interface ComparisonTableProps {
-  data: any[];
+  data: ComparisonTableRow[];
   competidores: string[];
   onPriceChange: (codigo: string, competidor: string, valor: number | null) => void;
   onDelete: (codigo: string) => void;
@@ -35,7 +37,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {data.map((item: IProductoEditado) => (
+          {data.map((item: ComparisonTableRow) => (
             <tr key={item.codigo} className="hover:opacity-90">
               <td className="px-6 py-4 whitespace-nowrap text-sm">{item.codigo}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">{item.cod_ean ?? ''}</td>
