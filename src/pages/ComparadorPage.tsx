@@ -9,8 +9,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IForm, IProductoEditado } from '../interfaces';
+import type { IProducto, IForm } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
+import { calculateDataWithPercentages, calculateSummary } from '../utils/comparisonUtils';
+import { ComparisonTable } from '../components/comparador/ComparisonTable';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
 
 // --- 2. Definición del Componente de Página ---
 export const ComparadorPage: React.FC = () => {
@@ -23,12 +28,12 @@ export const ComparadorPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [competidores, setCompetidores] = useState<string[]>([]);
-  const [displayValues, setDisplayValues] = useState<Record<string, string>>({});
 
   // Derivar los competidores de formState.precios
   useEffect(() => {
@@ -52,19 +57,6 @@ export const ComparadorPage: React.FC = () => {
     cargarCatalogo();
   }, [cargarCatalogo]);
 
-  // Inicializar displayValues a partir de los precios existentes en la lista
-  useEffect(() => {
-    const initialDisplayValues: Record<string, string> = {};
-    lista.forEach(item => {
-      if (item.precios) {
-        Object.entries(item.precios).forEach(([competidor, price]) => {
-          initialDisplayValues[`${item.codigo}-${competidor}`] = price.toFixed(2);
-        });
-      }
-    });
-    setDisplayValues(initialDisplayValues);
-  }, [lista]);
-
   // --- D. Lógica de Búsqueda ---
   const searchResults = useSearch(catalogo, searchTerm);
 
@@ -83,84 +75,18 @@ export const ComparadorPage: React.FC = () => {
     actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
   };
 
-  const handleInputChange = (codigo: string, competidor: string, value: string) => {
-    const key = `${codigo}-${competidor}`;
-    setDisplayValues(prev => ({ ...prev, [key]: value }));
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('precios', name as keyof IForm, value);
   };
 
-  const handleInputBlur = (codigo: string, competidor: string, value: string) => {
-    const key = `${codigo}-${competidor}`;
-    const cleanedValue = value.replace(/[^0-9.]/g, '');
-
-    let numericValue: number | null = null;
-    let displayValueForUI: string = value; 
-
-    if (cleanedValue !== '') {
-      const parsed = parseFloat(cleanedValue);
-      if (!isNaN(parsed)) {
-        numericValue = parseFloat(parsed.toFixed(2));
-        displayValueForUI = numericValue.toFixed(2); 
-      } else {
-        displayValueForUI = cleanedValue; 
-      }
-    } else {
-      displayValueForUI = ''; 
-    }
-    
-    handlePriceChange(codigo, competidor, numericValue);
-
-    setDisplayValues(prev => ({ ...prev, [key]: displayValueForUI }));
-  };
 
   const dataConPorcentajes = useMemo(() => {
-    return lista.map(producto => {
-      const precios = producto.precios || {};
-      const p1 = precios[competidores[0]] || 0;
-      const porcentajes: { [key: string]: string } = {};
-
-      if (p1 > 0) {
-        for (let i = 1; i < competidores.length; i++) {
-          const pi = precios[competidores[i]] || 0;
-          if (pi > 0) {
-            const ratio = (p1 / pi) - 1;
-            porcentajes[`% vs ${competidores[i]}`] = `${(ratio * 100).toFixed(2)}%`;
-          } else {
-            porcentajes[`% vs ${competidores[i]}`] = 'N/A';
-          }
-        }
-      } else {
-        for (let i = 1; i < competidores.length; i++) {
-          porcentajes[`% vs ${competidores[i]}`] = 'N/A';
-        }
-      }
-
-      return { ...producto, ...porcentajes };
-    });
+    return calculateDataWithPercentages(lista, competidores);
   }, [lista, competidores]);
 
   const resumenPorcentajes = useMemo(() => {
-    const pctHeaders = competidores.slice(1).map((comp) => `% vs ${comp}`);
-    const valores: number[] = [];
-
-    for (const row of dataConPorcentajes) {
-      for (const h of pctHeaders) {
-        const raw = (row as unknown as Record<string, string | undefined>)[h];
-        if (!raw) continue;
-        const num = parseFloat(raw.replace('%', '').replace(',', '.'));
-        if (Number.isFinite(num)) valores.push(num);
-      }
-    }
-
-    if (valores.length === 0) {
-      return { min: 0, max: 0, n: 0 };
-    }
-    let min = valores[0];
-    let max = valores[0];
-    for (const v of valores) {
-      if (v < min) min = v;
-      if (v > max) max = v;
-    }
-    return { min, max, n: valores.length };
+    return calculateSummary(dataConPorcentajes, competidores);
   }, [dataConPorcentajes, competidores]);
 
   const totales = useMemo(() => {
@@ -213,13 +139,59 @@ export const ComparadorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+
+      <PageHeader
+        title="Análisis Comparativo de Precios"
+        description="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta."
+        themeColor="comparador"
+      />
+
       <header className="mb-6 section-card">
         <h1 className="text-4xl font-extrabold title-comparador">Módulo Comparador de Precios</h1>
         <p className="mt-2">Compare los precios de sus productos con los de la competencia.</p>
       </header>
 
       <section className="section-card">
-        <DatosGeneralesForm tipo="precios" />
+        <DatosGeneralesForm tipo="precios">
+          <FormGroup>
+            <Label htmlFor="colaborador_personal">Colaborador / Personal</Label>
+            <StyledInput
+              type="text"
+              id="colaborador_personal"
+              name="colaborador_personal"
+              value={formState.colaborador_personal || ''}
+              onChange={handleFormChange}
+              placeholder="Nombre del colaborador"
+              variant="comparador"
+            />
+          </FormGroup>
+          {/* Loop to generate Marca inputs */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <FormGroup key={i}>
+              <Label htmlFor={`marca${i + 1}`}>{`Marca ${i + 1}`}</Label>
+              <StyledInput
+                type="text"
+                id={`marca${i + 1}`}
+                name={`marca${i + 1}`}
+                value={formState[`marca${i + 1}` as keyof IForm] as string || ''}
+                onChange={handleFormChange}
+                placeholder={`Marca ${i + 1}`}
+                variant="comparador"
+              />
+            </FormGroup>
+          ))}
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="comparador"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
       <section className="section-card">
@@ -288,64 +260,13 @@ export const ComparadorPage: React.FC = () => {
           <span>Min: <strong className="title-comparador">{resumenPorcentajes.min.toFixed(2)}%</strong></span>
           <span>Max: <strong className="title-comparador">{resumenPorcentajes.max.toFixed(2)}%</strong></span>
         </div>
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-full surface surface-border rounded-lg shadow-md">
-            <thead className="surface-contrast">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. EAN</th>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre</th>
-                {competidores.map((comp) => (
-                  <th key={comp} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">{comp}</th>
-                ))}
-                {competidores.slice(1).map((comp) => (
-                  <th key={`pct-${comp}`} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% vs {competidores[0]}</th>
-                ))}
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dataConPorcentajes.map((item: IProductoEditado) => (
-                <tr key={item.codigo} className="hover:opacity-90">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{item.codigo}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{item.cod_ean ?? ''}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{item.nombre}</td>
-                  {competidores.map((comp) => (
-                    <td key={`${item.codigo}-${comp}`} className="px-6 py-4 whitespace-nowrap">
-                      <input 
-                        type="text"
-                        aria-label={`Precio de ${item.nombre} en ${comp}`}
-                        placeholder="S/. 0.00"
-                        value={displayValues[`${item.codigo}-${comp}`] || ''}
-                        onChange={(e) => handleInputChange(item.codigo, comp, e.target.value)}
-                        onBlur={(e) => handleInputBlur(item.codigo, comp, e.target.value)}
-                        className="input input-module-comparador w-full"
-                      />
-                    </td>
-                  ))}
-                  {competidores.slice(1).map((comp) => {
-                    const keyPct = `% vs ${comp}`;
-                    const valorPct = (item as unknown as Record<string, string | undefined>)[keyPct] || 'N/A';
-                    return (
-                      <td key={`pct-${item.codigo}-${comp}`} className={`px-6 py-4 whitespace-nowrap ${getPercentageCellClass(valorPct)}`}>
-                        {valorPct}
-                      </td>
-                    );
-                  })}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button 
-                      onClick={() => eliminarProductoDeLista('precios', item.codigo)}
-                      className="text-red-500 hover:text-red-700 transition-colors duration-150"
-                      aria-label={`Eliminar ${item.nombre}`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ComparisonTable
+          data={dataConPorcentajes}
+          competidores={competidores}
+          onPriceChange={handlePriceChange}
+          onDelete={(codigo) => eliminarProductoDeLista('precios', codigo)}
+          getPercentageCellClass={getPercentageCellClass}
+        />
         <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-lg font-semibold">
             <span>Total Elementos: <span className="font-extrabold title-comparador">{totales.totalElementos}</span></span>

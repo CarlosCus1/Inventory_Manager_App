@@ -11,8 +11,13 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IForm, IProducto, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
+import { StyledSelect } from '../components/ui/StyledSelect';
+
 
 // --- 2. Definición del Componente de Página ---
 export const DevolucionesPage: React.FC = () => {
@@ -25,6 +30,8 @@ export const DevolucionesPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
+  const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
+  const setMotivoDevolucion = useAppStore((state) => state.setMotivoDevolucion);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,6 +61,12 @@ export const DevolucionesPage: React.FC = () => {
     const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
     actualizarProductoEnLista('devoluciones', codigo, campo, valorFinal);
   }, [actualizarProductoEnLista]);
+
+  // Handler para los campos del formulario de datos generales
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('devoluciones', name as keyof IForm, value);
+  };
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -103,63 +116,17 @@ export const DevolucionesPage: React.FC = () => {
   ], [handleInputChange, eliminarProductoDeLista]);
 
   // --- G. Lógica de Exportación a Excel ---
-  const removeAccentsAndLower = (s: string) =>
-    s
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ');
-
-  const toDDMMYY = (isoOrAny: string) => {
-    // espera 'AAAA-MM-DD' o similar y devuelve 'dd-mm-yy'
-    try {
-      const d = new Date(isoOrAny);
-      if (!isNaN(d.getTime())) {
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yy = String(d.getFullYear()).slice(-2);
-        return `${dd}-${mm}-${yy}`;
-      }
-    } catch {
-      // ignorar parseos inválidos; se maneja con fallback abajo
-    }
-    // fallback: si ya viene en dd-mm-yy lo devolvemos igual
-    if (/^\d{2}-\d{2}-\d{2}$/.test(isoOrAny)) return isoOrAny;
-    return isoOrAny;
-  };
-
   const handleExport = async () => {
     setIsSubmitting(true);
     try {
-      // Normalización del payload
-      const fecha_ddmmyy = toDDMMYY(formState.fecha || '');
-      const cliente = {
-        nombre: removeAccentsAndLower(formState.cliente || ''),
-        ruc: removeAccentsAndLower(formState.documento_cliente || ''),
-        codigo: removeAccentsAndLower(formState.codigo_cliente || '')
-      };
-
-      const items = lista.map((it) => ({
-        codigo: removeAccentsAndLower(it.codigo || ''),
-        cod_ean: removeAccentsAndLower((it.cod_ean as string) || ''),
-        nombre: removeAccentsAndLower(it.nombre || ''),
-        peso: Number(it.peso ?? 0),
-        cantidad: Number(it.cantidad ?? 0),
-        observacion: removeAccentsAndLower((it.observaciones as string) || '')
-      }));
-
-      const response = await fetch('http://localhost:5000/export/devoluciones', {
+      const response = await fetch('http://localhost:5000/export-xlsx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cliente,
-          fecha: fecha_ddmmyy,
-          motivo: (formState as { motivo?: 'falla_fabrica' | 'acuerdos_comerciales' })?.motivo === 'falla_fabrica'
-            ? 'FALLA_DE_FABRICA'
-            : 'ACUERDOS_COMERCIALES',
-          items
-        })
+          tipo: 'devoluciones',
+          form: formState,
+          list: lista,
+        }),
       });
 
       if (!response.ok) {
@@ -172,7 +139,6 @@ export const DevolucionesPage: React.FC = () => {
       const a = document.createElement('a');
       a.href = url;
 
-      // intento obtener nombre desde Content-Disposition
       const cd = response.headers.get('Content-Disposition') || response.headers.get('content-disposition');
       let filename = 'devoluciones.xlsx';
       if (cd && cd.includes('filename=')) {
@@ -196,6 +162,13 @@ export const DevolucionesPage: React.FC = () => {
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+
+      <PageHeader
+        title="Devoluciones & Logística Inversa"
+        description="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados."
+        themeColor="devoluciones"
+      />
+
       <header className="mb-6 section-card">
         <h1 className="text-4xl font-extrabold title-devoluciones">Módulo de Devoluciones</h1>
         <p className="mt-2">Registre los productos devueltos por un cliente y genere el reporte correspondiente.</p>
@@ -203,7 +176,34 @@ export const DevolucionesPage: React.FC = () => {
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
-        <DatosGeneralesForm tipo="devoluciones" />
+        <DatosGeneralesForm tipo="devoluciones">
+          {/* Campos específicos para Devoluciones */}
+          <FormGroup>
+            <Label htmlFor="motivo">Motivo de Devolución</Label>
+            <StyledSelect
+              id="motivo"
+              name="motivo"
+              value={formState.motivo || ''}
+              onChange={(e) => setMotivoDevolucion(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales')}
+              variant="devoluciones"
+            >
+              <option value="">Seleccionar motivo...</option>
+              <option value="falla_fabrica">Falla de fábrica</option>
+              <option value="acuerdos_comerciales">Acuerdos comerciales</option>
+            </StyledSelect>
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="devoluciones"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
 

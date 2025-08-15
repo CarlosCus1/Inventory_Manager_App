@@ -309,64 +309,6 @@
            text-amber-300 border border-amber-500/40 hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400;
   }
 
-  /* Inputs con alto contraste y borde/ring por módulo
-     - Fondo gris claro, texto gris oscuro, placeholder gris medio, borde suave */
-  /* Inputs de alto contraste para fondo oscuro: texto claro, fondo gris-800, bordes coloreados por módulo */
-  /* Inputs por módulo: fondo claro para máxima legibilidad en tema dark + borde inferior 2px del color del módulo */
-  .input-module-devoluciones {
-    @apply block w-full rounded-md bg-gray-50 text-gray-900 placeholder-gray-500
-           border border-gray-300 ring-1 ring-inset ring-gray-300 shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500 focus:border-red-500 sm:text-xs;
-    height: 20px;
-    line-height: 1;
-    padding: 1px 4px;
-    background-image: linear-gradient(rgb(239,68,68), rgb(239,68,68));
-    background-repeat: no-repeat;
-    background-size: 100% 2px;
-    background-position: left calc(100% - 0px);
-  }
-  .input-module-pedido {
-    @apply block w-full rounded-md bg-gray-50 text-gray-900 placeholder-gray-500
-           border border-gray-300 ring-1 ring-inset ring-gray-300 shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 focus:border-blue-500 sm:text-xs;
-    height: 20px;
-    line-height: 1;
-    padding: 1px 4px;
-    background-image: linear-gradient(rgb(59,130,246), rgb(59,130,246));
-    background-repeat: no-repeat;
-    background-size: 100% 2px;
-    background-position: left calc(100% - 0px);
-  }
-  .input-module-inventario {
-    @apply block w-full rounded-md bg-gray-50 text-gray-900 placeholder-gray-500
-           border border-gray-300 ring-1 ring-inset ring-gray-300 shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 focus:border-emerald-500 sm:text-xs;
-    height: 20px;
-    line-height: 1;
-    padding: 1px 4px;
-    background-image: linear-gradient(rgb(16,185,129), rgb(16,185,129));
-    background-repeat: no-repeat;
-    background-size: 100% 2px;
-    background-position: left calc(100% - 0px);
-  }
-  /* Inputs de comparador:
-     - En formulario superior (marcas, colaborador, fecha): alto 20px y ancho responsive (ocupan el contenedor).
-     - En tabla de precios (celdas de comparación): usar adicionalmente la clase .price-cell-45 para forzar 45x20. */
-  .input-module-comparador {
-    @apply block w-full rounded-md bg-gray-50 text-gray-900 align-middle
-           border border-gray-300 ring-1 ring-inset ring-gray-300 shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500 focus:border-amber-500
-           text-xs;
-    height: 20px;          /* alto fijo */
-    line-height: 18px;     /* alinear texto dentro de 20px */
-    padding: 1px 4px;      /* padding compacto */
-    /* Placeholder con mayor contraste y guía de formato monetario */
-    &::placeholder { color: rgb(107 114 128); opacity: 1; } /* gray-500 */
-    background-image: linear-gradient(rgb(245,158,11), rgb(245,158,11));
-    background-repeat: no-repeat;
-    background-size: 100% 2px;
-    background-position: left calc(100% - 0px);
-  }
 
   /* Utilizar esta clase adicional SOLO en celdas de precios de la tabla del comparador para 45x20 exactos */
   .price-cell-45 {
@@ -436,3 +378,38 @@
   .title-comparador   { @apply inline-block relative; color: var(--heading); }
   .title-comparador::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(245 158 11); bottom: -6px; }
 }
+
+
+.btn-module-planificador {
+    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
+           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
+           text-white bg-purple-600 hover:bg-purple-700 focus:ring-purple-600;
+}
+
+.btn-outline-planificador {
+    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
+           text-purple-300 border border-purple-500/40 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400;
+}
+
+.page-planificador {
+    @apply min-h-screen py-3;
+}
+
+.title-planificador {
+    @apply inline-block relative; color: var(--heading);
+}
+
+.title-planificador::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgb(147 51 234);
+    bottom: -6px;
+}
+
+.reel-card--planificador {
+    @apply outline-none ring-0;
+}
+

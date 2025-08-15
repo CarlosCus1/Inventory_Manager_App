@@ -98,6 +98,18 @@ export const FormSchema = z.object({
 
   /** Nombre de la Marca 5 para comparación de precios. */
   marca5: z.string().optional(),
+
+  /** Sucursal de la operación (usado en Devoluciones, Pedido, Inventario, Comparador). */
+  sucursal: z.string().optional(),
+
+  /** Código del pedido asociado al planificador. */
+  pedido_planificador: z.string().optional(),
+
+  /** Color de línea seleccionado en el planificador para el reporte XLSX. */
+  linea_planificador_color: z.string().optional(),
+
+  /** Monto total del planificador. */
+  montoOriginal: z.number().optional(),
 });
 
 /**

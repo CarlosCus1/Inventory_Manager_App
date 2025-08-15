@@ -1,11 +1,13 @@
 import React from 'react';
 import * as DateUtils from '../../utils/dateUtils'; // Adjust path as needed
+import { StyledInput } from '../ui/StyledInput';
 
 interface DetailTableProps {
   montosAsignados: Record<string, number>;
+  onMontoChange: (fecha: string, nuevoMonto: string) => void;
 }
 
-export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados }) => {
+export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMontoChange }) => {
   const montosPorMes: Record<string, Array<{ date: string; amount: number }>> = {};
   for (const fechaStr in montosAsignados) {
     const monthKey = DateUtils.obtenerMesAnio(fechaStr);
@@ -14,7 +16,7 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados }) => 
     }
     montosPorMes[monthKey].push({
       date: fechaStr,
-      amount: montosAsignados[fechaStr],
+      amount: montosAsignados[fechaStr] || 0,
     });
   }
 
@@ -26,8 +28,8 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados }) => 
 
   return (
     <div className="results-detail-section">
-      <h3>Detalle por Fecha (Ajuste Manual)</h3>
-      <div id="tabla-detalle-horizontal" className="detalle-horizontal-container">
+      <h3 className="text-lg font-semibold mb-2">Detalle por Fecha (Ajuste Manual)</h3>
+      <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-gray-50 dark:bg-gray-900 rounded">
         {sortedMonthKeys.map(monthKey => {
           const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + item.amount, 0);
           const monthDisplay = DateUtils.formatearMesAnioDisplay(monthKey);
@@ -35,23 +37,26 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados }) => 
           const sortedDatesInMonth = montosPorMes[monthKey].sort((a, b) => DateUtils.parsearFecha(a.date).getTime() - DateUtils.parsearFecha(b.date).getTime());
 
           return (
-            <div className="month-group" key={monthKey}>
-              <div className="month-header">
+            <div className="flex-shrink-0 w-64 border rounded-lg shadow-sm" key={monthKey}>
+              <div className="font-bold p-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
                 {`${monthDisplay.split(' ')[0]} ${yearShort}, S/ ${monthTotal.toFixed(2)}`}
               </div>
-              {sortedDatesInMonth.map(item => (
-                <div className="detail-item" key={item.date}>
-                  <span>{item.date}</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    pattern="[0-9]+([.][0-9]{1,2})?"
-                    defaultValue={item.amount.toFixed(2)}
-                    data-fecha={item.date}
-                  />
-                </div>
-              ))}
-              <div className="month-total">
+              <div className="p-2 space-y-2">
+                {sortedDatesInMonth.map(item => (
+                  <div className="flex items-center justify-between" key={item.date}>
+                    <span className="text-sm">{item.date}</span>
+                    <StyledInput
+                      type="number"
+                      step="0.01"
+                      value={item.amount.toFixed(2)}
+                      onChange={(e) => onMontoChange(item.date, e.target.value)}
+                      variant="planificador"
+                      className="w-28 text-right"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="font-semibold p-2 bg-gray-100 dark:bg-gray-800 rounded-b-lg text-right">
                 {`Total Mes: S/ ${monthTotal.toFixed(2)}`}
               </div>
             </div>

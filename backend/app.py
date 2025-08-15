@@ -32,6 +32,315 @@ CORS(app, expose_headers=["Content-Disposition"])
 # Esto facilita mantener una identidad visual consistente y es fácil de expandir.
 # Los colores están en formato ARGB (sin el Alpha inicial, RGB en hexadecimal).
 STYLE_CONFIG = {
+
+        "devoluciones": {"header_color": "FFC7CE", "font_color": "9C0006"}, # Rojo
+        "pedido": {"header_color": "B4C6E7", "font_color": "1F3864"}, # Azul
+        "inventario": {"header_color": "C6E0B4", "font_color": "385723"}, # Verde
+        "precios": {"header_color": "FFD966", "font_color": "8D5F00"}, # Naranja
+        "default": {"header_color": "D9D9D9", "font_color": "000000"}  # Gris
+    }
+
+# Datos de ejemplo para el endpoint de días festivos.
+HOLIDAYS_2025 = [
+    {"date": "01/01/2025", "name": "Año Nuevo"},
+    {"date": "17/04/2025", "name": "Jueves Santo"},
+    {"date": "18/04/2025", "name": "Viernes Santo"},
+    {"date": "01/05/2025", "name": "Día del Trabajo"},
+    {"date": "07/06/2025", "name": "Batalla de Arica y Día de la Bandera"},
+    {"date": "29/06/2025", "name": "San Pedro y San Pablo"},
+    {"date": "23/07/2025", "name": "Día de la Fuerza Aérea del Perú"},
+    {"date": "28/07/2025", "name": "Fiestas Patrias"},
+    {"date": "29/07/2025", "name": "Fiestas Patrias"},
+    {"date": "06/08/2025", "name": "Batalla de Junín"},
+    {"date": "30/08/2025", "name": "Santa Rosa de Lima"},
+    {"date": "08/10/2025", "name": "Combate de Angamos"},
+    {"date": "01/11/2025", "name": "Día de Todos los Santos"},
+    {"date": "08/12/2025", "name": "Inmaculada Concepción"},
+    {"date": "09/12/2025", "name": "Batalla de Ayacucho"},
+]
+
+# --- 4. Funciones Auxiliares ---
+def autosize_columns(worksheet: Workbook.active):
+    """
+    Ajusta el ancho de todas las columnas de la hoja de cálculo al
+    contenido más largo.
+    """
+    for col in worksheet.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                # Se manejan casos de valores None o no strings
+                if cell.value is not None:
+                    value_len = len(str(cell.value))
+                    if value_len > max_length:
+                        max_length = value_len
+            except (TypeError, ValueError):
+                pass
+        adjusted_width = (max_length + 2)
+        worksheet.column_dimensions[column].width = adjusted_width
+
+def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_data: Dict[str, Any], list_data: List[Dict[str, Any]]):
+    """
+    Genera una hoja de cálculo estándar para 'pedido' o 'inventario',
+    unificando la lógica duplicada.
+    """
+    # --- 1. Configuración específica por tipo de reporte ---
+    configs = {
+        'pedido': {
+            'sheet_name': "pedido",
+            'df_cols': ["codigo", "cod_ean", "nombre", "cantidad", "peso", "observaciones"],
+            'info_fields': [
+                ("hoja de pedido", ""),
+                ("Cliente", form_data.get('cliente', '')),
+                ("RUC o DNI", form_data.get('documento_cliente', '')),
+                ("Código Cliente", form_data.get('codigo_cliente', '')),
+                ("Fecha", form_data.get('fecha', ''))
+            ],
+            'header_start_row': 7,
+            'number_formats': {'D': '0', 'E': '#,##0.00'}
+        },
+        'inventario': {
+            'sheet_name': "inventario",
+            'df_cols': ["codigo", "cod_ean", "nombre", "cantidad", "linea", "observaciones"],
+            'info_fields': [
+                ("inventario", ""),
+                ("Cliente", form_data.get('cliente', '')),
+                ("RUC o DNI", form_data.get('documento_cliente', '')),
+                ("Colaborador", form_data.get('colaborador_personal', '')),
+                ("Fecha", form_data.get('fecha', ''))
+            ],
+            'header_start_row': 8,
+            'number_formats': {'D': '0'}
+        }
+    }
+
+    # Se maneja el caso de un tipo de gestión desconocido, aunque ya está filtrado
+    config = configs.get(tipo_gestion)
+    if not config:
+        raise ValueError(f"Tipo de gestión desconocido: {tipo_gestion}")
+
+    sheet_name = config['sheet_name']
+    
+    # --- 2. Normalización de datos y creación de DataFrame ---
+    fecha_raw = str(form_data.get('fecha', '')).strip()
+    try:
+        # Se manejan cadenas ISO con 'Z' o sin ella.
+        dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
+        fecha_ddmmyy = dt.strftime('%d-%m-%y')
+    except (ValueError, TypeError):
+        fecha_ddmmyy = datetime.now().strftime('%d-%m-%y')
+
+    # Actualizar la fecha en los campos de información
+    for i, (label, _) in enumerate(config['info_fields']):
+        if label == "Fecha":
+            config['info_fields'][i] = ("Fecha", fecha_ddmmyy)
+
+    df = pd.DataFrame(list_data)
+    for col in config['df_cols']:
+        if col not in df.columns:
+            df[col] = "" if col in ("cod_ean", "observaciones", "nombre", "linea") else 0
+    df = df[config['df_cols']]
+
+    # --- 3. Escritura en Excel ---
+    data_start_row = config['header_start_row']
+    # Se añade un encabezado para evitar que pandas lo escriba.
+    df.to_excel(writer, sheet_name=sheet_name, startrow=data_start_row, index=False, header=False)
+    ws = writer.sheets[sheet_name]
+
+    # --- 4. Estilos y Formato ---
+    style_info = STYLE_CONFIG.get(tipo_gestion, STYLE_CONFIG['default'])
+    header_fill = PatternFill(start_color=style_info['header_color'], fill_type="solid")
+    header_font = Font(bold=True, color=style_info['font_color'])
+
+    # --- 5. Escritura de Información General y Encabezados ---
+    current_row = 1
+    for label, value in config['info_fields']:
+        ws.cell(row=current_row, column=1, value=label).font = header_font
+        ws.cell(row=current_row, column=1).fill = header_fill
+        if value:
+            ws.cell(row=current_row, column=2, value=value)
+        current_row += 1
+
+    # Encabezados de la tabla
+    for idx, h in enumerate(config['df_cols'], start=1):
+        cell = ws.cell(row=data_start_row, column=idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Formatos de número para las columnas de datos
+    data_first_row_idx = data_start_row + 1
+    for r_idx in range(data_first_row_idx, data_first_row_idx + len(df)):
+        for col_letter, fmt in config['number_formats'].items():
+            ws[f'{col_letter}{r_idx}'].number_format = fmt
+
+    # --- 6. Escritura de Totales ---
+    total_row_idx = data_start_row + len(df) + 2
+    ws.cell(row=total_row_idx, column=1, value="totales").font = header_font
+    ws.cell(row=total_row_idx, column=1).fill = header_fill
+
+    if tipo_gestion == 'pedido':
+        if len(df) > 0:
+            start_row_data_formula = data_start_row + 1
+            end_row_data_formula = data_start_row + len(df)
+            
+            # Suma de la columna de cantidad (D)
+            total_cantidad_cell = ws.cell(row=total_row_idx, column=4)
+            total_cantidad_cell.value = f"=SUM(D{start_row_data_formula}:D{end_row_data_formula})"
+            total_cantidad_cell.number_format = "0"
+            
+            # Suma de la columna de peso (E), multiplicando por la cantidad (D)
+            total_peso_cell = ws.cell(row=total_row_idx, column=5)
+            total_peso_cell.value = f"=SUMPRODUCT(D{start_row_data_formula}:D{end_row_data_formula},E{start_row_data_formula}:E{end_row_data_formula})"
+            total_peso_cell.number_format = "#,##0.00"
+        else:
+            ws.cell(row=total_row_idx, column=4, value=0).number_format = "0"
+            ws.cell(row=total_row_idx, column=5, value=0).number_format = "#,##0.00"
+
+    elif tipo_gestion == 'inventario':
+        if len(df) > 0:
+            start_row_data_formula = data_start_row + 1
+            end_row_data_formula = data_start_row + len(df)
+            
+            # Suma de la columna de cantidad (D)
+            total_cantidad_cell = ws.cell(row=total_row_idx, column=4)
+            total_cantidad_cell.value = f"=SUM(D{start_row_data_formula}:D{end_row_data_formula})"
+            total_cantidad_cell.number_format = "0"
+            
+            # Conteo de líneas únicas
+            unique_lines = df['linea'].dropna().apply(lambda x: str(x).strip().upper()).nunique()
+            ws.cell(row=total_row_idx, column=5, value="Total Líneas Únicas:").font = header_font
+            ws.cell(row=total_row_idx, column=5).fill = header_fill
+            ws.cell(row=total_row_idx, column=6, value=unique_lines).number_format = "0"
+        else:
+            ws.cell(row=total_row_idx, column=4, value=0).number_format = "0"
+            ws.cell(row=total_row_idx, column=5, value="Total Líneas Únicas:").font = header_font
+            ws.cell(row=total_row_idx, column=5).fill = header_fill
+            ws.cell(row=total_row_idx, column=6, value=0).number_format = "0"
+    
+    # Autoajuste final
+    autosize_columns(ws)
+
+# --- 4.5. Lógica para Reporte del Planificador ---
+def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart_color_name: Optional[str] = None):
+    """
+    Genera un reporte detallado para el módulo planificador, utilizando pandas
+    para la creación de hojas y openpyxl para el estilo y el gráfico.
+    """
+    from openpyxl.chart import BarChart, Reference
+    from openpyxl.chart.label import DataLabelList
+    from openpyxl.chart.shapes import GraphicalProperties
+
+    # --- Funciones de Ayuda y Mapeo de Colores ---
+    COLOR_MAP = {
+        "rojo": "FF0000",   # Viniball
+        "azul": "0070C0",   # Vinifan
+        "verde": "00B050",  # Otros
+        "default": "4472C4" # Un azul por defecto si no se especifica
+    }
+    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP["default"])
+
+    def _lighten_color(hex_color, factor=0.5):
+        hex_color = hex_color.lstrip('#')
+        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        new_rgb = [int(val + (255 - val) * factor) for val in rgb]
+        return f'{new_rgb[0]:02X}{new_rgb[1]:02X}{new_rgb[2]:02X}'
+
+    def format_month_year_es(date_obj: datetime) -> str:
+        MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        return f"{MONTH_NAMES_ES[date_obj.month - 1]} {date_obj.year}"
+
+    # --- DataFrames ---
+    # Hoja de Dashboard
+    info_data = [
+        ("Cód. Cliente:", data.get('codigoCliente', '')),
+        ("RUC:", data.get('ruc', '')),
+        ("Cliente:", data.get('razonSocial', '')),
+        ("Línea:", data.get('linea', '')),
+        ("Cód. Pedido:", data.get('pedido', '')),
+        ("Monto Total:", data.get('montoOriginal', 0)),
+        ("Total Letras:", len(data.get('fechasOrdenadas', [])))
+    ]
+    df_info = pd.DataFrame(info_data, columns=["Campo", "Valor"])
+
+    resumen_mensual = data.get('resumenMensual', {})
+    df_resumen = pd.DataFrame(list(resumen_mensual.items()), columns=["Mes", "Monto (S/)"])
+    df_resumen["Porcentaje"] = df_resumen["Monto (S/)"] / data.get('montoOriginal', 1)
+
+    # Hoja de Detalle de Pagos
+    fechas_ordenadas = data.get('fechasOrdenadas', [])
+    montos_asignados = data.get('montosAsignados', {})
+    detalle_data = [{"N°": i + 1, "Fecha de Vencimiento": fecha, "Monto (S/)": montos_asignados.get(fecha, 0)} for i, fecha in enumerate(fechas_ordenadas)]
+    df_detalle = pd.DataFrame(detalle_data)
+
+    # --- Escritura en Excel ---
+    df_info.to_excel(writer, sheet_name="Reporte Dashboard", startrow=2, index=False, header=False)
+    df_resumen.to_excel(writer, sheet_name="Reporte Dashboard", startrow=len(df_info) + 4, index=False)
+    df_detalle.to_excel(writer, sheet_name="Detalle de Pagos", index=False)
+
+    # --- Estilizado ---
+    ws_dashboard = writer.sheets["Reporte Dashboard"]
+    ws_detalle = writer.sheets["Detalle de Pagos"]
+
+    color_hex = STYLE_CONFIG['pedido']['header_color']
+    styles = {
+        'main_title_font': Font(bold=True, size=16, color="FFFFFF"),
+        'section_title_font': Font(bold=True, size=12, color="FFFFFF"),
+        'main_color_fill': PatternFill(start_color=color_hex, fill_type="solid"),
+    }
+
+    # Estilo Dashboard
+    ws_dashboard.merge_cells('A1:C1')
+    cell = ws_dashboard['A1']
+    cell.value = "DISTRIBUCION DE MONTOS POR FECHA"
+    cell.font = styles['main_title_font']
+    cell.fill = styles['main_color_fill']
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Estilo Detalle
+    for col in ws_detalle.columns:
+        ws_detalle.column_dimensions[col[0].column_letter].width = 20
+
+    # --- Creación y Estilo del Gráfico ---
+    chart = BarChart()
+    chart.title = "Resumen de Montos por Mes"
+    chart.style = 12
+    chart.y_axis.title = 'Monto (S/)'
+    chart.x_axis.title = 'Mes'
+    chart.legend = None # Sin leyenda para un look más limpio
+
+    # Rango de datos (columna B de la tabla de resumen)
+    data_ref = Reference(ws_dashboard, min_col=2, min_row=len(df_info) + 5, max_row=len(df_info) + 5 + len(df_resumen))
+    # Rango de categorías (columna A)
+    cats_ref = Reference(ws_dashboard, min_col=1, min_row=len(df_info) + 6, max_row=len(df_info) + 5 + len(df_resumen))
+
+    chart.add_data(data_ref, titles_from_data=True)
+    chart.set_categories(cats_ref)
+
+    # Personalización del color de las barras
+    series = chart.series[0]
+    fill = PatternFill(patternType='solid', fgColor=hex_color)
+    series.graphicalProperties = GraphicalProperties(solidFill=fill)
+
+    # Añadir el gráfico a la hoja
+    ws_dashboard.add_chart(chart, "E3")
+
+
+# --- 5. Definición de Endpoints ---
+
+@app.route('/api/getHolidays', methods=['GET'])
+def get_holidays():
+    """
+    Endpoint para obtener los días festivos del 2025.
+    """
+    year = request.args.get('year', type=int)
+    if year == 2025:
+        return jsonify(HOLIDAYS_2025)
+    else:
+        return jsonify([]), 404
+
+=======
     "devoluciones": {"header_color": "FFC7CE", "font_color": "9C0006"}, # Rojo
     # Pedido = AZUL
     "pedido":       {"header_color": "B4C6E7", "font_color": "1F3864"}, # Azul
@@ -43,6 +352,7 @@ STYLE_CONFIG = {
 }
 
 # --- 4. Definición del Endpoint de Exportación ---
+
 @app.route('/export-xlsx', methods=['POST'])
 def export_xlsx():
     """
@@ -218,6 +528,29 @@ def export_xlsx():
 
                 autosize_columns(ws)
 
+
+            # --- Caso 2: Inventario, Pedido o Planificador (lógica unificada) ---
+            elif tipo_gestion in ['inventario', 'pedido', 'planificador']:
+                if tipo_gestion == 'planificador':
+                    chart_color = form_data.get('linea_planificador_color')
+                    _generate_planner_report(writer, data, chart_color_name=chart_color)
+                else:
+                    _generate_standard_report(writer, tipo_gestion, form_data, list_data)
+
+                ws = writer.sheets[tipo_gestion] if tipo_gestion != 'planificador' else writer.book["Reporte Dashboard"]
+                
+                # Generación del nombre de archivo después de procesar
+                if tipo_gestion == 'planificador':
+                    cliente = str(data.get('razonSocial', '')).strip()
+                    fecha_raw = str(data.get('fechasOrdenadas', [''])[0]).strip()
+                else:
+                    cliente = str(form_data.get('cliente', '')).strip()
+                    fecha_raw = str(form_data.get('fecha', '')).strip()
+                try:
+                    dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
+                    fecha_ddmmyy = dt.strftime('%d-%m-%y')
+                except (ValueError, TypeError):
+                  
             # Nombre de archivo
             safe_colab = colaborador.strip().replace(" ", "_") or "sin_colaborador"
             filename = f"comparacion_precios_{safe_colab}_{fecha_ddmmyy}.xlsx"
@@ -247,6 +580,7 @@ def export_xlsx():
                 if len(fecha_raw) == 8 and fecha_raw[2] == '-' and fecha_raw[5] == '-':
                     fecha_ddmmyy = fecha_raw
                 else:
+                  
                     fecha_ddmmyy = datetime.now().strftime('%d-%m-%y')
 
             # 2) DataFrame con columnas exactas y orden

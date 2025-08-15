@@ -8,29 +8,38 @@
 // --- 1. Importaciones necesarias ---
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+
+import { FormGroup, Label } from './ui/FormControls';
+import { StyledInput } from './ui/StyledInput';
+import { RucDniInput } from './RucDniInput';
+import { SucursalInput } from './ui/SucursalInput';
 import { FormGroup, Label, Input, FormError } from './ui/FormControls';
 import { DevolucionesPedidoFields } from './form-fields/DevolucionesPedidoFields';
 import { InventarioFields } from '../components/form-fields/InventarioFields';
 import { PreciosFields } from '../components/form-fields/PreciosFields';
+
 import type { IForm } from '../interfaces';
 
 // --- 2. Definición de las Props del Componente ---
 interface Props {
   // `tipo` determinará qué campos se renderizan en el formulario.
   tipo: 'devoluciones' | 'pedido' | 'inventario' | 'precios';
+  // `children` permitirá inyectar campos específicos de cada módulo.
+  children: React.ReactNode;
 }
 
 // --- 3. Definición del Componente ---
-export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
+export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
   // --- A. Conexión con el Store de Zustand ---
   // Se extrae el estado del formulario para el `tipo` actual y la acción para actualizarlo.
   // Gracias a la persistencia, los datos del formulario se cargarán desde localStorage si existen.
   const formState = useAppStore((state) => state.formState[tipo]);
   const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
+  const fetchRuc = useAppStore((state) => state.fetchRuc);
 
-  // --- B. Estado Local para la Validación ---
-  // Se usa un estado local para gestionar los errores de validación, en este caso para el RUC/DNI.
-  const [errorDocumento, setErrorDocumento] = useState<string | null>(null);
+  // Map 'precios' type to 'comparador' variant for styling consistency
+  const variant = tipo === 'precios' ? 'comparador' : tipo;
+
 
   // --- C. Lógica de Manejo de Cambios y Validación ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +82,44 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
     }
   }, [tipo, formState.fecha, actualizarFormulario]);
 
+
+  // Effect for debouncing RUC number and calling API
+  useEffect(() => {
+    if (formState.documentType === 'ruc' && debouncedDocumentNumber.length === 11) {
+      setIsLoadingRuc(true);
+      setRucError(null);
+      setRucEstado(null);
+      setRucCondicion(null);
+
+      const fetchRucData = async () => {
+        try {
+          const data = await fetchRuc(debouncedDocumentNumber);
+          actualizarFormulario(tipo, 'cliente' as keyof IForm, data.razonSocial);
+          setRucEstado(data.estado || null);
+          setRucCondicion(data.condicion || null);
+        } catch (err) {
+          console.error("Error fetching RUC in DatosGeneralesForm:", err);
+          setRucError((err as Error).message || 'Error al consultar RUC.');
+          actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social on error
+          setRucEstado(null);
+          setRucCondicion(null);
+        } finally {
+          setIsLoadingRuc(false);
+        }
+      };
+      fetchRucData();
+    } else if (formState.documentType === 'ruc' && debouncedDocumentNumber.length !== 11) {
+      setRucError('El RUC debe tener 11 dígitos.');
+      actualizarFormulario(tipo, 'cliente' as keyof IForm, ''); // Clear social
+      setRucEstado(null);
+      setRucCondicion(null);
+    } else {
+      setRucError(null);
+      setRucEstado(null);
+      setRucCondicion(null);
+    }
+  }, [formState.documentType, debouncedDocumentNumber, tipo, actualizarFormulario, fetchRuc]); // Dependencies for RUC effect
+
   // --- F. Lógica de Estilos Dinámicos ---
   // Mapeo de 'tipo' a la clase CSS del módulo para mantener la consistencia visual.
   // Esto asegura que todos los inputs dentro del mismo formulario tengan el mismo color de foco.
@@ -83,26 +130,47 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
     precios: 'input-module-comparador', // 'precios' usa el estilo del módulo comparador.
   };
 
-  const baseInputClass = moduleInputClasses[tipo];
 
-  // --- G. Renderizado Modular de Campos ---
-  // Se utiliza un objeto para mapear el `tipo` a su componente de campos específico.
-  // Esto hace que el JSX principal sea más limpio y el componente más fácil de extender.
-  const SpecificFieldsComponent = {
-    devoluciones: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    pedido: <DevolucionesPedidoFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    inventario: <InventarioFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-    precios: <PreciosFields formState={formState} handleChange={handleChange} baseInputClass={baseInputClass} errorDocumento={errorDocumento} />,
-  }[tipo];
 
   // --- E. Renderizado del Componente ---
-  // Orden de campos por módulo:
-  // - devoluciones/pedido: cliente, documento_cliente (RUC/DNI), fecha (default hoy)  [codigo_cliente oculto/no requerido]
-  // - inventario: cliente, documento_cliente como RUC/DNI (usado como ruc), colaborador, fecha (default hoy)
-  // - precios (comparador): colaborador, marca1..marca5, fecha
   return (
     <div className="card">
       <h2 className="text-2xl font-bold mb-4 form-section-title">Datos Generales</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* --- Campos Comunes --- */}
+        <RucDniInput
+          documentType={formState.documentType || 'ruc'}
+          documentNumber={formState.documento_cliente || ''}
+          razonSocial={formState.cliente || ''}
+          onDocumentChange={handleRucDniChange}
+          onRazonSocialChange={handleRazonSocialManualChange}
+          rucEstado={rucEstado}
+          rucCondicion={rucCondicion}
+          isLoading={isLoadingRuc}
+          error={rucError}
+          variant={variant}
+        />
+
+        <FormGroup>
+          <Label htmlFor="codigo_cliente">Código de Cliente</Label>
+          <StyledInput
+            type="text"
+            id="codigo_cliente"
+            name="codigo_cliente"
+            value={formState.codigo_cliente || ''}
+            onChange={handleChange}
+            placeholder="Opcional"
+            variant={variant}
+          />
+        </FormGroup>
+
+        {/* El campo Sucursal se muestra en todos los módulos según el nuevo requisito */}
+        <SucursalInput
+          value={formState.sucursal || ''}
+          onChange={handleChange}
+          variant={variant}
+        />
 
       {['devoluciones', 'pedido'].includes(tipo) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -338,9 +406,8 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo }) => {
         </div>
       )}
 
-      {/* Campos específicos por módulo si se requieren adicionales */}
-      <div className="mt-4">
-        {SpecificFieldsComponent}
+        {/* --- Campos Específicos del Módulo (Inyectados) --- */}
+        {children}
       </div>
     </div>
   );
