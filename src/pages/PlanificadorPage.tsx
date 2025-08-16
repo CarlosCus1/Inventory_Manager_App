@@ -234,7 +234,7 @@ export const PlanificadorPage: React.FC = () => {
       setMontosAjustados(resultado.montosAsignados);
 
       // Form data is already in the global store, so no need to set it here.
-      
+
       // mostrarResults(); // Now handled by React rendering
     } catch (error) {
       console.error('Error en cálculo:', error);
@@ -397,6 +397,16 @@ export const PlanificadorPage: React.FC = () => {
 
         {/* Page Content */}
         <div className="mt-4 space-y-8">
+
+          <SeleccionFechas
+            selectedDates={plannerState.selectedDates}
+            onCargarRespaldoClick={handleCargarRespaldoClick}
+            fetchCalendarEvents={fetchCalendarEvents}
+            handleDateClick={handleDateClick}
+            handleDayCellMount={handleDayCellMount}
+          />
+
+
           <DatosGeneralesPlanner
             formState={formState}
             onFormChange={handleFormChange}
@@ -416,6 +426,7 @@ export const PlanificadorPage: React.FC = () => {
             handleDateClick={handleDateClick}
             handleDayCellMount={handleDayCellMount}
           />
+
 
           <ResultadosPlanner
             resumenMensual={plannerState.resumenMensual}

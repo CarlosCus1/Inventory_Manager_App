@@ -353,7 +353,7 @@ def export_xlsx():
         with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
             
             # --- B. Procesamiento por Tipo de Gestión ---
-            
+
             # --- Caso 1: Comparación de Precios ---
             if tipo_gestion == 'precios':
                 # Normalización de datos generales
@@ -414,7 +414,7 @@ def export_xlsx():
                     ws.cell(row=2 + i, column=1, value=f"Marca {i}").font = header_font
                     ws.cell(row=2 + i, column=1).fill = header_fill
                     ws.cell(row=2 + i, column=2, value=m)
-                
+
                 fecha_row = 8
                 ws.cell(row=fecha_row, column=1, value="Fecha").font = header_font
                 ws.cell(row=fecha_row, column=1).fill = header_fill
@@ -422,7 +422,7 @@ def export_xlsx():
                 ws.cell(row=fecha_row + 1, column=1, value="Total Productos:").font = header_font
                 ws.cell(row=fecha_row + 1, column=1).fill = header_fill
                 ws.cell(row=fecha_row + 1, column=2, value=len(list_data)).number_format = "0"
-                
+
                 # Encabezados de la tabla
                 columns = ["codigo", "cod_ean", "nombre"] + marcas_finales
                 for i in range(1, len(marcas_finales)):
@@ -431,7 +431,7 @@ def export_xlsx():
                     columns.append(f"Dif. {marca_competidor} vs {marca_base}")
                     columns.append(f"% {marca_competidor} vs {marca_base}")
                 columns.extend(["Precio MAX", "Precio MIN", f"% MAX vs {marcas_finales[0]}", f"% MIN vs {marcas_finales[0]}"])
-                
+
                 header_row = 11
                 for idx, h in enumerate(columns, start=1):
                     cell = ws.cell(row=header_row, column=idx, value=h)
@@ -464,11 +464,11 @@ def export_xlsx():
                         pct_cell = ws.cell(row=row_num, column=pct_col)
                         pct_cell.value = f'=IFERROR(({p_base_ref}/{comp_ref})-1, "")'
                         pct_cell.number_format = percentage_format
-                    
+
                     # Fórmulas para precios MAX/MIN
                     price_range_cols = get_column_letter(4) + ":" + get_column_letter(3 + len(marcas_finales))
                     price_range = f"{price_range_cols}{row_num}"
-                    
+
                     summary_price_start_col = col_offset + (len(marcas_finales)-1) * 2 + 1
                     max_price_ref = f"{get_column_letter(summary_price_start_col)}{row_num}"
                     min_price_ref = f"{get_column_letter(summary_price_start_col + 1)}{row_num}"
@@ -488,7 +488,7 @@ def export_xlsx():
                     ws[min_pct_ref] = f'=IFERROR(MIN({",".join(pct_comp_refs)}), "")'
                     for cell_ref in [max_pct_ref, min_pct_ref]:
                         ws[cell_ref].number_format = percentage_format
-                
+
                 # Autoajuste de columnas
                 autosize_columns(ws)
 
@@ -544,7 +544,7 @@ def export_xlsx():
                 style_info = STYLE_CONFIG.get(tipo_gestion, STYLE_CONFIG['default'])
                 header_fill = PatternFill(start_color=style_info['header_color'], fill_type="solid")
                 header_font = Font(bold=True, color=style_info['font_color'])
-                
+
                 ws.cell(row=1, column=1, value="Datos Generales").font = header_font
                 ws.cell(row=1, column=1).fill = header_fill
                 ws.cell(row=start_row_reporte, column=1, value="Reporte Final").font = header_font
