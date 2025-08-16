@@ -30,8 +30,8 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
   onCalcular
 }) => {
   return (
-    <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">1. Datos Generales</h2>
+    <section id="datos-cliente" className="card">
+      <h2 className="form-section-title title-planificador">1. Datos Generales</h2>
       <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={(e) => e.preventDefault()}>
 
         <RucDniInput
@@ -44,7 +44,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
             rucCondicion={rucCondicion}
             isLoading={isLoadingRuc}
             error={rucError}
-            variant="planificador"
         />
 
         <FormGroup>
@@ -56,7 +55,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 value={formState.codigo_cliente || ''}
                 onChange={onFormChange}
                 placeholder="Opcional"
-                variant="planificador"
             />
         </FormGroup>
 
@@ -77,7 +75,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 required
                 value={formState.montoOriginal || ''}
                 onChange={onFormChange}
-                variant="planificador"
             />
         </FormGroup>
 
@@ -90,7 +87,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 value={formState.pedido_planificador || ''}
                 onChange={onFormChange}
                 placeholder="Ej: Pedido de campaña"
-                variant="planificador"
             />
         </FormGroup>
 
@@ -101,7 +97,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 name="linea_planificador_color"
                 value={formState.linea_planificador_color || ''}
                 onChange={onFormChange}
-                variant="planificador"
             >
                 <option value="">Seleccionar color...</option>
                 <option value="rojo">Viniball (Rojo)</option>
@@ -114,7 +109,7 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
           <button
             type="button"
             onClick={onCalcular}
-            className="bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg"
+            className="btn-module-planificador"
           >
             Calcular
           </button>

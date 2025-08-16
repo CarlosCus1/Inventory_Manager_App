@@ -9,7 +9,7 @@ import React from 'react';
 interface PageHeaderProps {
   title: string;
   description: string;
-  themeColor: 'devoluciones' | 'pedido' | 'inventario' | 'comparador';
+  themeColor: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador';
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({ title, description, themeColor }) => {
@@ -19,6 +19,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, description, themeColor 
     pedido: 'title-pedido',
     inventario: 'title-inventario',
     comparador: 'title-comparador',
+    planificador: 'title-planificador',
   };
 
   return (

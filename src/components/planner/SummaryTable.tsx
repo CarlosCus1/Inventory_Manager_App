@@ -15,8 +15,8 @@ export const SummaryTable: React.FC<SummaryTableProps> = ({ resumenMensual, mont
   });
 
   return (
-    <div className="table-container">
-      <h3>Resumen por Mes</h3>
+    <div>
+      <h3 className="form-section-title">Resumen por Mes</h3>
       <table id="tabla-resumen" className="data-table">
         <thead>
           <tr>

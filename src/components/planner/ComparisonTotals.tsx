@@ -13,8 +13,8 @@ export const ComparisonTotals: React.FC<ComparisonTotalsProps> = ({ montoOrigina
   const statusClass = Math.abs(montoOriginal - sumaMontosDetallados) < tolerance ? 'status-ok' : 'status-error';
 
   return (
-    <div className="table-container">
-      <h3>Totales Comparativos</h3>
+    <div>
+      <h3 className="form-section-title">Totales Comparativos</h3>
       <div id="totales-comparativos">
         <div className="comparison-item">
           <span>Monto Original:</span>

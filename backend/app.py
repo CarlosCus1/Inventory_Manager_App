@@ -7,7 +7,7 @@
 # --- 1. Importaciones necesarias ---
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-import pandas as pd
+import pandas as pd # type: ignore
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
@@ -15,6 +15,7 @@ from datetime import datetime
 import io
 import unicodedata
 from typing import Any, Dict, List, Optional
+from openpyxl.worksheet.worksheet import Worksheet
 
 # --- 2. Inicialización de la aplicación Flask ---
 app = Flask(__name__)
@@ -29,7 +30,13 @@ STYLE_CONFIG = {
         "pedido": {"header_color": "B4C6E7", "font_color": "1F3864"}, # Azul
         "inventario": {"header_color": "C6E0B4", "font_color": "385723"}, # Verde
         "precios": {"header_color": "FFD966", "font_color": "8D5F00"}, # Naranja
-        "default": {"header_color": "D9D9D9", "font_color": "000000"}  # Gris
+        "default": {"header_color": "D9D9D9", "font_color": "000000"},  # Gris
+        "planner_charts": {
+            "rojo": "FF0000",   # Viniball
+            "azul": "0070C0",   # Vinifan
+            "verde": "00B050",  # Otros
+            "default": "4472C4" # Un azul por defecto si no se especifica
+        }
     }
 
 # Datos de ejemplo para el endpoint de días festivos.
@@ -52,7 +59,7 @@ HOLIDAYS_2025 = [
 ]
 
 # --- 4. Funciones Auxiliares ---
-def autosize_columns(worksheet: Workbook.active):
+def autosize_columns(worksheet: Worksheet):
     """
     Ajusta el ancho de todas las columnas de la hoja de cálculo al
     contenido más largo.
@@ -102,8 +109,20 @@ def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_da
                 ("Colaborador", form_data.get('colaborador_personal', '')),
                 ("Fecha", form_data.get('fecha', ''))
             ],
-            'header_start_row': 8,
+            'header_start_row': 7,
             'number_formats': {'D': '0'}
+        },
+        'devoluciones': {
+            'sheet_name': "devoluciones",
+            'df_cols': ["codigo", "cod_ean", "nombre", "cantidad", "peso", "observaciones"],
+            'info_fields': [
+                ("hoja de devolucion", ""),
+                ("Cliente", form_data.get('cliente', '')),
+                ("Motivo", form_data.get('motivo', '')),
+                ("Fecha", form_data.get('fecha', ''))
+            ],
+            'header_start_row': 7,
+            'number_formats': {'D': '0', 'E': '#,##0.00'}
         }
     }
 
@@ -211,6 +230,16 @@ def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_da
             ws.cell(row=total_row_idx, column=5).fill = header_fill
             ws.cell(row=total_row_idx, column=6, value=0).number_format = "0"
     
+    elif tipo_gestion == 'devoluciones':
+        if len(df) > 0:
+            start_row_data_formula = data_start_row + 1
+            end_row_data_formula = data_start_row + len(df)
+            total_cantidad_cell = ws.cell(row=total_row_idx, column=4)
+            total_cantidad_cell.value = f"=SUM(D{start_row_data_formula}:D{end_row_data_formula})"
+            total_cantidad_cell.number_format = "0"
+            total_peso_cell = ws.cell(row=total_row_idx, column=5)
+            total_peso_cell.value = f"=SUMPRODUCT(D{start_row_data_formula}:D{end_row_data_formula},E{start_row_data_formula}:E{end_row_data_formula})"
+            total_peso_cell.number_format = "#,##0.00"
     # Autoajuste final
     autosize_columns(ws)
 
@@ -224,14 +253,8 @@ def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart
     from openpyxl.chart.label import DataLabelList
     from openpyxl.chart.shapes import GraphicalProperties
 
-    # --- Funciones de Ayuda y Mapeo de Colores ---
-    COLOR_MAP = {
-        "rojo": "FF0000",   # Viniball
-        "azul": "0070C0",   # Vinifan
-        "verde": "00B050",  # Otros
-        "default": "4472C4" # Un azul por defecto si no se especifica
-    }
-    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP["default"])
+    COLOR_MAP = STYLE_CONFIG.get("planner_charts", {})
+    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP.get("default", "4472C4"))
 
     def _lighten_color(hex_color, factor=0.5):
         hex_color = hex_color.lstrip('#')
@@ -324,13 +347,16 @@ def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart
 @app.route('/api/getHolidays', methods=['GET'])
 def get_holidays():
     """
-    Endpoint para obtener los días festivos del 2025.
+    Endpoint para obtener los días festivos. Actualmente solo soporta 2025.
     """
-    year = request.args.get('year', type=int)
+    # Se obtiene el año de los argumentos, por defecto 2025 si no se especifica.
+    year = request.args.get('year', default=2025, type=int)
     if year == 2025:
         return jsonify(HOLIDAYS_2025)
     else:
-        return jsonify([]), 404
+        # Para cualquier otro año, devuelve una lista vacía con estado 200 OK.
+        # Esto evita que los servidores de desarrollo devuelvan index.html en un 404.
+        return jsonify([])
 
 @app.route('/export-xlsx', methods=['POST'])
 def export_xlsx():
@@ -496,8 +522,8 @@ def export_xlsx():
                 safe_colab = unicodedata.normalize('NFKD', colaborador).encode('ascii', 'ignore').decode('utf-8').strip().replace(" ", "_") or "sin_colaborador"
                 filename = f"comparacion_precios_{safe_colab}_{fecha_ddmmyy}.xlsx"
 
-            # --- Caso 2: Inventario, Pedido o Planificador (lógica unificada) ---
-            elif tipo_gestion in ['inventario', 'pedido', 'planificador']:
+            # --- Caso 2: Inventario, Pedido, Devoluciones o Planificador (lógica unificada) ---
+            elif tipo_gestion in ['inventario', 'pedido', 'devoluciones', 'planificador']:
                 if tipo_gestion == 'planificador':
                     chart_color = form_data.get('linea_planificador_color')
                     _generate_planner_report(writer, data, chart_color_name=chart_color)
@@ -524,8 +550,11 @@ def export_xlsx():
 
             # --- Caso 3: Por defecto (si no coincide con ningún tipo) ---
             else:
-                # Se mantiene la lógica para tipos de gestión no estandarizados
-                cliente_o_colaborador = form_data.get('cliente', form_data.get('colaborador', form_data.get('nombre', 'N_A')))
+                # Lógica para tipos de gestión no estandarizados
+                cliente_o_colaborador = str(form_data.get('cliente') or 
+                                            form_data.get('colaborador') or 
+                                            form_data.get('nombre') or 
+                                            'N_A').strip()
                 fecha_actual = datetime.now().strftime("%d_%m_%y")
                 filename = f"{tipo_gestion}-{cliente_o_colaborador}-{fecha_actual}.xlsx"
 

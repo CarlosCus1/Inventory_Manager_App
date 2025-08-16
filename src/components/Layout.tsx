@@ -74,14 +74,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      {/* Floating Theme Toggle */}
-      <div className="fixed bottom-3 right-16 z-50">
+      {/* Floating Buttons Container */}
+      <div className="fixed bottom-3 left-3 z-50 flex flex-col gap-2">
         <ThemeToggle />
-      </div>
-
-      {/* Floating Reset Button */}
-      {currentPalette && (
-        <div className="fixed bottom-3 left-3 z-50">
+        {currentPalette && (
           <button
             onClick={handleClear}
             className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-lg"
@@ -92,8 +88,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.12M20 15a9 9 0 01-14.13 5.12" />
             </svg>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Badge discreto de versión en esquina inferior derecha */}
       <div className="fixed bottom-3 right-3 z-50 hidden sm:block select-none" title="Proyecto de Carlos Cusi — versión 3.0" aria-label="cc Gestor v3.0">

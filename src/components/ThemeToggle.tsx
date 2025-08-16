@@ -7,7 +7,7 @@ import { useTheme } from "../hooks/useTheme";
  * - Sincronizado en toda la app vía ThemeProvider.
  * - Persistencia en localStorage gestionada por el hook.
  */
-const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => {
+const ThemeToggle: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
@@ -17,16 +17,9 @@ const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => {
       title={`Cambiar a ${isDark ? "Light" : "Dark"}`}
       onClick={toggleTheme}
       className={
-        "inline-flex items-center rounded-md p-2 text-sm transition " +
-        "hover:opacity-95 " +
-        (className ?? "")
+        `p-2 rounded-full shadow-lg transition hover:opacity-95
+        ${isDark ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'}`
       }
-      style={{
-        // Relleno menos oscuro (semineutro) y borde sutil derivados del tema
-        background: 'color-mix(in oklab, var(--panel) 88%, white 12%)',
-        boxShadow: 'inset 0 0 0 1px var(--border)',
-        color: 'var(--fg)'
-      }}
     >
       {/* Íconos con color vivo, relleno más claro según tema */}
       {isDark ? (

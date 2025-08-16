@@ -13,7 +13,7 @@ import { type DayCellContentArg } from '@fullcalendar/core';
 import { SeleccionFechas } from '../components/planner/SeleccionFechas';
 import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
 import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
-import './PlanificadorPage.css';
+import PageHeader from '../components/PageHeader';
 
 // Define initial state interface (for better type safety)
 // This local state only holds data not related to the form itself.
@@ -370,15 +370,13 @@ export const PlanificadorPage: React.FC = () => {
 
 
   return (
-    <div className="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text min-h-screen font-sans">
-      <header className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white shadow-md">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          <h1 className="text-xl font-bold">Planificador de Vencimientos</h1>
-          {/* Theme toggle can be added here if needed */}
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4">
+    <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+      <PageHeader
+        title="Planificador de Vencimientos"
+        description="Distribuye montos en el tiempo de forma equitativa, con selección de fechas en calendario y opción de ajuste manual para cada vencimiento."
+        themeColor="planificador"
+      />
+      <main>
         <div id="loading-overlay" style={{ display: isLoadingRuc ? 'flex' : 'none' }}>
           <div className="spinner"></div>
           <p id="loading-message">Cargando...</p>
@@ -396,7 +394,7 @@ export const PlanificadorPage: React.FC = () => {
         />
 
         {/* Page Content */}
-        <div className="mt-4 space-y-8">
+        <div className="space-y-8">
           <DatosGeneralesPlanner
             formState={formState}
             onFormChange={handleFormChange}

@@ -194,7 +194,7 @@ export const InventarioPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-inventario">Búsqueda y Selección</h2>
+        <h2 className="form-section-title title-inventario">Búsqueda y Selección</h2>
         <div className="mb-4 flex items-center">
           <input
             type="text"
@@ -254,7 +254,7 @@ export const InventarioPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-inventario">Conteo de Inventario</h2>
+        <h2 className="form-section-title title-inventario">Conteo de Inventario</h2>
         <DataTable
           data={lista as unknown as RowInv[]}
           columns={columns}

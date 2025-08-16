@@ -33,8 +33,8 @@ export const ResultadosPlanner: React.FC<Props> = ({
   }
 
   return (
-    <section id="resultados" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">3. Resultados</h2>
+    <section id="resultados" className="card">
+      <h2 className="form-section-title title-planificador">3. Resultados</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SummaryTable
           resumenMensual={resumenMensual}
@@ -57,7 +57,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
               type="button"
               onClick={onExportAjustado}
               disabled={!totalsMatch}
-              className="bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Descargar Reporte
             </button>
