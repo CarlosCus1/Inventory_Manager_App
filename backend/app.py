@@ -214,6 +214,110 @@ def _generate_standard_report(writer: pd.ExcelWriter, tipo_gestion: str, form_da
     # Autoajuste final
     autosize_columns(ws)
 
+# --- 4.5. Lógica para Reporte del Planificador ---
+def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart_color_name: Optional[str] = None):
+    """
+    Genera un reporte detallado para el módulo planificador, utilizando pandas
+    para la creación de hojas y openpyxl para el estilo y el gráfico.
+    """
+    from openpyxl.chart import BarChart, Reference
+    from openpyxl.chart.label import DataLabelList
+    from openpyxl.chart.shapes import GraphicalProperties
+
+    # --- Funciones de Ayuda y Mapeo de Colores ---
+    COLOR_MAP = {
+        "rojo": "FF0000",   # Viniball
+        "azul": "0070C0",   # Vinifan
+        "verde": "00B050",  # Otros
+        "default": "4472C4" # Un azul por defecto si no se especifica
+    }
+    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP["default"])
+
+    def _lighten_color(hex_color, factor=0.5):
+        hex_color = hex_color.lstrip('#')
+        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        new_rgb = [int(val + (255 - val) * factor) for val in rgb]
+        return f'{new_rgb[0]:02X}{new_rgb[1]:02X}{new_rgb[2]:02X}'
+
+    def format_month_year_es(date_obj: datetime) -> str:
+        MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        return f"{MONTH_NAMES_ES[date_obj.month - 1]} {date_obj.year}"
+
+    # --- DataFrames ---
+    # Hoja de Dashboard
+    info_data = [
+        ("Cód. Cliente:", data.get('codigoCliente', '')),
+        ("RUC:", data.get('ruc', '')),
+        ("Cliente:", data.get('razonSocial', '')),
+        ("Línea:", data.get('linea', '')),
+        ("Cód. Pedido:", data.get('pedido', '')),
+        ("Monto Total:", data.get('montoOriginal', 0)),
+        ("Total Letras:", len(data.get('fechasOrdenadas', [])))
+    ]
+    df_info = pd.DataFrame(info_data, columns=["Campo", "Valor"])
+
+    resumen_mensual = data.get('resumenMensual', {})
+    df_resumen = pd.DataFrame(list(resumen_mensual.items()), columns=["Mes", "Monto (S/)"])
+    df_resumen["Porcentaje"] = df_resumen["Monto (S/)"] / data.get('montoOriginal', 1)
+
+    # Hoja de Detalle de Pagos
+    fechas_ordenadas = data.get('fechasOrdenadas', [])
+    montos_asignados = data.get('montosAsignados', {})
+    detalle_data = [{"N°": i + 1, "Fecha de Vencimiento": fecha, "Monto (S/)": montos_asignados.get(fecha, 0)} for i, fecha in enumerate(fechas_ordenadas)]
+    df_detalle = pd.DataFrame(detalle_data)
+
+    # --- Escritura en Excel ---
+    df_info.to_excel(writer, sheet_name="Reporte Dashboard", startrow=2, index=False, header=False)
+    df_resumen.to_excel(writer, sheet_name="Reporte Dashboard", startrow=len(df_info) + 4, index=False)
+    df_detalle.to_excel(writer, sheet_name="Detalle de Pagos", index=False)
+
+    # --- Estilizado ---
+    ws_dashboard = writer.sheets["Reporte Dashboard"]
+    ws_detalle = writer.sheets["Detalle de Pagos"]
+
+    color_hex = STYLE_CONFIG['pedido']['header_color']
+    styles = {
+        'main_title_font': Font(bold=True, size=16, color="FFFFFF"),
+        'section_title_font': Font(bold=True, size=12, color="FFFFFF"),
+        'main_color_fill': PatternFill(start_color=color_hex, fill_type="solid"),
+    }
+
+    # Estilo Dashboard
+    ws_dashboard.merge_cells('A1:C1')
+    cell = ws_dashboard['A1']
+    cell.value = "DISTRIBUCION DE MONTOS POR FECHA"
+    cell.font = styles['main_title_font']
+    cell.fill = styles['main_color_fill']
+    cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Estilo Detalle
+    for col in ws_detalle.columns:
+        ws_detalle.column_dimensions[col[0].column_letter].width = 20
+
+    # --- Creación y Estilo del Gráfico ---
+    chart = BarChart()
+    chart.title = "Resumen de Montos por Mes"
+    chart.style = 12
+    chart.y_axis.title = 'Monto (S/)'
+    chart.x_axis.title = 'Mes'
+    chart.legend = None # Sin leyenda para un look más limpio
+
+    # Rango de datos (columna B de la tabla de resumen)
+    data_ref = Reference(ws_dashboard, min_col=2, min_row=len(df_info) + 5, max_row=len(df_info) + 5 + len(df_resumen))
+    # Rango de categorías (columna A)
+    cats_ref = Reference(ws_dashboard, min_col=1, min_row=len(df_info) + 6, max_row=len(df_info) + 5 + len(df_resumen))
+
+    chart.add_data(data_ref, titles_from_data=True)
+    chart.set_categories(cats_ref)
+
+    # Personalización del color de las barras
+    series = chart.series[0]
+    fill = PatternFill(patternType='solid', fgColor=hex_color)
+    series.graphicalProperties = GraphicalProperties(solidFill=fill)
+
+    # Añadir el gráfico a la hoja
+    ws_dashboard.add_chart(chart, "E3")
+
 
 # --- 5. Definición de Endpoints ---
 
@@ -392,14 +496,23 @@ def export_xlsx():
                 safe_colab = unicodedata.normalize('NFKD', colaborador).encode('ascii', 'ignore').decode('utf-8').strip().replace(" ", "_") or "sin_colaborador"
                 filename = f"comparacion_precios_{safe_colab}_{fecha_ddmmyy}.xlsx"
 
-            # --- Caso 2: Inventario o Pedido (lógica unificada) ---
-            elif tipo_gestion in ['inventario', 'pedido']:
-                _generate_standard_report(writer, tipo_gestion, form_data, list_data)
-                ws = writer.sheets[tipo_gestion]
+            # --- Caso 2: Inventario, Pedido o Planificador (lógica unificada) ---
+            elif tipo_gestion in ['inventario', 'pedido', 'planificador']:
+                if tipo_gestion == 'planificador':
+                    chart_color = form_data.get('linea_planificador_color')
+                    _generate_planner_report(writer, data, chart_color_name=chart_color)
+                else:
+                    _generate_standard_report(writer, tipo_gestion, form_data, list_data)
+
+                ws = writer.sheets[tipo_gestion] if tipo_gestion != 'planificador' else writer.book["Reporte Dashboard"]
                 
                 # Generación del nombre de archivo después de procesar
-                cliente = str(form_data.get('cliente', '')).strip()
-                fecha_raw = str(form_data.get('fecha', '')).strip()
+                if tipo_gestion == 'planificador':
+                    cliente = str(data.get('razonSocial', '')).strip()
+                    fecha_raw = str(data.get('fechasOrdenadas', [''])[0]).strip()
+                else:
+                    cliente = str(form_data.get('cliente', '')).strip()
+                    fecha_raw = str(form_data.get('fecha', '')).strip()
                 try:
                     dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
                     fecha_ddmmyy = dt.strftime('%d-%m-%y')

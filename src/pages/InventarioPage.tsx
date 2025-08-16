@@ -10,8 +10,12 @@ import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
+import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
 import type { IProducto } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
+import PageHeader from '../components/PageHeader';
+import { FormGroup, Label } from '../components/ui/FormControls';
+import { StyledInput } from '../components/ui/StyledInput';
 // Removed unused import
 
 // --- 2. Definición del Componente de Página ---
@@ -103,6 +107,9 @@ export const InventarioPage: React.FC = () => {
     actualizarProductoEnLista('inventario', codigo, 'cantidad', num as unknown as RowInv['cantidad']);
   }, [actualizarProductoEnLista]);
 
+  // Handler para los campos del formulario de datos generales
+  const handleFormChange = useFormChangeHandler('inventario');
+
   const columns: IColumn<RowInv>[] = [
     { header: 'Código', accessor: 'codigo' },
     { header: 'Cod. EAN', accessor: 'cod_ean' },
@@ -151,13 +158,39 @@ export const InventarioPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
-      <header className="mb-6 section-card">
-        <h1 className="text-4xl font-extrabold title-inventario">Control de Inventario</h1>
-        <p className="mt-2">Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones.</p>
-      </header>
+      <PageHeader
+        title="Control de Inventario"
+        description="Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones."
+        themeColor="inventario"
+      />
 
       <section className="section-card">
-        <DatosGeneralesForm tipo="inventario" />
+        <DatosGeneralesForm tipo="inventario">
+          {/* Campos específicos para Inventario */}
+          <FormGroup>
+            <Label htmlFor="colaborador_personal">Colaborador / Personal</Label>
+            <StyledInput
+              type="text"
+              id="colaborador_personal"
+              name="colaborador_personal"
+              value={formState.colaborador_personal || ''}
+              onChange={handleFormChange}
+              placeholder="Nombre del colaborador"
+              variant="inventario"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="fecha">Fecha</Label>
+            <StyledInput
+              type="date"
+              id="fecha"
+              name="fecha"
+              value={formState.fecha || ''}
+              onChange={handleFormChange}
+              variant="inventario"
+            />
+          </FormGroup>
+        </DatosGeneralesForm>
       </section>
 
       <section className="section-card">

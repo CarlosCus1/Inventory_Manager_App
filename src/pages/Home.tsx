@@ -39,12 +39,17 @@ const Card: React.FC<{
 };
 
 const Home: React.FC = () => {
-  const items = [
-    <Card key="dev" to="/devoluciones" title="Devoluciones & Logística Inversa" desc="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados." variant="devoluciones" />,
-    <Card key="ped" to="/pedido" title="Pedidos & Disponibilidad" desc="Crea y administra hojas de pedido con información actualizada de stock, sin incluir precios, para optimizar el seguimiento de requerimientos y disponibilidad de inventario." variant="pedido" />,
-    <Card key="inv" to="/inventario" title="Control de Inventario" desc="Realiza el conteo y actualización de existencias para mantener un inventario preciso y actualizado, con reportes que facilitan el análisis y toma de decisiones." variant="inventario" />,
-    <Card key="cmp" to="/comparador" title="Análisis Comparativo de Precios" desc="Ingresa entre 2 y 5 precios para comparar y conocer diferencias absolutas y porcentuales, así como identificar precios mínimos y máximos para optimizar decisiones de compra y venta." variant="comparador" />,
-    <Card key="pln" to="/planificador" title="Distribución Equitativa de Montos" desc="Selecciona un rango de fechas, ingresa un monto total y distribúyelo equitativamente con opción de ajuste manual para una asignación precisa según tus parámetros. Ideal para presupuestos, pagos o asignaciones de costos." variant="planificador" />,
+  const items: {
+    to: string;
+    title: string;
+    desc: string;
+    variant: "devoluciones" | "pedido" | "inventario" | "comparador" | "planificador";
+  }[] = [
+    { to: "/devoluciones", title: "Devoluciones", desc: "Registra devoluciones de productos de forma rápida. Ideal para logística inversa y control de calidad.", variant: "devoluciones" },
+    { to: "/pedido", title: "Pedidos", desc: "Crea y administra hojas de pedido con información de stock para optimizar requerimientos.", variant: "pedido" },
+    { to: "/inventario", title: "Inventario", desc: "Realiza el conteo y actualización de existencias para mantener un inventario preciso.", variant: "inventario" },
+    { to: "/comparador", title: "Comparador", desc: "Analiza precios de la competencia para optimizar tus decisiones de compra y venta.", variant: "comparador" },
+    { to: "/planificador", title: "Planificador", desc: "Distribuye montos en el tiempo de forma equitativa con opción de ajuste manual.", variant: "planificador" },
   ];
 
   return (
@@ -60,44 +65,29 @@ const Home: React.FC = () => {
             {/* Header */}
             <header className="text-center mb-10 section-card">
               <h1 className="text-4xl md:text-5xl font-extrabold mb-3 heading">
-                Panel de control general
+                Panel de Control General
               </h1>
               <p className="text-base md:text-lg muted">
-                Acceso rápido a todos los módulos de gestión de operaciones, con indicadores clave y atajos para generación de reportes.
+                Acceso rápido a todos los módulos de gestión de operaciones.
               </p>
             </header>
 
-            {/* Móvil: lista vertical; Desktop: carrusel */}
+            {/* Contenedor de tarjetas con un grid más simétrico */}
             <section className="section-card">
-              {/* Móvil: pila vertical con aire lateral y ancho máximo controlado */}
-              <div className="md:hidden">
-                <div className="flex flex-col gap-4 px-5">
-                  {items.map((node, i) => (
-                    <div key={`m-${i}`} className="mx-auto w-full max-w-[380px]">
-                      {node}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Desktop: grid horizontal adaptable para mostrar las 5 cards */}
-              <div className="hidden md:block">
-                <div className="px-[clamp(12px,4vw,40px)]">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-x-[clamp(12px,3vw,28px)] gap-y-6 justify-items-center">
-                    {items.map((node, i) => (
-                      <div key={`d-${i}`} className="w-full max-w-[320px] [transform-style:preserve-3d] will-change-transform card-bg-gradient">
-                        <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)]">
-                          <div
-                            className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300"
-                          >
-                            <div className="relative">
-                              <div className="card-hover-glow pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
-                              {node}
-                            </div>
+              <div className="px-[clamp(12px,4vw,40px)]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                  {items.map((item) => (
+                    <div key={item.to} className="w-full max-w-sm">
+                      <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)]">
+                        <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300">
+                          <div className="relative">
+                            <div className="card-hover-glow pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
+                            <Card {...item} />
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

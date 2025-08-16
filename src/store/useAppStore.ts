@@ -10,7 +10,8 @@ import { create } from 'zustand';
 // Middleware de Zustand para persistir parte del estado en un almacenamiento.
 import { persist, createJSONStorage } from 'zustand/middleware';
 // Interfaces de datos que hemos definido.
-import type { IForm, IProducto, IProductoEditado } from '../interfaces';
+import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
+import { consultarRuc, fetchHolidays } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 
 // --- Tipos Adicionales ---
@@ -30,6 +31,7 @@ interface State {
     pedido: IForm;
     inventario: IForm;
     precios: IForm;
+    planificador: IForm;
   };
   // Listas de productos para cada módulo.
   listas: {
@@ -37,11 +39,15 @@ interface State {
     pedido: IProductoEditado[];
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
+    planificador: IProductoEditado[];
   };
   // Indica si el catálogo de productos se está cargando.
   loading: boolean;
   // Para almacenar cualquier error que pueda ocurrir.
   error: string | null;
+  // Cache para RUC y Feriados
+  rucCache: Record<string, unknown>;
+  holidays: Array<{ date: string; name: string }>;
 }
 
 // --- 3. Definición de las Acciones (Actions) ---
@@ -52,7 +58,7 @@ interface Actions {
   // Carga el catálogo de productos desde un archivo JSON.
   cargarCatalogo: () => Promise<void>;
   // Actualiza un campo específico en el estado de un formulario.
-  actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string) => void;
+  actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string | number) => void;
   // Setter específico para motivo de devoluciones
   setMotivoDevolucion: (motivo: MotivoDevolucion) => void;
   // Añade un producto a una lista específica.
@@ -68,6 +74,9 @@ interface Actions {
   eliminarProductoDeLista: (tipo: keyof State['listas'], codigo: string) => void;
   // Limpia una lista y el formulario asociado.
   resetearModulo: (tipo: keyof State['listas']) => void;
+  // Nuevas acciones para cache
+  fetchRuc: (ruc: string) => Promise<RucData>;
+  fetchHolidays: (year: number) => Promise<Array<{ date: string; name: string }>>;
 }
 
 // --- 4. Estado Inicial ---
@@ -81,15 +90,19 @@ const initialState: Omit<State, keyof Actions> = {
     pedido: {},
     inventario: {},
     precios: {},
+    planificador: {},
   },
   listas: {
     devoluciones: [],
     pedido: [],
     inventario: [],
     precios: [],
+    planificador: [],
   },
   loading: false,
   error: null,
+  rucCache: {},
+  holidays: [],
 };
 
 // --- 5. Creación del Store con Zustand ---
@@ -116,8 +129,9 @@ export const useAppStore = create<State & Actions>()(
 
         set({ loading: true, error: null });
         try {
-          console.log('Intentando cargar productos_local.json...');
-          const response = await fetch('/productos_local.json');
+          const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
+          console.log(`Intentando cargar catálogo desde: ${url}`);
+          const response = await fetch(url);
           console.log('Respuesta de fetch:', response);
           if (!response.ok) {
             const errorText = await response.text();
@@ -221,6 +235,33 @@ export const useAppStore = create<State & Actions>()(
             [tipo]: initialState.formState[tipo],
           }
         }));
+      },
+
+      fetchRuc: async (ruc) => {
+        const cache = get().rucCache;
+        if (cache[ruc]) {
+          return cache[ruc] as RucData;
+        }
+        const data = await consultarRuc(ruc);
+        set(state => ({
+          rucCache: {
+            ...state.rucCache,
+            [ruc]: data,
+          }
+        }));
+        return data;
+      },
+
+      fetchHolidays: async (year) => {
+        const holidays = get().holidays;
+        // A simple check if holidays for any year are already loaded.
+        // A more robust implementation would check for the specific year.
+        if (holidays.length > 0) {
+          return holidays;
+        }
+        const data = await fetchHolidays(year);
+        set({ holidays: data });
+        return data;
       }
     }),
     {
