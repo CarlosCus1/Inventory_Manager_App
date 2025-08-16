@@ -397,14 +397,6 @@ export const PlanificadorPage: React.FC = () => {
 
         {/* Page Content */}
         <div className="mt-4 space-y-8">
-          <SeleccionFechas
-            selectedDates={plannerState.selectedDates}
-            onCargarRespaldoClick={handleCargarRespaldoClick}
-            fetchCalendarEvents={fetchCalendarEvents}
-            handleDateClick={handleDateClick}
-            handleDayCellMount={handleDayCellMount}
-          />
-
           <DatosGeneralesPlanner
             formState={formState}
             onFormChange={handleFormChange}
@@ -415,6 +407,14 @@ export const PlanificadorPage: React.FC = () => {
             isLoadingRuc={isLoadingRuc}
             rucError={rucError}
             onCalcular={calcular}
+          />
+
+          <SeleccionFechas
+            selectedDates={plannerState.selectedDates}
+            onCargarRespaldoClick={handleCargarRespaldoClick}
+            fetchCalendarEvents={fetchCalendarEvents}
+            handleDateClick={handleDateClick}
+            handleDayCellMount={handleDayCellMount}
           />
 
           <ResultadosPlanner
