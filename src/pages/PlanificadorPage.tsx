@@ -1,123 +1,83 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 
 import * as DateUtils from '../utils/dateUtils';
-import { calcular as calcularApi, generarReporte, generarReporteJson, fetchHolidays } from '../utils/api'; // Renamed calcular to calcularApi
-import { MAX_FECHAS, LABELS } from '../utils/config';
-import { mostrarToast, mostrarLoading, downloadFile, normalizeStringForFilename } from '../utils/uiUtils';
+import { calcular as calcularApi } from '../utils/api'; // Renamed calcular to calcularApi
+import { MAX_FECHAS } from '../utils/config';
 import { FormValidator } from '../utils/formValidator';
 
-import { SummaryTable } from '../components/planner/SummaryTable';
-import { DetailTable } from '../components/planner/DetailTable';
-import { ComparisonTotals } from '../components/planner/ComparisonTotals';
-
-import { RUCManager } from '../../modulo_planificador/public/js/rucManager.js'; // Will be refactored
-import { GraficoManager } from '../../modulo_planificador/public/js/graficoManager.js'; // Will be refactored
-import { FileManager } from '../../modulo_planificador/public/js/fileManager.js'; // Will be refactored
-import { NavigationManager } from '../../modulo_planificador/public/js/navigationManager.js'; // Will be refactored
-import { StateManager } from '../../modulo_planificador/public/js/stateManager.js'; // Will be replaced
-
-// Import CSS files
-import '../../modulo_planificador/public/css/style.css';
-import '../../modulo_planificador/public/css/calendar-base.css';
-import '../../modulo_planificador/public/css/calendar-custom.css';
+import { useAppStore } from '../store/useAppStore';
+import type { IForm } from '../interfaces';
+import { useRucDni } from '../hooks/useRucDni';
+import { type DateClickArg } from '@fullcalendar/interaction';
+import { type DayCellContentArg } from '@fullcalendar/core';
+import { SeleccionFechas } from '../components/planner/SeleccionFechas';
+import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
+import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
+import './PlanificadorPage.css';
 
 // Define initial state interface (for better type safety)
+// This local state only holds data not related to the form itself.
 interface PlannerState {
-  montoOriginal: number;
   selectedDates: Set<string>;
   fechasOrdenadas: string[];
-  montosAsignados: Record<string, any>;
-  resumenMensual: Record<string, any>;
-  cliente: string;
-  ruc: string;
-  descCliente: string;
-  linea: string;
-  pedido: string;
-  codigoCliente: string;
+  montosAsignados: Record<string, number>;
+  resumenMensual: Record<string, number>;
   isDataDirty: boolean;
 }
 
 export const PlanificadorPage: React.FC = () => {
   const [plannerState, setPlannerState] = useState<PlannerState>({
-    montoOriginal: 0,
     selectedDates: new Set(),
     fechasOrdenadas: [],
     montosAsignados: {},
     resumenMensual: {},
-    cliente: '',
-    ruc: '',
-    descCliente: '',
-    linea: '',
-    pedido: '',
-    codigoCliente: '',
     isDataDirty: false,
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
+  const [isCalcularDisabled, setCalcularDisabled] = useState(true);
 
-  const [currentPage, setCurrentPage] = useState(0); // 0: Fechas, 1: Cliente, 2: Resultados
+  const fetchHolidays = useAppStore(state => state.fetchHolidays);
+  const formState = useAppStore(state => state.formState.planificador);
+  const actualizarFormulario = useAppStore(state => state.actualizarFormulario);
 
-  const feriadosCargados = useRef(new Map<string, string>()); // Use useRef for mutable map
+  const {
+    rucEstado,
+    rucCondicion,
+    isLoadingRuc,
+    rucError,
+    handleRucDniChange,
+    handleRazonSocialManualChange,
+  } = useRucDni('planificador');
 
-  // Refs for DOM elements that were previously accessed by getElementById
-  const montoInputRef = useRef<HTMLInputElement>(null);
-  const rucInputRef = useRef<HTMLInputElement>(null);
-  const descClienteInputRef = useRef<HTMLInputElement>(null);
-  const lineaInputRef = useRef<HTMLSelectElement>(null);
-  const pedidoInputRef = useRef<HTMLInputElement>(null);
-  const codigoClienteInputRef = useRef<HTMLInputElement>(null);
-  const btnCalcularRef = useRef<HTMLButtonElement>(null);
-  const btnDescargarReportesRef = useRef<HTMLButtonElement>(null);
-  const btnActualizarCalculosRef = useRef<HTMLButtonElement>(null);
-  const btnCargarRespaldoRef = useRef<HTMLButtonElement>(null);
-  const btnReiniciarTareaRef = useRef<HTMLButtonElement>(null);
-  const themeToggleRef = useRef<HTMLDivElement>(null);
-  const recalculateContainerRef = useRef<HTMLDivElement>(null);
-  const btnRecalculateRef = useRef<HTMLButtonElement>(null);
-  const calendarioContainerRef = useRef<HTMLDivElement>(null);
-  const listaFechasUlRef = useRef<HTMLUListElement>(null);
-  const contadorFechasSpanRef = useRef<HTMLSpanElement>(null);
-  const rucErrorRef = useRef<HTMLSpanElement>(null);
-  const rucLoadingRef = useRef<HTMLDivElement>(null);
-  const rucResultRef = useRef<HTMLDivElement>(null);
-  const razonSocialManualMessageRef = useRef<HTMLSpanElement>(null);
-  const errorMontoRef = useRef<HTMLSpanElement>(null);
-  const errorPedidoRef = useRef<HTMLSpanElement>(null);
-  const errorDescClienteRef = useRef<HTMLSpanElement>(null);
+  const feriadosCargados = useRef(new Map<string, string>());
 
-  // Placeholder for UIUtils.mostrarToast
-  const mostrarToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning') => {
-    console.log(`Toast (${type}): ${message}`);
-    // In a real app, you would render a toast component here
-  }, []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to fetch calendar events (holidays)
-  const fetchCalendarEvents = useCallback(async (fetchInfo: any, successCallback: (events: any[]) => void, failureCallback: (error: any) => void) => {
+  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
     try {
       const year = fetchInfo.start.getFullYear();
-      const feriados = await fetchHolidays(year);
+      const feriados = await fetchHolidays(year) as Array<{ date: string; name: string }>;
 
       feriadosCargados.current.clear();
-      feriados.forEach(feriado => {
+      feriados.forEach((feriado) => {
         feriadosCargados.current.set(feriado.date, feriado.name);
       });
 
       successCallback([]); // Return empty array for events, as styling is handled by dayCellDidMount
     } catch (error) {
       console.error('Error al cargar eventos del calendario:', error);
-      mostrarToast('No se pudieron cargar los feriados.', 'error');
-      failureCallback(error);
+      failureCallback(error as Error);
     }
-  }, [feriadosCargados, mostrarToast]);
+  }, [fetchHolidays]);
 
-  const handleDateClick = useCallback((arg: any) => {
+  const handleDateClick = useCallback((arg: DateClickArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
     const isHoliday = feriadosCargados.current.has(dateStr);
     const isSunday = arg.date.getDay() === 0;
 
     if (DateUtils.esPasado(arg.date) || isSunday || isHoliday) {
-      mostrarToast('No se pueden seleccionar domingos, feriados o días pasados.', 'info');
       return;
     }
 
@@ -127,20 +87,16 @@ export const PlanificadorPage: React.FC = () => {
         newSelectedDates.delete(dateStr);
       } else {
         if (newSelectedDates.size >= MAX_FECHAS) {
-          mostrarToast(`Máximo ${MAX_FECHAS} fechas permitidas`, 'error');
           return prevState; // Return previous state if max dates reached
         }
         newSelectedDates.add(dateStr);
       }
       // No direct classList manipulation here, React will re-render based on state
-      return { ...prevState, selectedDates: newSelectedDates };
+      return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
+  }, [feriadosCargados]);
 
-    // handleFormChange will be called by a useEffect that watches plannerState
-    // actualizarListaFechas will be called by a useEffect that watches plannerState.selectedDates
-  }, [feriadosCargados, mostrarToast, MAX_FECHAS]);
-
-  const handleDayCellMount = useCallback((arg: any) => {
+  const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
     
     // Apply class if the date is selected
@@ -153,220 +109,216 @@ export const PlanificadorPage: React.FC = () => {
       arg.el.classList.add('fc-holiday');
       arg.el.setAttribute('title', feriadosCargados.current.get(dateStr) || '');
     }
-  }, [plannerState.selectedDates, feriadosCargados]);
+  }, [plannerState.selectedDates]);
 
-  // Placeholder for FullCalendar initialization
-  const initCalendar = useCallback(() => {
-    if (calendarioContainerRef.current) {
-      console.log('Initializing FullCalendar...');
-      const calendar = new FullCalendar.Calendar(calendarioContainerRef.current, {
-        plugins: [dayGridPlugin, interactionPlugin],
-        locale: 'es',
-        initialView: 'dayGridMonth',
-        height: 'auto',
-        fixedWeekCount: true,
-        headerToolbar: {
-          left: 'prev,today,next',
-          center: 'title',
-          right: ''
-        },
-        buttonText: {
-          today: 'Hoy'
-        },
-        eventSources: [
-          {
-            events: fetchCalendarEvents // Use the new fetchCalendarEvents useCallback
-          }
-        ],
-        dateClick: handleDateClick, // Use the new handleDateClick useCallback
-        dayCellDidMount: handleDayCellMount // Use the new handleDayCellMount useCallback
-      });
-      calendar.render();
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    actualizarFormulario('planificador', name as keyof IForm, value);
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  }, [feriadosCargados, fetchCalendarEvents, handleDateClick, handleDayCellMount]);
+    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+  };
 
-  const toggleRecalculateButton = useCallback((show: boolean) => {
-    if (recalculateContainerRef.current) {
-      recalculateContainerRef.current.style.display = show ? 'block' : 'none';
+  const handleMontoAjustadoChange = (fecha: string, nuevoMonto: string) => {
+    const montoNumerico = parseFloat(nuevoMonto);
+    if (isNaN(montoNumerico)) {
+      // Si el valor no es un número, se podría manejar el error o simplemente no actualizar
+      // Por ahora, lo guardaremos como está para permitir la limpieza del campo
     }
-    if (btnDescargarReportesRef.current) {
-      btnDescargarReportesRef.current.disabled = show;
-    }
-  }, []);
+    setMontosAjustados(prev => ({
+      ...prev,
+      [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
+    }));
+    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+  };
 
-  const _updateActionButtonsState = useCallback(() => {
-    const monto = parseFloat(montoInputRef.current?.value || '0');
+  // Recalculate validation state whenever form or selections change
+  useEffect(() => {
+    const monto = Number(formState.montoOriginal) || 0;
     const fechas = Array.from(plannerState.selectedDates);
-    const razonSocial = descClienteInputRef.current?.value.trim() || '';
-    const pedido = pedidoInputRef.current?.value.trim() || '';
-
-    if (!btnCalcularRef.current) return;
+    const pedido = formState.pedido_planificador?.trim() || '';
+    const cliente = formState.cliente?.trim() || '';
 
     const isMontoValid = monto > 0;
     const areFechasValid = fechas.length > 0;
-    const isClienteValid = razonSocial.length > 0;
+    const isClienteValid = cliente.length > 0;
     const isPedidoValid = pedido.length > 0;
 
     const canCalculate = isMontoValid && areFechasValid && isClienteValid && isPedidoValid;
 
-    btnCalcularRef.current.disabled = !canCalculate;
+    setCalcularDisabled(!canCalculate);
 
-    if (!canCalculate) {
-      const tooltips = [];
-      if (!isMontoValid) tooltips.push('Ingrese un monto válido.');
-      if (!areFechasValid) tooltips.push('Seleccione al menos una fecha.');
-      if (!isClienteValid) tooltips.push('Ingrese la razón social del cliente.');
-      if (!isPedidoValid) tooltips.push('Ingrese el código del pedido.');
-      btnCalcularRef.current.title = tooltips.join(' ');
-    } else {
-      btnCalcularRef.current.title = 'Realizar el cálculo de distribución';
-    }
-  }, [plannerState.selectedDates]);
-
-  const handleFormChange = useCallback(() => {
-    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
-    toggleRecalculateButton(true);
-    _updateActionButtonsState();
-  }, [toggleRecalculateButton, _updateActionButtonsState]);
-
-  const _getValidationData = useCallback(() => {
-    const monto = parseFloat(montoInputRef.current?.value || '0');
-    const fechas = Array.from(plannerState.selectedDates);
-    const razonSocial = descClienteInputRef.current?.value.trim() || '';
-    const pedido = pedidoInputRef.current?.value.trim() || '';
-
-    return { monto, fechas, razonSocial, pedido };
-  }, [plannerState.selectedDates]);
+  }, [formState, plannerState.selectedDates]);
 
   const _getAndValidateFormData = useCallback(() => {
-    const monto = parseFloat(montoInputRef.current?.value || '0');
-    const ruc = rucInputRef.current?.value.trim() || '';
-    const linea = lineaInputRef.current?.value || '';
-    const pedido = pedidoInputRef.current?.value.value || '';
+    const monto = Number(formState.montoOriginal) || 0;
+    const ruc = formState.documento_cliente || '';
+    const razonSocial = formState.cliente || '';
+    const pedido = formState.pedido_planificador || '';
     const fechas = Array.from(plannerState.selectedDates);
-    const razonSocial = descClienteInputRef.current?.value.trim() || '';
-    const codigoCliente = codigoClienteInputRef.current?.value.trim() || '';
 
     const { fieldErrors, generalErrors, isValid } = FormValidator.validate({
       monto,
       fechas,
-      ruc,
-      razonSocial,
-      pedido
+      ruc: ruc.trim(),
+      razonSocial: razonSocial.trim(),
+      pedido: pedido.trim()
     });
 
     return {
       fieldErrors,
       generalErrors,
       isValid,
-      payload: { montoTotal: monto, fechasValidas: fechas, razonSocial },
-      uiData: { linea, pedido, ruc, codigoCliente }
+      payload: { montoTotal: monto, fechasValidas: fechas, razonSocial: razonSocial.trim() },
+      uiData: { ...formState } // Pass all form state to uiData
     };
-  }, [plannerState.selectedDates]);
+  }, [formState, plannerState.selectedDates]);
 
   const calcular = useCallback(async () => {
-    const { fieldErrors, generalErrors, isValid, payload, uiData } = _getAndValidateFormData();
+    const { fieldErrors, generalErrors, isValid, payload } = _getAndValidateFormData();
 
     if (!isValid) {
-      mostrarToast(generalErrors.join(' | '), 'error');
-      // Display field errors
-      if (errorMontoRef.current) errorMontoRef.current.textContent = fieldErrors.find(e => e.field === 'monto')?.message || '';
-      if (rucErrorRef.current) rucErrorRef.current.textContent = fieldErrors.find(e => e.field === 'ruc')?.message || '';
-      if (errorDescClienteRef.current) errorDescClienteRef.current.textContent = fieldErrors.find(e => e.field === 'desc-cliente')?.message || '';
-      if (errorPedidoRef.current) errorPedidoRef.current.textContent = fieldErrors.find(e => e.field === 'pedido')?.message || '';
+      const newErrors = fieldErrors.reduce((acc, error) => {
+        // Map validator field names to component IDs
+        const fieldMap: Record<string, string> = {
+          monto: 'montoOriginal',
+          razonSocial: 'cliente',
+          ruc: 'documento_cliente',
+          pedido: 'pedido_planificador'
+        };
+        const componentId = fieldMap[error.field] || error.field;
+        acc[componentId] = error.message;
+        return acc;
+      }, {} as Record<string, string>);
+      setErrors(newErrors);
+
+      if (generalErrors.length > 0) {
+        // Here you might want to use a toast notification library
+        alert(`Por favor revise los siguientes puntos:\n- ${generalErrors.join('\n- ')}`);
+      }
       return;
     }
     
+    setErrors({}); // Clear errors on successful validation
+
     try {
-      mostrarLoading(true, 'Calculando distribución...');
+      // mostrarLoading(true, 'Calculando distribución...');
       const resultado = await calcularApi(payload); // Renamed to avoid conflict with local function
 
+      // Update local state with calculation results
       setPlannerState(prevState => ({
         ...prevState,
-        montoOriginal: payload.montoTotal,
         fechasOrdenadas: payload.fechasValidas,
         montosAsignados: resultado.montosAsignados,
         resumenMensual: resultado.resumenMensual,
-        linea: uiData.linea,
-        pedido: uiData.pedido,
-        ruc: uiData.ruc,
-        codigoCliente: uiData.codigoCliente,
-        descCliente: payload.razonSocial,
         isDataDirty: false
       }));
+      // Initialize adjusted amounts with the calculated ones
+      setMontosAjustados(resultado.montosAsignados);
+
+      // Form data is already in the global store, so no need to set it here.
       
       // mostrarResults(); // Now handled by React rendering
-      toggleRecalculateButton(false);
-      setCurrentPage(2); // Go to results page
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error en cálculo:', error);
-      mostrarToast(error.message || 'Error al realizar el cálculo', 'error');
+      // mostrarToast((error as Error).message || 'Error al realizar el cálculo', 'error');
     } finally {
-      mostrarLoading(false);
+      // mostrarLoading(false);
     }
-  }, [_getAndValidateFormData, mostrarToast, mostrarLoading, toggleRecalculateButton, setCurrentPage]);
+  }, [_getAndValidateFormData]);
 
-  const recalcular = useCallback(async () => {
-    await calcular();
-  }, [calcular]);
+  const handleExportAjustado = useCallback(async () => {
+    // This function will be similar to other handleExport functions
+    // It will send the adjusted data to the backend
+    const payload = {
+      tipo: 'planificador',
+      form: formState,
+      // The backend expects a 'montosAsignados' key in the main data object
+      montosAsignados: montosAjustados,
+      fechasOrdenadas: plannerState.fechasOrdenadas,
+      resumenMensual: plannerState.resumenMensual,
+      montoOriginal: formState.montoOriginal,
+      razonSocial: formState.cliente,
+      // Pass other necessary data from formState
+      codigoCliente: formState.codigo_cliente,
+      ruc: formState.documento_cliente,
+      linea: formState.linea_planificador_color,
+      pedido: formState.pedido_planificador,
+    };
 
-  const generarAmbosReportes = useCallback(async () => {
-    if (plannerState.isDataDirty) {
-      mostrarToast('Hay cambios sin calcular. Por favor, actualice el cálculo antes de descargar los reportes.', 'warning');
-      return;
-    }
-  
-    mostrarLoading(true, 'Generando reportes...');
     try {
-      const reportData = {
-        montoOriginal: plannerState.montoOriginal,
-        fechasOrdenadas: Array.from(plannerState.selectedDates), // Convert Set to Array
-        montosAsignados: plannerState.montosAsignados,
-        resumenMensual: plannerState.resumenMensual,
-        razonSocial: plannerState.descCliente,
-        ruc: plannerState.ruc,
-        linea: plannerState.linea,
-        pedido: plannerState.pedido,
-        codigoCliente: plannerState.codigoCliente
-      };
-      const baseFilename = `${DateUtils.formatearMesAnioParaFilename(new Date())}-${normalizeStringForFilename(plannerState.pedido)}-${normalizeStringForFilename(plannerState.descCliente)}`; // Use normalizeStringForFilename
-
-      // Generate and download Excel report
-      const excelBlob = await generarReporte(reportData);
-      const excelFilename = `reporte_${baseFilename}.xlsx`;
-      downloadFile(excelBlob, excelFilename);
-      mostrarToast('Reporte Excel generado correctamente', 'success');
-
-      // Generate and download JSON report
-      const jsonBlob = await generarReporteJson(reportData);
-      const jsonFilename = `respaldo_${baseFilename}.json`;
-      downloadFile(jsonBlob, jsonFilename);
-      mostrarToast('Respaldo JSON generado correctamente', 'success');
-
-      // Clear local storage after successful report download
-      localStorage.removeItem('planificadorAppData');
-      setPlannerState({ // Reset plannerState to initial values
-        montoOriginal: 0,
-        selectedDates: new Set(),
-        fechasOrdenadas: [],
-        montosAsignados: {},
-        resumenMensual: {},
-        cliente: '',
-        ruc: '',
-        descCliente: '',
-        linea: '',
-        pedido: '',
-        codigoCliente: '',
-        isDataDirty: false,
+      const response = await fetch('http://localhost:5000/export-xlsx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-    } catch (error: any) {
-      console.error('Error generando reportes:', error);
-      mostrarToast(error.message || 'Error al generar uno o ambos reportes', 'error');
-    } finally {
-      mostrarLoading(false);
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor al exportar.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'planificador_ajustado.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Error al exportar a Excel:", error);
+      alert("No se pudo generar el archivo de Excel.");
     }
-  }, [plannerState, mostrarToast, mostrarLoading, downloadFile]);
+  }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual]);
+
+  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await file.text();
+      const data = JSON.parse(content);
+
+      // Basic validation of the loaded data
+      if (data && data.montosAsignados && data.selectedDates) {
+        const localPlannerUpdate: Partial<PlannerState> = {
+            selectedDates: new Set(data.selectedDates || []),
+            fechasOrdenadas: data.fechasOrdenadas || [],
+            montosAsignados: data.montosAsignados || {},
+            resumenMensual: data.resumenMensual || {},
+            isDataDirty: false,
+        };
+        setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
+        setMontosAjustados(data.montosAsignados || {});
+
+        // Also update the global form state
+        const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+        formFieldsToUpdate.forEach(field => {
+            const value = data[field];
+            if (value !== undefined) {
+                actualizarFormulario('planificador', field, value);
+            }
+        });
+
+        // mostrarToast('Respaldo cargado correctamente.', 'success');
+      } else {
+        // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error');
+      }
+    } catch (error) {
+      console.error('Error al cargar el respaldo:', error);
+      // mostrarToast('Error al procesar el archivo de respaldo.', 'error');
+    }
+
+    // Reset file input to allow loading the same file again
+    if (event.target) {
+      event.target.value = '';
+    }
+  }, [actualizarFormulario]);
+
+  const handleCargarRespaldoClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // Equivalent of PlanificadorApp.init()
   useEffect(() => {
@@ -374,244 +326,92 @@ export const PlanificadorPage: React.FC = () => {
       try {
         console.log('PlanificadorPage: Initializing app...');
 
-        // Migrate initComponents logic here
-        initCalendar(); // Initialize calendar
-
         // Example of migrating state from localStorage (if any)
         const cachedState = localStorage.getItem('planificadorAppData');
         if (cachedState) {
-          const parsedState: PlannerState = JSON.parse(cachedState);
-          if (Array.isArray(parsedState.selectedDates)) {
-            parsedState.selectedDates = new Set(parsedState.selectedDates);
+          const parsedState = JSON.parse(cachedState) as { plannerState: PlannerState, formState: { planificador: IForm } };
+          if (parsedState.plannerState && Array.isArray(parsedState.plannerState.selectedDates)) {
+            parsedState.plannerState.selectedDates = new Set(parsedState.plannerState.selectedDates);
           }
-          setPlannerState(parsedState);
+          setPlannerState(prevState => ({...prevState, ...parsedState.plannerState}));
+
+          const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+          formFieldsToUpdate.forEach(field => {
+              const value = parsedState.formState?.planificador?.[field];
+              if (value !== undefined) {
+                  actualizarFormulario('planificador', field, value);
+              }
+          });
         }
-
-        // Update UI elements based on loaded state (using refs)
-        if (montoInputRef.current) montoInputRef.current.value = plannerState.montoOriginal.toString();
-        if (rucInputRef.current) rucInputRef.current.value = plannerState.ruc;
-        if (descClienteInputRef.current) descClienteInputRef.current.value = plannerState.descCliente;
-        if (lineaInputRef.current) lineaInputRef.current.current.value = plannerState.linea || 'otros';
-        if (pedidoInputRef.current) pedidoInputRef.current.value = plannerState.pedido;
-        if (codigoClienteInputRef.current) codigoClienteInputRef.current.value = plannerState.codigoCliente;
-
-        // Re-render calendar and selected dates list (will be handled by React state)
-        // actualizarListaFechas(Array.from(plannerState.selectedDates));
-        // if (Object.keys(plannerState.montosAsignados).length > 0) {
-        //     mostrarResults();
-        // }
-        // toggleRecalculateButton(plannerState.isDataDirty);
-
-        // setupEventListeners will be handled by React's event system
-        // _updateActionButtonsState will be a derived state or effect
       } catch (error) {
         console.error('Error initializing PlanificadorPage:', error);
-        mostrarToast('Error al iniciar la aplicación', 'error');
+        // mostrarToast('Error al iniciar la aplicación', 'error');
       }
     };
 
     initializeApp();
-  }, [initCalendar, plannerState, mostrarToast]); // Add plannerState to dependencies to update UI on state change
+  }, [actualizarFormulario]);
 
-  // Effect to update the list of selected dates whenever plannerState.selectedDates changes
-  useEffect(() => {
-    const fechasArray = Array.from(plannerState.selectedDates);
-    if (listaFechasUlRef.current && contadorFechasSpanRef.current) {
-      fechasArray.sort((a, b) => DateUtils.parsearFecha(a).getTime() - DateUtils.parsearFecha(b).getTime());
-
-      listaFechasUlRef.current.innerHTML = ''; // Clear existing list
-      fechasArray.forEach(fecha => {
-        const diasRestantes = DateUtils.diasDesdeHoy(fecha);
-        let textoDias = '';
-        switch (diasRestantes) {
-            case 0:
-                textoDias = ' (Hoy)';
-                break;
-            case 1:
-                textoDias = ' (Mañana)';
-                break;
-            case -1:
-                textoDias = ' (Ayer)';
-                break;
-            default:
-                if (diasRestantes > 1) {
-                    textoDias = ` (en ${diasRestantes} días)`;
-                } else {
-                    textoDias = ` (hace ${Math.abs(diasRestantes)} días)`;
-                }
-                break;
-        }
-        const li = document.createElement('li');
-        li.textContent = `${fecha}${textoDias}`;
-        listaFechasUlRef.current?.appendChild(li);
-      });
-
-      contadorFechasSpanRef.current.textContent = `(${fechasArray.length})`;
-    }
-  }, [plannerState.selectedDates]);
 
   return (
-    <>
-      <div className="banner-container" title="Desarrollado por Carlos Cusi, con la asistencia de Gemini.">
-        <p id="banner-status-text">Planificador de Vencimientos v2.1</p>
-      </div>
-      <header>
-        <div className="header-container">
-          <h1 className="main-title">Planificador de Vencimientos</h1>
-          {/* Interruptor de Tema Mejorado */}
-          <div id="theme-toggle" role="switch" aria-checked="false" aria-label="Cambiar tema" tabIndex={0} ref={themeToggleRef}>
-            <div className="toggle-thumb">
-              <span className="icon sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h3.75a.75.75 0 01.75.75zM18 12a.75.75 0 01-.75.75h-3.75a.75.75 0 010-1.5h3.75a.75.75 0 01.75.75zM12 18a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zM12 6a6 6 0 110 12 6 6 0 010-12zM4.929 4.929a.75.75 0 011.06 0l1.591 1.59a.75.75 0 01-1.061 1.06l-1.59-1.59a.75.75 0 010-1.061zm12.021 0a.75.75 0 010 1.06l-1.591 1.59a.75.75 0 11-1.061-1.06l1.59-1.59a.75.75 0 011.061 0zm-1.06 12.021a.75.75 0 01-1.06 0l-1.59-1.59a.75.75 0 011.06-1.061l1.591 1.59a.75.75 0 010 1.061zm-12.021 0a.75.75 0 010-1.06l1.59-1.59a.75.75 0 011.061 1.06l-1.59 1.59a.75.75 0 01-1.061 0z" /></svg></span>
-              <span className="icon moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.855 11.154 11.154 0 00-3.91 7.647c0 4.935 3.993 8.928 8.928 8.928a11.154 11.154 0 007.647-3.91.75.75 0 01.855.162 8.25 8.25 0 11-13.92-8.928 8.25 8.25 0 013.91-7.647z" clipRule="evenodd" /></svg></span>
-            </div>
-          </div>
+    <div className="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text min-h-screen font-sans">
+      <header className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white shadow-md">
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+          <h1 className="text-xl font-bold">Planificador de Vencimientos</h1>
+          {/* Theme toggle can be added here if needed */}
         </div>
       </header>
 
-      <main>
-        <div className="progress-indicator">
-          <div className={`step ${currentPage === 0 ? 'active' : ''}`} data-step="0" title="Ir a la selección de fechas" onClick={() => setCurrentPage(0)}><span>1</span> Fechas</div>
-          <div className={`step ${currentPage === 1 ? 'active' : ''}`} data-step="1" title="Ir a los datos del cliente" onClick={() => setCurrentPage(1)}><span>2</span> Cliente</div>
-          <div className={`step ${currentPage === 2 ? 'active' : ''}`} data-step="2" title="Ir a los resultados" onClick={() => setCurrentPage(2)}><span>3</span> Resultados</div>
-        </div>
-
-        <div id="loading-overlay" ref={rucLoadingRef}> {/* Reusing rucLoadingRef for general loading overlay */}
+      <main className="container mx-auto p-4">
+        <div id="loading-overlay" style={{ display: isLoadingRuc ? 'flex' : 'none' }}>
           <div className="spinner"></div>
           <p id="loading-message">Cargando...</p>
         </div>
 
         <div id="toast-container"></div>
 
-        {/* Sección 1: Selección de Fechas */}
-        <section id="seleccion-fechas" className={`page ${currentPage === 0 ? 'active' : ''}`}>
-          <h2>Selección de Fechas</h2>
-          <div id="calendario-container" ref={calendarioContainerRef}></div>
-          
-          <div className="fechas-seleccionadas">
-            <div className="fechas-header">
-              <h3>Fechas Seleccionadas <span id="contador-fechas" ref={contadorFechasSpanRef}>(0)</span></h3>
-            </div>
-            <ul id="lista-fechas" ref={listaFechasUlRef}>
-              {plannerState.fechasOrdenadas.map(fecha => {
-                const diasRestantes = DateUtils.diasDesdeHoy(fecha);
-                let textoDias = '';
-                switch (diasRestantes) {
-                    case 0:
-                        textoDias = ' (Hoy)';
-                        break;
-                    case 1:
-                        textoDias = ' (Mañana)';
-                        break;
-                    case -1:
-                        textoDias = ' (Ayer)';
-                        break;
-                    default:
-                        if (diasRestantes > 1) {
-                            textoDias = ` (en ${diasRestantes} días)`;
-                        } else {
-                            textoDias = ` (hace ${Math.abs(diasRestantes)} días)`;
-                        }
-                        break;
-                }
-                return <li key={fecha}>{`${fecha}${textoDias}`}</li>;
-              })}
-            </ul>
-          </div>
-          
-          <div className="form-actions">
-            <button type="button" id="btn-cargar-respaldo" className="btn-secondary" ref={btnCargarRespaldoRef}>Cargar Respaldo</button>
-            <button type="button" id="btn-reiniciar-tarea" className="btn-primary large-button" ref={btnReiniciarTareaRef}>Empezar de Nuevo</button>
-          </div>
-        </section>
+        {/* Hidden File Input for Backup Loading */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="application/json"
+          style={{ display: 'none' }}
+        />
 
-        {/* Sección 2: Datos del Cliente */}
-        <section id="datos-cliente" className={`page ${currentPage === 1 ? 'active' : ''}`}>
-          <h2>Datos del Cliente</h2>
-          <form id="formulario-cliente">
-            <div className="form-group">
-              <label htmlFor="monto">Monto Total (S/)</label>
-              <input type="number" id="monto" step="0.01" min="0" required ref={montoInputRef} />
-              <span className="error-message" id="error-monto" ref={errorMontoRef}></span>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="ruc">RUC</label>
-              <input type="text" id="ruc" maxLength={11} pattern="\d{11}" required ref={rucInputRef} />
-              <span className="error-message" id="error-ruc" ref={rucErrorRef}></span>
-              <div id="ruc-loading" className="loading-indicator" hidden ref={rucLoadingRef}> {/* This ref is duplicated, will need to be handled */}
-                <div className="spinner"></div>
-                <span>Buscando RUC...</span>
-              </div>
-              <div id="ruc-result" className="ruc-result" hidden ref={rucResultRef}></div>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="desc-cliente">Razón Social</label>
-              <input type="text" id="desc-cliente" ref={descClienteInputRef} />
-              <span className="error-message" id="error-desc-cliente" ref={errorDescClienteRef}></span>
-              <span className="info-message" id="manual-razon-social-message" hidden ref={razonSocialManualMessageRef}></span>
-            </div>
+        {/* Page Content */}
+        <div className="mt-4 space-y-8">
+          <DatosGeneralesPlanner
+            formState={formState}
+            onFormChange={handleFormChange}
+            onRucDniChange={handleRucDniChange}
+            onRazonSocialManualChange={handleRazonSocialManualChange}
+            rucEstado={rucEstado}
+            rucCondicion={rucCondicion}
+            isLoadingRuc={isLoadingRuc}
+            rucError={rucError}
+          />
 
-            <div className="form-group">
-              <label htmlFor="codigo-cliente">Código de Cliente (Opcional)</label>
-              <input type="text" id="codigo-cliente" maxLength={20} ref={codigoClienteInputRef} />
-            </div>
+          <SeleccionFechas
+            selectedDates={plannerState.selectedDates}
+            onCargarRespaldoClick={handleCargarRespaldoClick}
+            fetchCalendarEvents={fetchCalendarEvents}
+            handleDateClick={handleDateClick}
+            handleDayCellMount={handleDayCellMount}
+            onCalcular={calcular}
+            isCalcularDisabled={isCalcularDisabled}
+          />
 
-            <div className="form-group">
-              <label htmlFor="linea">Línea</label>
-              <select id="linea" required ref={lineaInputRef}>
-                <option value="viniball">Viniball</option>
-                <option value="vinifan">Vinifan</option>
-                <option value="otros">Otros</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pedido">Código de Pedido (Requerido)</label>
-              <input type="text" id="pedido" maxLength={50} required ref={pedidoInputRef} />
-              <span className="error-message" id="error-pedido" ref={errorPedidoRef}></span>
-            </div>
-            
-            <div className="form-actions">
-              <button type="button" id="btn-calcular" className="btn-primary" ref={btnCalcularRef}>Calcular</button>
-            </div>
-          </form>
-        </section>
-
-        {/* Sección 3: Resultados */}
-        <section id="resultados" className={`page ${currentPage === 2 ? 'active' : ''}`}>
-          <h2>Results</h2>
-          <div className="results-layout">
-            <div className="results-top-section">
-              <SummaryTable
-                resumenMensual={plannerState.resumenMensual}
-                montoOriginal={plannerState.montoOriginal}
-              />
-              <ComparisonTotals
-                montoOriginal={plannerState.montoOriginal}
-                montosAsignados={plannerState.montosAsignados}
-              />
-            </div>
-            <DetailTable
-              montosAsignados={plannerState.montosAsignados}
-            />
-            <div className="results-chart-section">
-              <h3>Resumen Mensual</h3>
-              <canvas id="grafico-resumen"></canvas> {/* Chart.js will render here */}
-              </div>
-            </div>
-          </div>
-          <div id="recalculate-container" style={{ display: 'none' }} ref={recalculateContainerRef}>
-            <p>Los datos han cambiado. Por favor, actualice el cálculo.</p>
-            <button type="button" id="btn-recalculate" className="btn-primary" ref={btnRecalculateRef}>Actualizar Cálculo</button>
-          </div>
-          <div className="form-actions">
-            <button type="button" id="btn-actualizar-calculos" className="btn-secondary" ref={btnActualizarCalculosRef}>Reiniciar Cálculo</button>
-            <button type="button" id="btn-descargar-reportes" className="btn-primary" ref={btnDescargarReportesRef}>Descargar Reportes</button>
-            <button type="button" id="btn-reiniciar" className="btn-secondary">Empezar de Nuevo</button>
-          </div>
-        </section>
+          <ResultadosPlanner
+            resumenMensual={plannerState.resumenMensual}
+            montoOriginal={Number(formState.montoOriginal) || 0}
+            montosAsignados={montosAjustados} // Usar los montos ajustados para la tabla
+            linea={formState.linea_planificador_color || ''}
+            onMontoAjustadoChange={handleMontoAjustadoChange}
+            onExportAjustado={handleExportAjustado}
+          />
+        </div>
       </main>
-    </>
+    </div>
   );
 };

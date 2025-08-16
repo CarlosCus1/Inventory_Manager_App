@@ -1,7 +1,8 @@
-// src/components/RucDniInput.tsx
+import React from 'react';
+import { StyledInput, type InputProps } from './ui/StyledInput'; // Assuming StyledInput is in ui folder
 
-import React, { useState, useEffect, useCallback } from 'react';
-// Removed consultarRuc import as API call will be handled by parent
+// Extending InputProps to get variant type
+type VariantProp = InputProps['variant'];
 
 interface RucDniInputProps {
   documentType: 'ruc' | 'dni';
@@ -12,9 +13,8 @@ interface RucDniInputProps {
   isLoading?: boolean;
   error?: string | null;
   onDocumentChange: (type: 'ruc' | 'dni', number: string, razonSocial: string) => void;
-  onRazonSocialChange: (social: string) => void; // New prop for manual razonSocial change
-  // Add a prop for the current module's theme class
-  themeClass?: string;
+  onRazonSocialChange: (social: string) => void;
+  variant?: VariantProp; // Use the same variant prop as StyledInput
 }
 
 export const RucDniInput: React.FC<RucDniInputProps> = ({
@@ -27,16 +27,16 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
   error = null,
   onDocumentChange,
   onRazonSocialChange,
-  themeClass = ''
+  variant = 'default'
 }) => {
 
   const handleTypeChange = (type: 'ruc' | 'dni') => {
-    onDocumentChange(type, '', ''); // Reset number and social when type changes
+    onDocumentChange(type, '', '');
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const sanitizedValue = value.replace(/\D/g, ''); // Only digits
+    const sanitizedValue = value.replace(/\D/g, '');
     onDocumentChange(documentType, sanitizedValue, razonSocial);
   };
 
@@ -44,42 +44,29 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
     onRazonSocialChange(e.target.value);
   };
 
-  // Determine input type and placeholder based on documentType
-  const inputType = documentType === 'ruc' ? 'text' : 'text';
   const inputPlaceholder = documentType === 'ruc' ? 'Ingrese RUC (11 dígitos)' : 'Ingrese DNI';
   const inputMaxLength = documentType === 'ruc' ? 11 : 8;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-2 mb-2">
-        <button
-          type="button"
-          onClick={() => handleTypeChange('ruc')}
-          className={`btn ${documentType === 'ruc' ? themeClass : 'btn-secondary'}`}
-        >
-          RUC
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTypeChange('dni')}
-          className={`btn ${documentType === 'dni' ? themeClass : 'btn-secondary'}`}
-        >
-          DNI
-        </button>
+        {/* These buttons need styling that matches the variant */}
+        <button type="button" onClick={() => handleTypeChange('ruc')} className={`p-2 rounded ${documentType === 'ruc' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>RUC</button>
+        <button type="button" onClick={() => handleTypeChange('dni')} className={`p-2 rounded ${documentType === 'dni' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>DNI</button>
       </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="documentNumber" className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Número de Documento:
         </label>
-        <input
+        <StyledInput
           id="documentNumber"
-          type={inputType}
+          type="text"
           placeholder={inputPlaceholder}
           value={documentNumber}
           onChange={handleNumberChange}
           maxLength={inputMaxLength}
-          className={`input ${themeClass} w-full`}
+          variant={variant}
           disabled={isLoading}
         />
         {isLoading && <p className="text-sm text-blue-500">Buscando...</p>}
@@ -90,14 +77,14 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
         <label htmlFor="razonSocial" className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Razón Social / Nombre:
         </label>
-        <input
+        <StyledInput
           id="razonSocial"
           type="text"
           placeholder="Razón Social o Nombre"
           value={razonSocial}
           onChange={handleRazonSocialChange}
-          className={`input ${themeClass} w-full`}
-          readOnly={documentType === 'ruc' && isLoading} // Readonly when RUC is loading
+          variant={variant}
+          readOnly={documentType === 'ruc' && isLoading}
         />
         {documentType === 'ruc' && rucEstado && rucCondicion && (
           <div className="text-sm mt-1">

@@ -30,22 +30,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     currentPalette === 'inventario' ? 'page-inventario' :
     currentPalette === 'comparador' ? 'page-comparador' : '';
 
-  const clearButtonClass =
-    currentPalette === 'devoluciones' ? 'btn-module-devoluciones' :
-    currentPalette === 'pedido' ? 'btn-module-pedido' :
-    currentPalette === 'inventario' ? 'btn-module-inventario' :
-    currentPalette === 'comparador' ? 'btn-module-comparador' : 'btn';
-
   const handleClear = () => {
     if (!currentPalette) return;
     if (window.confirm('¿Desea limpiar la página actual? Esta acción eliminará todos los datos ingresados.')) {
-      const mapToStoreKey: Record<typeof currentPalette, 'devoluciones' | 'pedido' | 'inventario' | 'precios'> = {
+      const mapToStoreKey: Record<string, 'devoluciones' | 'pedido' | 'inventario' | 'precios' | 'planificador'> = {
         devoluciones: 'devoluciones',
         pedido: 'pedido',
         inventario: 'inventario',
         comparador: 'precios',
+        planificador: 'planificador',
       };
-      resetCurrentModule(mapToStoreKey[currentPalette]);
+      resetCurrentModule(mapToStoreKey[currentPalette] as 'devoluciones' | 'pedido' | 'inventario' | 'precios' | 'planificador');
     }
   };
 
@@ -66,20 +61,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Gestor de Inventario
           </Link>
           <nav className="navbar-actions">
-            <ThemeToggle />
             {!isHomePage && (
               <Link to="/" className="btn-outline-pedido">
                 Inicio
               </Link>
-            )}
-            {currentPalette && (
-              <button
-                onClick={handleClear}
-                className={clearButtonClass}
-                title="Iniciar nuevo (limpiar datos del módulo actual)"
-              >
-                Iniciar Nuevo
-              </button>
             )}
           </nav>
         </div>
@@ -88,6 +73,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main>
         {children}
       </main>
+
+      {/* Floating Theme Toggle */}
+      <div className="fixed bottom-3 right-16 z-50">
+        <ThemeToggle />
+      </div>
+
+      {/* Floating Reset Button */}
+      {currentPalette && (
+        <div className="fixed bottom-3 left-3 z-50">
+          <button
+            onClick={handleClear}
+            className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-lg"
+            title="Limpiar Módulo Actual"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.12M20 15a9 9 0 01-14.13 5.12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Badge discreto de versión en esquina inferior derecha */}
       <div className="fixed bottom-3 right-3 z-50 hidden sm:block select-none" title="Proyecto de Carlos Cusi — versión 3.0" aria-label="cc Gestor v3.0">
