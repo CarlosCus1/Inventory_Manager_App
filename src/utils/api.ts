@@ -71,7 +71,8 @@ interface Holiday {
  */
 export async function fetchHolidays(year: number): Promise<Holiday[]> {
     try {
-        const response = await fetchWithRetry(`/api/getHolidays?year=${year}`);
+        const timestamp = new Date().getTime();
+        const response = await fetchWithRetry(`/api/getHolidays?year=${year}&t=${timestamp}`);
         return await response.json();
     } catch (error) {
         console.error('Error al obtener los feriados:', error);

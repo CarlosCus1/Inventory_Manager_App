@@ -25,16 +25,16 @@ export const ResultadosPlanner: React.FC<Props> = ({
     return Object.values(montosAsignados).reduce((sum, amount) => sum + amount, 0);
   }, [montosAsignados]);
 
-  const totalsMatch = Math.abs(adjustedTotal - montoOriginal) < 0.001;
+  const totalsMatch = Math.abs(adjustedTotal - montoOriginal) < 0.001; // Compare with a small tolerance for floating point issues
 
+  // Do not render the section if there are no results yet
   if (Object.keys(montosAsignados).length === 0) {
     return null;
   }
 
   return (
-    <section className="card">
+    <section id="resultados" className="card">
       <h2 className="form-section-title title-planificador">3. Resultados</h2>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SummaryTable
           resumenMensual={resumenMensual}

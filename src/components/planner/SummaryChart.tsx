@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
-import { COLOR_PALETTES } from '../../utils/config';
+import { COLOR_PALETTES } from '../../utils/config'; // Assuming config is moved here
 
+// Register all necessary components for Chart.js
 Chart.register(...registerables);
 
 interface SummaryChartProps {
@@ -26,6 +27,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
     const ctx = chartRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Destroy previous chart instance if it exists
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy();
     }
@@ -53,7 +55,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
           y: {
             beginAtZero: true,
             ticks: {
-              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'),
+              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tick color
               callback: function(value: string | number) {
                 if (typeof value === 'number') {
                   return 'S/ ' + value.toLocaleString('es-PE');
@@ -63,17 +65,18 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
             },
             title: {
               display: true,
-              text: 'Monto (S/)'
+              text: 'Monto (S/)',
+              color: getComputedStyle(document.documentElement).getPropertyValue('--heading') // Use --heading for title color
             }
           },
           x: {
             ticks: {
-              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'),
+              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tick color
             },
             title: {
               display: true,
               text: 'Mes',
-              color: getComputedStyle(document.documentElement).getPropertyValue('--heading')
+              color: getComputedStyle(document.documentElement).getPropertyValue('--heading') // Use --heading for title color
             }
           }
         },
@@ -82,8 +85,8 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
             display: false
           },
           tooltip: {
-            bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--fg'),
-            titleColor: getComputedStyle(document.documentElement).getPropertyValue('--heading'),
+            bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tooltip body
+            titleColor: getComputedStyle(document.documentElement).getPropertyValue('--heading'), // Use --heading for tooltip title
             callbacks: {
               label: function(context: TooltipItem<'bar'>) {
                 let label = context.dataset.label || '';
@@ -103,6 +106,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
       }
     });
 
+    // Cleanup function to destroy the chart on component unmount
     return () => {
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();

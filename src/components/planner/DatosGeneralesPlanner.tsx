@@ -7,7 +7,7 @@ import { SucursalInput } from '../ui/SucursalInput';
 import type { IForm } from '../../interfaces';
 
 interface Props {
-  formState: IForm;
+  formState: IForm; // Pass the whole form state for simplicity
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onRucDniChange: (type: 'ruc' | 'dni', number: string, social: string) => void;
   onRazonSocialManualChange: (social: string) => void;
@@ -30,7 +30,7 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
   onCalcular
 }) => {
   return (
-    <section className="card">
+    <section id="datos-cliente" className="card">
       <h2 className="form-section-title title-planificador">1. Datos Generales</h2>
       <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={(e) => e.preventDefault()}>
 
@@ -119,7 +119,6 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
             Calcular
           </button>
         </div>
-
       </form>
     </section>
   );

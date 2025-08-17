@@ -16,7 +16,6 @@ import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
 import { StyledInput } from '../components/ui/StyledInput';
-// Removed unused import
 
 // --- 2. Definición del Componente de Página ---
 export const InventarioPage: React.FC = () => {
@@ -33,7 +32,6 @@ export const InventarioPage: React.FC = () => {
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Removed unused state variable
 
   // --- C. Carga inicial de datos ---
   useEffect(() => {
@@ -46,7 +44,6 @@ export const InventarioPage: React.FC = () => {
   // --- E. Cálculos para los Totales ---
   const totales = useMemo(() => {
     const totalCantidades = lista.reduce((sum, item) => sum + Number(item.cantidad), 0);
-    // Contar líneas únicas normalizando a mayúsculas y recortando espacios
     const lineasUnicas = new Set(
       (lista || [])
         .map((it) => (it.linea ?? '').toString().trim().toUpperCase())
@@ -93,12 +90,9 @@ export const InventarioPage: React.FC = () => {
 
   // --- G. Renderizado del Componente ---
   const handleInputChange = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
-    const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
-    if (campo === 'cantidad' && (Number.isNaN(valorFinal) || (valorFinal as number) < 0)) return;
-    actualizarProductoEnLista('inventario', codigo, campo, valorFinal);
+    actualizarProductoEnLista('inventario', codigo, campo, valor);
   }, [actualizarProductoEnLista]);
 
-  // Handler para los campos del formulario de datos generales
   const handleFormChange = useFormChangeHandler('inventario');
 
   const columns: IColumn<IProductoEditado>[] = useMemo(() => [

@@ -116,30 +116,29 @@ const Home: React.FC = () => {
             </header>
 
             {/* Contenedor de tarjetas con un grid más simétrico */}
-            <section className="section-card"> {/* Single section-card */}
+            <section className="section-card relative">
               <div className="px-[clamp(12px,4vw,40px)]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center"> {/* Grid for cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-center">
                   {items.map((item) => (
-                    <div key={item.to} className="w-full max-w-sm"> {/* Wrapper for each card */}
-                      <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)]">
-                        <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300">
-                          <div className="relative"> {/* This div is for card-hover-glow */}
+                    <div key={item.to} className="self-stretch">
+                      <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)] h-full">
+                        <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300 h-full">
+                          <div className="relative h-full">
                             <div className="card-hover-glow pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
                             <Card {...item} />
-                          </div> {/* Closing tag for the relative div */}
-                        </div> {/* Closing tag for the group div */}
-                      </div> {/* Closing tag for the w-full max-w-sm div */}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
-                </div> {/* Closing tag for the grid div */}
-              </div> {/* Closing tag for the px clamp div */}
-            </section> {/* Closing tag for the section-card */}
-          </div> {/* Closing tag for the w-full max-w-6xl div */}
-        </section> {/* Closing tag for the relative section */}
-      </main> {/* Closing tag for the outer main */}
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
-
 
 export default Home;

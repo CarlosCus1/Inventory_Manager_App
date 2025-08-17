@@ -71,9 +71,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className={`min-h-screen relative ${pageBgClass} transition-colors duration-300`}>
-<InteractiveBackground
-        moduleStats={defaultModuleStats}
-        particleColors={defaultParticleColors}
+      <InteractiveBackground 
+        moduleStats={defaultModuleStats} 
+        particleColors={defaultParticleColors} 
+        className="absolute inset-0 z-0" 
       />
 
       {/* Enhanced navbar with glassmorphism */}
@@ -90,14 +91,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Active module indicator */}
           {currentPalette && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-black/10 dark:bg-white/10">
-              <div
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{
+              <div 
+                className="w-2 h-2 rounded-full animate-pulse" 
+                style={{ 
                   backgroundColor: currentPalette === 'devoluciones' ? '#DC2626' :
                                  currentPalette === 'pedido' ? '#2563EB' :
                                  currentPalette === 'inventario' ? '#16A34A' :
                                  currentPalette === 'comparador' ? '#EA580C' : '#0EA5E9'
-                }}
+                }} 
               />
               <span className="text-xs font-medium capitalize">{currentPalette}</span>
             </div>
@@ -107,11 +108,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <nav className="navbar-actions">
             <LiveDateTime />
             <NotificationBell />
-            <WhatsAppLink
+            <WhatsAppLink 
               phoneNumber={mockRootProps.phoneNumber}
               message={mockRootProps.supportMessage}
             />
-
             {!isHomePage && (
               <Link to="/" className="btn-outline-pedido">
                 🏠 Inicio
@@ -125,42 +125,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 1rem', position: 'absolute', bottom: 0, right: 0 }}>
-        {/* Floating Theme Toggle */}
+      {/* Floating Buttons Container */}
+      <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-3">
         <ThemeToggle />
-
-        {/* Floating Reset Button */}
         {currentPalette && (
-            <button
-              onClick={handleClear}
-              className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-lg"
-              title="Limpiar Módulo Actual"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
-            </button>
+          <button
+            onClick={handleClear}
+            className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-lg hover:scale-110 transition-all duration-200"
+            title="Limpiar Módulo Actual"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 9a9 9 0 0114.13-5.12M20 15a9 9 0 01-14.13 5.12" />
+            </svg>
+          </button>
         )}
-      </div>
-
-
-      {/* Badge discreto de versión en esquina inferior derecha */}
-      <div className="fixed bottom-3 right-3 z-50 hidden sm:block select-none" title="Proyecto de Carlos Cusi — versión 3.0" aria-label="cc Gestor v3.0">
-        <div
-          className="rounded-full px-3 py-1 text-[11px] font-medium shadow-sm ring-1 backdrop-blur"
-          style={{
-            background: 'color-mix(in oklab, var(--panel) 78%, transparent)',
-            color: 'var(--fg)',
-            boxShadow: 'inset 0 0 0 1px var(--border)',
-            opacity: 0.9
-          }}
-        >
-          cc Gestor v3.0
-        </div>
       </div>
 
       {/* Enhanced version badge */}
       <div className="fixed bottom-4 right-4 z-50 hidden sm:block select-none">
         <div className="group">
-          <div
+          <div 
             className="rounded-full px-4 py-2 text-xs font-medium shadow-lg ring-1 backdrop-blur-md transition-all duration-200 hover:scale-105"
             style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',

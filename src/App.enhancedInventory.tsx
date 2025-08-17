@@ -10,7 +10,6 @@ const InventarioPage = lazy(() => import('./pages/InventarioPage').then(module =
 const ComparadorPage = lazy(() => import('./pages/ComparadorPage').then(module => ({ default: module.ComparadorPage })));
 const PlanificadorPage = lazy(() => import('./pages/PlanificadorPage').then(module => ({ default: module.PlanificadorPage })));
 
-
 const App: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
 

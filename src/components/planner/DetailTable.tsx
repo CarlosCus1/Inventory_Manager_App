@@ -1,5 +1,5 @@
 import React from 'react';
-import * as DateUtils from '../../utils/dateUtils';
+import * as DateUtils from '../../utils/dateUtils'; // Adjust path as needed
 import { StyledInput } from '../ui/StyledInput';
 
 interface DetailTableProps {
@@ -27,8 +27,8 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
   });
 
   return (
-    <div className="results-detail-section">
-      <h3 className="text-lg font-semibold mb-2">Detalle por Fecha (Ajuste Manual)</h3>
+    <div className="card">
+      <h3 className="form-section-title">Detalle por Fecha (Ajuste Manual)</h3>
       <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-panel dark:bg-panel-dark rounded">
         {sortedMonthKeys.map(monthKey => {
           const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + item.amount, 0);

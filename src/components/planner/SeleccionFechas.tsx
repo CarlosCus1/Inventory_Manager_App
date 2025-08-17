@@ -34,7 +34,7 @@ export const SeleccionFechas: React.FC<Props> = ({
   };
 
   return (
-    <section className="card">
+    <section id="seleccion-fechas" className="card">
       <h2 className="form-section-title title-planificador">2. Selección de Fechas</h2>
       <div className="mb-4 w-full overflow-x-auto">
         <FullCalendar

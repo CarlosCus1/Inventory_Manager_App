@@ -253,19 +253,8 @@ def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart
     from openpyxl.chart.label import DataLabelList
     from openpyxl.chart.shapes import GraphicalProperties
 
-
-    # --- Funciones de Ayuda y Mapeo de Colores ---
-    COLOR_MAP = {
-        "rojo": "FF0000",   # Viniball
-        "azul": "0070C0",   # Vinifan
-        "verde": "00B050",  # Otros
-        "default": "4472C4" # Un azul por defecto si no se especifica
-    }
-    hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP["default"])
-
     COLOR_MAP = STYLE_CONFIG.get("planner_charts", {})
     hex_color = COLOR_MAP.get(chart_color_name or "default", COLOR_MAP.get("default", "4472C4"))
-
 
     def _lighten_color(hex_color, factor=0.5):
         hex_color = hex_color.lstrip('#')
@@ -533,10 +522,8 @@ def export_xlsx():
                 safe_colab = unicodedata.normalize('NFKD', colaborador).encode('ascii', 'ignore').decode('utf-8').strip().replace(" ", "_") or "sin_colaborador"
                 filename = f"comparacion_precios_{safe_colab}_{fecha_ddmmyy}.xlsx"
 
-
             # --- Caso 2: Inventario, Pedido, Devoluciones o Planificador (lógica unificada) ---
             elif tipo_gestion in ['inventario', 'pedido', 'devoluciones', 'planificador']:
-
                 if tipo_gestion == 'planificador':
                     chart_color = form_data.get('linea_planificador_color')
                     _generate_planner_report(writer, data, chart_color_name=chart_color)

@@ -1,4 +1,3 @@
-
 // --------------------------------------------------------------------------- #
 //                                                                             #
 //                       src/store/useAppStore.ts                              #
@@ -309,10 +308,9 @@ export const useAppStore = create<State & Actions>()(
         }
       })),
 
-      addIncompleteTask: () =>
-        set((state) => ({
-          incompleteTasks: state.incompleteTasks + 1,
-        })),
+      addIncompleteTask: () => set((state) => ({
+        incompleteTasks: state.incompleteTasks + 1
+      })),
 
       completeTask: () => set((state) => ({
         incompleteTasks: Math.max(0, state.incompleteTasks - 1)
