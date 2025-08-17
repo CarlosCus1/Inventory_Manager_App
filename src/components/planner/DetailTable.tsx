@@ -27,9 +27,14 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
   });
 
   return (
+
     <div className="results-detail-section">
       <h3 className="text-lg font-semibold mb-2">Detalle por Fecha (Ajuste Manual)</h3>
       <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-gray-50 dark:bg-gray-900 rounded">
+    <div className="card">
+      <h3 className="form-section-title">Detalle por Fecha (Ajuste Manual)</h3>
+      <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-panel dark:bg-panel-dark rounded">
+        
         {sortedMonthKeys.map(monthKey => {
           const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + item.amount, 0);
           const monthDisplay = DateUtils.formatearMesAnioDisplay(monthKey);
@@ -38,7 +43,10 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
 
           return (
             <div className="flex-shrink-0 w-64 border rounded-lg shadow-sm" key={monthKey}>
+
               <div className="font-bold p-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
+              <div className="font-bold p-2 bg-panel-dark dark:bg-panel-dark rounded-t-lg">
+
                 {`${monthDisplay.split(' ')[0]} ${yearShort}, S/ ${monthTotal.toFixed(2)}`}
               </div>
               <div className="p-2 space-y-2">
@@ -56,7 +64,10 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
                   </div>
                 ))}
               </div>
+
               <div className="font-semibold p-2 bg-gray-100 dark:bg-gray-800 rounded-b-lg text-right">
+              <div className="font-semibold p-2 bg-panel-dark dark:bg-panel-dark rounded-b-lg text-right">
+
                 {`Total Mes: S/ ${monthTotal.toFixed(2)}`}
               </div>
             </div>

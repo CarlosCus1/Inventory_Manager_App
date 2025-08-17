@@ -55,6 +55,10 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
           y: {
             beginAtZero: true,
             ticks: {
+
+
+              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tick color
+              
               callback: function(value: string | number) {
                 if (typeof value === 'number') {
                   return 'S/ ' + value.toLocaleString('es-PE');
@@ -63,7 +67,7 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
               }
             },
             title: {
-              display: true,
+              display: true,        
               text: 'Monto (S/)'
             }
           },
@@ -71,6 +75,19 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
             title: {
               display: true,
               text: 'Mes'
+              text: 'Monto (S/)',
+              color: getComputedStyle(document.documentElement).getPropertyValue('--heading') // Use --heading for title color
+            }
+          },
+          x: {
+            ticks: {
+              color: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tick color
+            },
+            title: {
+              display: true,
+              text: 'Mes',
+              color: getComputedStyle(document.documentElement).getPropertyValue('--heading') // Use --heading for title color
+
             }
           }
         },
@@ -79,6 +96,10 @@ export const SummaryChart: React.FC<SummaryChartProps> = ({ resumenMensual, mont
             display: false
           },
           tooltip: {
+
+            bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--fg'), // Use --fg for tooltip body
+            titleColor: getComputedStyle(document.documentElement).getPropertyValue('--heading'), // Use --heading for tooltip title
+
             callbacks: {
               label: function(context: TooltipItem<'bar'>) {
                 let label = context.dataset.label || '';

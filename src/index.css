@@ -29,6 +29,8 @@
     --text-muted: #6B7280;     /* gray-500 */
     --heading: #0F172A;        /* slate-900 para títulos */
     --link: #1D4ED8;           /* blue-700 */
+    --text-success: #065F46;    /* Darker green for success */
+    --text-error: #991B1B;      /* Darker red for error */
   }
   :root.dark {
     --bg: #111827;       /* fondo base dark (gray-900) */
@@ -49,6 +51,8 @@
     --text-muted: #9CA3AF;     /* gray-400 */
     --heading: #F8FAFC;        /* slate-50 */
     --link: #93C5FD;           /* blue-300 */
+    --text-success: #6EE7B7;    /* Even lighter green for success */
+    --text-error: #FCA5A5;      /* Even lighter red for error */
   }
 
   /* Asegurar que el tema por clase gobierna el canvas */
@@ -111,6 +115,71 @@
 }
 
 @layer components {
+  /* Enhanced glassmorphism and animations */
+  .navbar-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .navbar-glass {
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Floating animation keyframes */
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0px) translateX(0px) rotate(0deg); 
+      opacity: 0.3; 
+    }
+    25% { 
+      transform: translateY(-20px) translateX(10px) rotate(90deg); 
+      opacity: 0.6; 
+    }
+    50% { 
+      transform: translateY(-10px) translateX(-15px) rotate(180deg); 
+      opacity: 0.4; 
+    }
+    75% { 
+      transform: translateY(-30px) translateX(5px) rotate(270deg); 
+      opacity: 0.7; 
+    }
+  }
+
+  .animate-float {
+    animation: float linear infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 30s linear infinite;
+  }
+
+  /* Enhanced hover effects */
+  .group:hover .group-hover\:scale-110 {
+    transform: scale(1.1);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--panel);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fg);
+  }
+
   /* Botón base y primario. El padding más generoso se define en .btn-primary */
   /* Reemplazar alias 'btn' por utilidades explícitas para Tailwind v4 (evita unknown utility `btn`) */
   .btn {
@@ -138,7 +207,7 @@
     /* Meta ~25px: usamos px-5 (20px horizontales) y py-6 (~24px vertical) para sensación ~25px, 
        y gap inferior 20-24px según viewport */
     @apply shadow-md rounded-lg px-5 py-6 border mb-5 md:mb-4;
-    background-color: var(--panel);
+    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
     border-color: var(--border);
     color: var(--fg);
   }
@@ -157,11 +226,11 @@
     @apply block w-full rounded-md ring-1 ring-inset shadow-sm
            focus:outline-none focus:ring-2 focus:ring-inset
            sm:text-xs px-2; /* densidad uniforme */;
-    height: 20px;          /* altura uniforme */
+    height: 32px;          /* altura uniforme */
     line-height: 1;        /* alinear verticalmente */
 
     background-color: #F3F4F6; /* FIJO */
-    color: #111827;            /* FIJO */
+    color: var(--fg);            /* Use global foreground color */
     border: 1px solid #D1D5DB; /* FIJO */
     ring-color: #D1D5DB;       /* FIJO */
   }
@@ -183,12 +252,9 @@
   .form-section-title {
     /* Compactar ligeramente el espacio de títulos dentro de cards/secciones */
     @apply text-lg font-bold mb-2;
-    color: var(--fg);
   }
   /* Subtítulos H2 por sección también claros por defecto */
-  h2 {
-    color: inherit;
-  }
+  /* Removed h2 { color: inherit; } to ensure consistent heading color */
   /* Variante de error para inputs */
   .input-error {
     @apply border-red-500 ring-2 ring-red-500;
@@ -199,12 +265,12 @@
   .select {
     @apply block w-full rounded-md ring-1 ring-inset shadow-sm appearance-none
            focus:outline-none focus:ring-2 focus:ring-inset sm:text-xs;
-    height: 20px;          /* altura uniforme */
+    height: 32px;          /* altura uniforme */
     line-height: 1;        /* alinear verticalmente */
     padding-right: 2rem;   /* Espacio para la flecha */
     /* FIJO como input */
     background-color: #F3F4F6;
-    color: #111827;
+    color: var(--fg); /* Use global foreground color */
     border: 1px solid #D1D5DB;
 
     /* Flecha por defecto (light) */
@@ -220,7 +286,6 @@
 
   /* Accesos directos neutrales para superficies y texto si se desean en contenedores generales */
   .surface {
-    background-color: var(--panel);
     color: var(--fg); /* Texto global unificado */
   }
   .surface-contrast {
@@ -336,7 +401,8 @@
     display: none; /* Chrome/Safari/Opera */
   }
   .reel-card {
-    @apply min-w-[280px] snap-center rounded-2xl p-6 shadow-md bg-gray-800/90 border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
+    @apply min-w-[280px] snap-center rounded-2xl p-6 shadow-md border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
+    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
   }
@@ -377,37 +443,218 @@
   .title-inventario::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(16 185 129); bottom: -6px; }
   .title-comparador   { @apply inline-block relative; color: var(--heading); }
   .title-comparador::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(245 158 11); bottom: -6px; }
-}
 
-.btn-module-planificador {
+  .btn-module-planificador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-purple-600 hover:bg-purple-700 focus:ring-purple-600;
-}
+           text-white bg-sky-600 hover:bg-sky-700 focus:ring-sky-600;
+  }
 
-.btn-outline-planificador {
+  .btn-outline-planificador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
+
            text-purple-300 border border-purple-500/40 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400;
 }
 
 .page-planificador {
+           text-sky-300 border border-sky-500/40 hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400;
+  }
+
+  .page-planificador {
+
     @apply min-h-screen py-3;
-}
+  }
 
-.title-planificador {
+  .title-planificador {
     @apply inline-block relative; color: var(--heading);
-}
+  }
 
-.title-planificador::after {
+  .title-planificador::after {
     content: "";
     position: absolute;
     left: 0;
     width: 100%;
     height: 4px;
-    background: rgb(147 51 234);
+    background: rgb(14 165 233); /* sky-500 */
     bottom: -6px;
-}
+  }
 
-.reel-card--planificador {
+  .reel-card--planificador {
     @apply outline-none ring-0;
+  }
+
+  /* FullCalendar Theming */
+  .fc {
+    /* Calendar container */
+    background-color: var(--panel);
+    color: var(--fg);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .fc .fc-toolbar-title {
+    /* Calendar title */
+    color: var(--heading);
+  }
+
+  .fc .fc-button {
+    /* Calendar buttons */
+    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2;
+    background-color: var(--input-bg);
+    color: var(--input-fg);
+    border-color: var(--input-border);
+  }
+
+  .fc .fc-button:hover {
+    background-color: color-mix(in oklab, var(--input-bg) 90%, var(--fg) 10%);
+  }
+
+  .fc .fc-button-primary {
+    /* Primary buttons like 'today' */
+    background-color: var(--link);
+    color: var(--on-primary-color); /* Assuming on-primary-color is white */
+  }
+
+  .fc .fc-button-primary:hover {
+    background-color: color-mix(in oklab, var(--link) 90%, var(--fg) 10%);
+  }
+
+  .fc-daygrid-day {
+    /* Default day cell */
+    background-color: var(--panel);
+    color: var(--fg);
+  }
+
+  .fc-day-today {
+    /* Today's date */
+    background-color: color-mix(in oklab, var(--panel) 90%, var(--link) 10%);
+  }
+
+  .fc-day-selected {
+    /* Selected date */
+    background-color: color-mix(in oklab, var(--panel) 80%, var(--link) 20%);
+    border: 2px solid var(--link);
+  }
+
+  .fc-holiday {
+    /* Holiday date */
+    background-color: color-mix(in oklab, var(--panel) 90%, var(--error-color) 10%);
+    color: var(--error-color);
+    font-weight: bold;
+  }
+
+  .fc-day-past {
+    /* Past dates */
+    opacity: 0.6;
+  }
+
+  .fc-day-future {
+    /* Future dates */
+    opacity: 1;
+  }
+
+  .fc-day-sun {
+    /* Sundays */
+    color: var(--error-color);
+  }
+
+  .fc-col-header-cell {
+    /* Day names (Mon, Tue, etc.) */
+    background-color: var(--panel-dark);
+    color: var(--fg);
+  }
+
+  .fc-col-header-cell-cushion {
+    /* Padding for day names */
+    padding: 0.5rem;
+  }
+
+  .fc-daygrid-day-number {
+    /* Day numbers */
+    color: var(--fg);
+  }
+
+  .fc-event {
+    /* Events */
+    background-color: var(--link);
+    color: var(--on-primary-color);
+    border-radius: 0.25rem;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .fc-event-title {
+    /* Event title */
+    color: var(--on-primary-color);
+  }
+
+  /* Data Table Styling */
+  .data-table {
+    @apply w-full text-sm text-left rtl:text-right;
+    color: var(--fg);
+    border-collapse: collapse;
+  }
+
+  .data-table thead {
+    @apply text-xs uppercase;
+    background-color: var(--panel-dark);
+    color: var(--fg);
+  }
+
+  .data-table th {
+    @apply px-6 py-3;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table tbody tr {
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .data-table td {
+    @apply px-6 py-4;
+  }
+
+  .data-table tbody tr:hover {
+    background-color: color-mix(in oklab, var(--panel) 90%, var(--link) 5%);
+  }
+
+  /* Comparison Totals Styling */
+  .comparison-item {
+    @apply flex justify-between items-center py-2 border-b;
+    border-color: var(--border);
+    color: var(--fg);
+  }
+
+  .comparison-item:last-child {
+    border-bottom: none;
+  }
+
+  .comparison-status {
+    @apply mt-4 p-3 rounded-md text-center font-bold;
+  }
+
+  .status-ok {
+    background-color: color-mix(in oklab, var(--panel) 90%, #10B981 10%); /* Green-ish */
+    color: var(--text-success);
+  }
+
+  .dark .status-ok {
+    background-color: color-mix(in oklab, var(--panel) 90%, #34D399 10%); /* Lighter green */
+    color: var(--text-success);
+  }
+
+  .status-error {
+    background-color: color-mix(in oklab, var(--panel) 90%, #EF4444 10%); /* Red-ish */
+    color: var(--text-error);
+  }
+
+  .dark .status-error {
+    background-color: color-mix(in oklab, var(--panel) 90%, #F87171 10%); /* Lighter red */
+    color: var(--text-error);
+  }
 }

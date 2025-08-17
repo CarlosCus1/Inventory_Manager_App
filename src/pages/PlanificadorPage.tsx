@@ -13,7 +13,9 @@ import { type DayCellContentArg } from '@fullcalendar/core';
 import { SeleccionFechas } from '../components/planner/SeleccionFechas';
 import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlanner';
 import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
+
 import './PlanificadorPage.css';
+import PageHeader from '../components/PageHeader';
 
 // Define initial state interface (for better type safety)
 // This local state only holds data not related to the form itself.
@@ -35,7 +37,9 @@ export const PlanificadorPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
+
   const [isCalcularDisabled, setCalcularDisabled] = useState(true);
+
 
   const fetchHolidays = useAppStore(state => state.fetchHolidays);
   const formState = useAppStore(state => state.formState.planificador);
@@ -51,6 +55,9 @@ export const PlanificadorPage: React.FC = () => {
   } = useRucDni('planificador');
 
   const feriadosCargados = useRef(new Map<string, string>());
+
+
+  const btnCalcularRef = useRef<HTMLButtonElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -133,12 +140,17 @@ export const PlanificadorPage: React.FC = () => {
     setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
   };
 
+
   // Recalculate validation state whenever form or selections change
   useEffect(() => {
+  const _updateActionButtonsState = useCallback(() => {
+
     const monto = Number(formState.montoOriginal) || 0;
     const fechas = Array.from(plannerState.selectedDates);
     const pedido = formState.pedido_planificador?.trim() || '';
     const cliente = formState.cliente?.trim() || '';
+
+    if (!btnCalcularRef.current) return;
 
     const isMontoValid = monto > 0;
     const areFechasValid = fechas.length > 0;
@@ -147,9 +159,27 @@ export const PlanificadorPage: React.FC = () => {
 
     const canCalculate = isMontoValid && areFechasValid && isClienteValid && isPedidoValid;
 
+
     setCalcularDisabled(!canCalculate);
 
   }, [formState, plannerState.selectedDates]);
+    btnCalcularRef.current.disabled = !canCalculate;
+
+    if (!canCalculate) {
+      const tooltips = [];
+      if (!isMontoValid) tooltips.push('Ingrese un monto válido.');
+      if (!areFechasValid) tooltips.push('Seleccione al menos una fecha.');
+      if (!isClienteValid) tooltips.push('Ingrese la razón social del cliente.');
+      if (!isPedidoValid) tooltips.push('Ingrese el código del pedido.');
+      btnCalcularRef.current.title = tooltips.join(' ');
+    } else {
+      btnCalcularRef.current.title = 'Realizar el cálculo de distribución';
+    }
+  }, [formState, plannerState.selectedDates]);
+
+  useEffect(() => {
+    _updateActionButtonsState();
+  }, [formState, plannerState.selectedDates, _updateActionButtonsState]);
 
   const _getAndValidateFormData = useCallback(() => {
     const monto = Number(formState.montoOriginal) || 0;
@@ -218,7 +248,7 @@ export const PlanificadorPage: React.FC = () => {
       setMontosAjustados(resultado.montosAsignados);
 
       // Form data is already in the global store, so no need to set it here.
-      
+
       // mostrarResults(); // Now handled by React rendering
     } catch (error) {
       console.error('Error en cálculo:', error);
@@ -246,6 +276,18 @@ export const PlanificadorPage: React.FC = () => {
       linea: formState.linea_planificador_color,
       pedido: formState.pedido_planificador,
     };
+
+
+    try {
+      const response = await fetch('http://localhost:5000/export-xlsx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor al exportar.');
+      }
 
     try {
       const response = await fetch('http://localhost:5000/export-xlsx', {
@@ -354,6 +396,7 @@ export const PlanificadorPage: React.FC = () => {
 
 
   return (
+
     <div className="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text min-h-screen font-sans">
       <header className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white shadow-md">
         <div className="container mx-auto px-4 py-2 flex justify-between items-center">
@@ -363,6 +406,13 @@ export const PlanificadorPage: React.FC = () => {
       </header>
 
       <main className="container mx-auto p-4">
+    <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+      <PageHeader
+        title="Planificador de Vencimientos"
+        description="Distribuye montos en el tiempo de forma equitativa, con selección de fechas en calendario y opción de ajuste manual para cada vencimiento."
+        themeColor="planificador"
+      />
+      <main>
         <div id="loading-overlay" style={{ display: isLoadingRuc ? 'flex' : 'none' }}>
           <div className="spinner"></div>
           <p id="loading-message">Cargando...</p>
@@ -380,7 +430,10 @@ export const PlanificadorPage: React.FC = () => {
         />
 
         {/* Page Content */}
+
         <div className="mt-4 space-y-8">
+        <div className="space-y-8">
+
           <DatosGeneralesPlanner
             formState={formState}
             onFormChange={handleFormChange}
@@ -390,6 +443,9 @@ export const PlanificadorPage: React.FC = () => {
             rucCondicion={rucCondicion}
             isLoadingRuc={isLoadingRuc}
             rucError={rucError}
+
+            onCalcular={calcular}
+
           />
 
           <SeleccionFechas
@@ -398,8 +454,10 @@ export const PlanificadorPage: React.FC = () => {
             fetchCalendarEvents={fetchCalendarEvents}
             handleDateClick={handleDateClick}
             handleDayCellMount={handleDayCellMount}
+
             onCalcular={calcular}
             isCalcularDisabled={isCalcularDisabled}
+            
           />
 
           <ResultadosPlanner

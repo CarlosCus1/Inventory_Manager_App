@@ -2,7 +2,10 @@ import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const inputVariants = cva(
+
   'w-full px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
+  'input', // Use the global input class
+
   {
     variants: {
       variant: {
@@ -10,7 +13,10 @@ const inputVariants = cva(
         pedido: 'border-blue-300 focus:ring-blue-500 focus:border-blue-500',
         inventario: 'border-green-300 focus:ring-green-500 focus:border-green-500',
         comparador: 'border-orange-300 focus:ring-orange-500 focus:border-orange-500',
+
         planificador: 'border-sky-300 focus:ring-sky-500 focus:border-sky-500',
+        planificador: 'border-sky-300 focus:ring-sky-500 focus:border-sky-500', // Changed to sky
+
         default: 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500',
       },
     },

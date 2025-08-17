@@ -126,12 +126,12 @@ export const ComparadorPage: React.FC = () => {
   };
 
   const getPercentageCellClass = (value: string | undefined): string => {
-    if (!value) return 'text-[var(--fg)] font-semibold';
+    if (!value) return 'text-[var(--text-secondary)] font-semibold';
     const parsed = parseFloat(value.replace('%',''));
-    if (isNaN(parsed)) return 'text-[var(--fg)] font-semibold';
-    if (parsed > 0) return 'text-red-600 font-semibold';
-    if (parsed < 0) return 'text-green-600 font-semibold';
-    return 'text-[var(--fg)] font-semibold';
+    if (isNaN(parsed)) return 'text-[var(--text-secondary)] font-semibold';
+    if (parsed > 0) return 'text-[var(--color-danger)] font-semibold'; // Usar variable de tema
+    if (parsed < 0) return 'text-[var(--color-success)] font-semibold'; // Usar variable de tema
+    return 'text-[var(--text-primary)] font-semibold';
   };
 
   return (
@@ -186,7 +186,7 @@ export const ComparadorPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-comparador">Búsqueda y Selección</h2>
+        <h2 className="form-section-title title-comparador">Búsqueda y Selección</h2>
         <div className="mb-4 flex items-center">
           <input
             type="text"
@@ -246,7 +246,7 @@ export const ComparadorPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-comparador">Tabla de Comparación</h2>
+        <h2 className="form-section-title title-comparador">Tabla de Comparación</h2>
         <div className="mb-4 flex flex-wrap gap-6 text-sm md:text-base" title={`Cálculo sobre columnas “% vs …”. Muestras: ${resumenPorcentajes.n}`}>
           <span>Min: <strong className="title-comparador">{resumenPorcentajes.min.toFixed(2)}%</strong></span>
           <span>Max: <strong className="title-comparador">{resumenPorcentajes.max.toFixed(2)}%</strong></span>

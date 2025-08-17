@@ -15,6 +15,8 @@ interface Props {
   rucCondicion: string | null;
   isLoadingRuc: boolean;
   rucError: string | null;
+
+  onCalcular: () => void;
 }
 
 export const DatosGeneralesPlanner: React.FC<Props> = ({
@@ -25,11 +27,19 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
   rucEstado,
   rucCondicion,
   isLoadingRuc,
+
   rucError
 }) => {
   return (
     <section id="datos-cliente" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4 text-planificador-light-primary dark:text-planificador-dark-primary">1. Datos Generales</h2>
+
+  rucError,
+  onCalcular
+}) => {
+  return (
+    <section id="datos-cliente" className="card">
+      <h2 className="form-section-title title-planificador">1. Datos Generales</h2>
       <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={(e) => e.preventDefault()}>
 
         <RucDniInput
@@ -42,6 +52,7 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
             rucCondicion={rucCondicion}
             isLoading={isLoadingRuc}
             error={rucError}
+
             variant="planificador"
         />
 
@@ -54,7 +65,9 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 value={formState.codigo_cliente || ''}
                 onChange={onFormChange}
                 placeholder="Opcional"
+
                 variant="planificador"
+
             />
         </FormGroup>
 
@@ -75,7 +88,9 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 required
                 value={formState.montoOriginal || ''}
                 onChange={onFormChange}
+
                 variant="planificador"
+
             />
         </FormGroup>
 
@@ -88,7 +103,9 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 value={formState.pedido_planificador || ''}
                 onChange={onFormChange}
                 placeholder="Ej: Pedido de campaña"
+
                 variant="planificador"
+
             />
         </FormGroup>
 
@@ -99,7 +116,9 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 name="linea_planificador_color"
                 value={formState.linea_planificador_color || ''}
                 onChange={onFormChange}
+
                 variant="planificador"
+
             >
                 <option value="">Seleccionar color...</option>
                 <option value="rojo">Viniball (Rojo)</option>
@@ -107,6 +126,17 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
                 <option value="verde">Otros (Verde)</option>
             </StyledSelect>
         </FormGroup>
+
+
+        <div className="lg:col-span-3 flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onCalcular}
+            className="btn-module-planificador"
+          >
+            Calcular
+          </button>
+        </div>
 
       </form>
     </section>

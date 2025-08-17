@@ -1,3 +1,4 @@
+
 // --------------------------------------------------------------------------- #
 //                                                                             #
 //                               src/pages/Home.tsx                            #
@@ -6,6 +7,54 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { ModuleType, ModuleColor } from '../enums';
+import InteractiveBackground from '../components/background/InteractiveBackground';
+
+export const mockRootProps = {
+  phoneNumber: "998104169",
+  supportMessage: "Hola, necesito información sobre el Gestor de Inventario",
+  moduleStats: [
+    { 
+      name: "Devoluciones", 
+      usage: 75, 
+      color: ModuleColor.DEVOLUCIONES,
+      module: ModuleType.DEVOLUCIONES
+    },
+    { 
+      name: "Pedidos", 
+      usage: 90, 
+      color: ModuleColor.PEDIDO,
+      module: ModuleType.PEDIDO  
+    },
+    { 
+      name: "Inventario", 
+      usage: 60, 
+      color: ModuleColor.INVENTARIO,
+      module: ModuleType.INVENTARIO
+    },
+    { 
+      name: "Comparador", 
+      usage: 45, 
+      color: ModuleColor.COMPARADOR,
+      module: ModuleType.COMPARADOR
+    },
+    { 
+      name: "Planificador", 
+      usage: 30, 
+      color: ModuleColor.PLANIFICADOR,
+      module: ModuleType.PLANIFICADOR
+    }
+  ],
+  particleColors: [
+    ModuleColor.DEVOLUCIONES,
+    ModuleColor.PEDIDO, 
+    ModuleColor.INVENTARIO,
+    ModuleColor.COMPARADOR,
+    ModuleColor.PLANIFICADOR
+  ],
+  currentDateTime: new Date('2024-01-15T15:30:45'),
+  appVersion: "v3.0"
+};
 
 
 const Card: React.FC<{
@@ -26,9 +75,9 @@ const Card: React.FC<{
   const cardMod = `reel-card reel-card--${variant}`;
 
   return (
-    <div className={`${cardMod} surface surface-border p-6 ring-1 ring-[var(--border)]`}>
+    <div className={`${cardMod} surface surface-border p-6 ring-1 ring-[var(--border)] flex flex-col h-full`}>
       <h3 className={`reel-card__title ${titleClass}`}>{title}</h3>
-      <p className="reel-card__desc mb-5">{desc}</p>
+      <p className="reel-card__desc mb-5 flex-grow">{desc}</p>
       <div className="flex justify-center mt-1.5">
         <Link to={to} className={btnClass} aria-label={`Ir a ${title}`}>
           Ir al módulo
@@ -56,11 +105,6 @@ const Home: React.FC = () => {
     <div className="surface min-h-screen">
       <main>
         <section className="relative flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6">
-          {/* Fondo radial decorativo */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 decorative-bg-radial">
-            <div className="h-full w-full opacity-60 blur-3xl" />
-          </div>
-
           <div className="w-full max-w-6xl">
             {/* Header */}
             <header className="text-center mb-10 section-card">
@@ -73,6 +117,7 @@ const Home: React.FC = () => {
             </header>
 
             {/* Contenedor de tarjetas con un grid más simétrico */}
+
             <section className="section-card">
               <div className="px-[clamp(12px,4vw,40px)]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
@@ -81,6 +126,15 @@ const Home: React.FC = () => {
                       <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)]">
                         <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300">
                           <div className="relative">
+            <section className="section-card relative">
+              <div className="px-[clamp(12px,4vw,40px)]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-center">
+                  {items.map((item) => (
+                    <div key={item.to} className="self-stretch">
+                      <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)] h-full">
+                        <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300 h-full">
+                          <div className="relative h-full">
+
                             <div className="card-hover-glow pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
                             <Card {...item} />
                           </div>

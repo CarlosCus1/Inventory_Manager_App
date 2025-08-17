@@ -51,12 +51,16 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
     <div className="flex flex-col gap-4">
       <div className="flex gap-2 mb-2">
         {/* These buttons need styling that matches the variant */}
+
         <button type="button" onClick={() => handleTypeChange('ruc')} className={`p-2 rounded ${documentType === 'ruc' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>RUC</button>
         <button type="button" onClick={() => handleTypeChange('dni')} className={`p-2 rounded ${documentType === 'dni' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>DNI</button>
+        <button type="button" onClick={() => handleTypeChange('ruc')} className={`btn ${documentType === 'ruc' ? 'bg-sky-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>RUC</button>
+        <button type="button" onClick={() => handleTypeChange('dni')} className={`btn ${documentType === 'dni' ? 'bg-sky-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>DNI</button>
+
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="documentNumber" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="documentNumber" className="form-label">
           Número de Documento:
         </label>
         <StyledInput
@@ -69,12 +73,12 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
           variant={variant}
           disabled={isLoading}
         />
-        {isLoading && <p className="text-sm text-blue-500">Buscando...</p>}
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {isLoading && <p className="text-sm text-sky-500">Buscando...</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="razonSocial" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="razonSocial" className="form-label">
           Razón Social / Nombre:
         </label>
         <StyledInput

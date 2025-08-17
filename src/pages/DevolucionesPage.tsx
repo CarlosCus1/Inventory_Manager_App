@@ -104,7 +104,7 @@ export const DevolucionesPage: React.FC = () => {
       cellRenderer: (item) => (
         <button
           onClick={() => eliminarProductoDeLista('devoluciones', item.codigo)}
-          className="text-red-500 hover:text-red-700 transition-colors duration-150"
+          className="btn-outline-devoluciones"
           aria-label={`Eliminar ${item.nombre}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
         </button>
@@ -158,7 +158,14 @@ export const DevolucionesPage: React.FC = () => {
 
   // --- H. Renderizado del Componente ---
   return (
+
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+    <div className="container mx-auto p-4 md:p-8 min-h-screen surface relative">
+      {/* Fondo radial decorativo */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 decorative-bg-radial">
+        <div className="h-full w-full opacity-60 blur-3xl" />
+      </div>
+
       <PageHeader
         title="Devoluciones & Logística Inversa"
         description="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados."
@@ -200,7 +207,7 @@ export const DevolucionesPage: React.FC = () => {
 
       {/* Sección 2: Búsqueda y Selección de Productos */}
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-devoluciones">Búsqueda y Selección</h2>
+        <h2 className="form-section-title title-devoluciones">Búsqueda y Selección</h2>
         <div className="mb-4 flex items-center">
           <input
             type="text"
@@ -261,7 +268,7 @@ export const DevolucionesPage: React.FC = () => {
 
       {/* Sección 3: Reporte Final (Tabla de Productos) */}
       <section className="section-card">
-        <h2 className="text-2xl font-bold mb-4 title-devoluciones">Reporte Final</h2>
+        <h2 className="form-section-title title-devoluciones">Reporte Final</h2>
         <DataTable
           data={lista}
           columns={columns}
