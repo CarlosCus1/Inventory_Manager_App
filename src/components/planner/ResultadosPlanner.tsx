@@ -57,7 +57,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
               type="button"
               onClick={onExportAjustado}
               disabled={!totalsMatch}
-              className="btn bg-planificador-light-primary hover:bg-planificador-dark-secondary text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white font-bold py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Descargar Reporte
             </button>

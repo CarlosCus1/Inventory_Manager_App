@@ -98,7 +98,7 @@ export const PedidoPage: React.FC = () => {
       cellRenderer: (item) => (
         <button
           onClick={() => eliminarProductoDeLista('pedido', item.codigo)}
-          className="btn-outline-pedido"
+          className="bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary"
           aria-label={`Eliminar ${item.nombre}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
         </button>
@@ -206,7 +206,7 @@ export const PedidoPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="btn-module-pedido ml-3"
+            className="bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary ml-3"
           >
             Añadir Manualmente
           </button>
@@ -244,7 +244,7 @@ export const PedidoPage: React.FC = () => {
           <button
             onClick={handleExport}
             disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente}
-            className="btn-module-pedido mt-4 md:mt-0 w-full md:w-auto"
+            className="bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary mt-4 md:mt-0 w-full md:w-auto"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Pedido (XLSX)'}
           </button>

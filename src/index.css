@@ -229,13 +229,13 @@
     height: 32px;          /* altura uniforme */
     line-height: 1;        /* alinear verticalmente */
 
-    background-color: #F3F4F6; /* FIJO */
-    color: var(--fg);            /* Use global foreground color */
-    border: 1px solid #D1D5DB; /* FIJO */
-    ring-color: #D1D5DB;       /* FIJO */
+    background-color: var(--input-bg); /* Use theme variable */
+    color: var(--input-fg);            /* Use theme variable */
+    border: 1px solid var(--input-border); /* Use theme variable */
+    ring-color: var(--input-border);       /* Use theme variable */
   }
   .input::placeholder {
-    color: #6B7280; /* FIJO */
+    color: var(--input-ph); /* Use theme variable */
     opacity: 1;
   }
 

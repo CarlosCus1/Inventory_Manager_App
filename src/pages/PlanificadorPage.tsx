@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import * as DateUtils from '../utils/dateUtils';
-import { calcular as calcularApi } from '../utils/api'; // Renamed calcular to calcularApi
+import { calcular as calcularApi, generarReporte, generarReporteJson } from '../utils/api';
 import { MAX_FECHAS } from '../utils/config';
 import { FormValidator } from '../utils/formValidator';
 
@@ -15,6 +15,24 @@ import { DatosGeneralesPlanner } from '../components/planner/DatosGeneralesPlann
 import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
 import './PlanificadorPage.css';
 import PageHeader from '../components/PageHeader';
+import { BackupOptionsModal } from '../components/planner/BackupOptionsModal';
+
+// This could be a helper function inside PlanificadorPage or in a utility file
+const readFileContent = async (file: File) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        resolve(data);
+      } catch (e) {
+        reject(new Error("Error parsing JSON file."));
+      }
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
+  });
+};
 
 // Define initial state interface (for better type safety)
 // This local state only holds data not related to the form itself.
@@ -37,6 +55,7 @@ export const PlanificadorPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
   const [isCalcularDisabled, setCalcularDisabled] = useState(true);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const fetchHolidays = useAppStore(state => state.fetchHolidays);
   const formState = useAppStore(state => state.formState.planificador);
   const actualizarFormulario = useAppStore(state => state.actualizarFormulario);
@@ -53,6 +72,7 @@ export const PlanificadorPage: React.FC = () => {
   const feriadosCargados = useRef(new Map<string, string>());
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileSelectionMode, setFileSelectionMode] = useState<'loadAndEdit' | 'createCopy' | null>(null);
 
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
@@ -63,18 +83,13 @@ export const PlanificadorPage: React.FC = () => {
       console.log('Fetched holidays:', feriados);
 
       feriadosCargados.current.clear();
-      const events = feriados.map(feriado => ({
-        title: feriado.name,
-        start: feriado.date,
-        allDay: true,
-        classNames: ['fc-holiday-event'] // Add a class for styling if needed
-      }));
+      feriadosCargados.current.clear();
       feriados.forEach((feriado) => {
         feriadosCargados.current.set(feriado.date, feriado.name);
       });
       console.log('Feriados cargados en ref:', feriadosCargados.current);
 
-      successCallback(events); // Pass the events to FullCalendar
+      successCallback([]); // Pass an empty array of events to FullCalendar for holidays
     } catch (error) {
       console.error('Error al cargar eventos del calendario:', error);
       failureCallback(error as Error);
@@ -152,6 +167,14 @@ export const PlanificadorPage: React.FC = () => {
       [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
     }));
     setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+  }, []);
+
+  const handleOpenBackupModal = useCallback(() => {
+    setIsBackupModalOpen(true);
+  }, []);
+
+  const handleCloseBackupModal = useCallback(() => {
+    setIsBackupModalOpen(false);
   }, []);
 
   // Function to update the state of action buttons (like 'Calcular')
@@ -269,10 +292,8 @@ export const PlanificadorPage: React.FC = () => {
     }
   }, [_getAndValidateFormData]);
 
-  const handleExportAjustado = useCallback(async () => {
-    // This function will be similar to other handleExport functions
-    // It will send the adjusted data to the backend
-    const payload = {
+  const handleExportAjustado = useCallback(async (dataToExport?: any) => { // Added dataToExport parameter
+    const payload = dataToExport || { // Use provided data or construct from state
       tipo: 'planificador',
       form: formState,
       // The backend expects a 'montosAsignados' key in the main data object
@@ -289,27 +310,29 @@ export const PlanificadorPage: React.FC = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/export-xlsx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Export XLSX
+      const xlsxBlob = await generarReporte(payload);
+      const xlsxUrl = window.URL.createObjectURL(xlsxBlob);
+      const xlsxA = document.createElement('a');
+      xlsxA.href = xlsxUrl;
+      xlsxA.download = `planificador_${formState.cliente || 'reporte'}_${new Date().toISOString().slice(0,10)}.xlsx`; // Dynamic filename
+      document.body.appendChild(xlsxA);
+      xlsxA.click();
+      xlsxA.remove();
 
-      if (!response.ok) {
-        throw new Error('Error en la respuesta del servidor al exportar.');
-      }
+      // Export JSON backup
+      const jsonBlob = await generarReporteJson(payload);
+      const jsonUrl = window.URL.createObjectURL(jsonBlob);
+      const jsonA = document.createElement('a');
+      jsonA.href = jsonUrl;
+      jsonA.download = `planificador_${formState.cliente || 'reporte'}_${new Date().toISOString().slice(0,10)}.json`; // Dynamic filename
+      document.body.appendChild(jsonA);
+      jsonA.click();
+      jsonA.remove();
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'planificador_ajustado.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
     } catch (error) {
-      console.error("Error al exportar a Excel:", error);
-      alert("No se pudo generar el archivo de Excel.");
+      console.error("Error al exportar:", error);
+      alert("No se pudo generar el archivo de reporte. Verifique que el servidor backend esté funcionando.");
     }
   }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual]);
 
@@ -318,48 +341,52 @@ export const PlanificadorPage: React.FC = () => {
     if (!file) return;
 
     try {
-      const content = await file.text();
-      const data = JSON.parse(content);
+      const data = await readFileContent(file); // Use the new utility
 
-      // Basic validation of the loaded data
-      if (data && data.montosAsignados && data.selectedDates) {
-        const localPlannerUpdate: Partial<PlannerState> = {
-            selectedDates: new Set(data.selectedDates || []),
-            fechasOrdenadas: data.fechasOrdenadas || [],
-            montosAsignados: data.montosAsignados || {},
-            resumenMensual: data.resumenMensual || {},
-            isDataDirty: false,
-        };
-        setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
-        setMontosAjustados(data.montosAsignados || {});
+      if (fileSelectionMode === 'loadAndEdit') {
+        // Basic validation of the loaded data
+        if (data && data.montosAsignados && data.selectedDates) {
+          const localPlannerUpdate: Partial<PlannerState> = {
+              selectedDates: new Set(data.selectedDates || []),
+              fechasOrdenadas: data.fechasOrdenadas || [],
+              montosAsignados: data.montosAsignados || {},
+              resumenMensual: data.resumenMensual || {},
+              isDataDirty: false,
+          };
+          setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
+          setMontosAjustados(data.montosAsignados || {});
 
-        // Also update the global form state
-        const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
-        formFieldsToUpdate.forEach(field => {
-            const value = data[field];
-            if (value !== undefined) {
-                actualizarFormulario('planificador', field, value);
-            }
-        });
+          // Also update the global form state
+          const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+          formFieldsToUpdate.forEach(field => {
+              const value = data[field];
+              if (value !== undefined) {
+                  actualizarFormulario('planificador', field, value);
+              }
+          });
 
-        // mostrarToast('Respaldo cargado correctamente.', 'success');
-      } else {
-        // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error');
+          // mostrarToast('Respaldo cargado correctamente.', 'success');
+        } else {
+          // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error');
+        }
+      } else if (fileSelectionMode === 'createCopy') {
+        await handleExportAjustado(data); // Export directly with loaded data
       }
     } catch (error) {
       console.error('Error al cargar el respaldo:', error);
       // mostrarToast('Error al procesar el archivo de respaldo.', 'error');
+    } finally {
+      // Reset file input to allow loading the same file again
+      if (event.target) {
+        event.target.value = '';
+      }
+      setFileSelectionMode(null); // Reset mode after processing
     }
+  }, [actualizarFormulario, fileSelectionMode, handleExportAjustado]); // Added dependencies
 
-    // Reset file input to allow loading the same file again
-    if (event.target) {
-      event.target.value = '';
-    }
-  }, [actualizarFormulario]);
-
-  const handleCargarRespaldoClick = () => {
+  const triggerFileInputClick = useCallback(() => {
     fileInputRef.current?.click();
-  };
+  }, []);
 
   // Equivalent of PlanificadorApp.init()
   useEffect(() => {
@@ -392,6 +419,14 @@ export const PlanificadorPage: React.FC = () => {
 
     initializeApp();
   }, [actualizarFormulario]);
+
+  const handleClearSelectedDates = useCallback(() => {
+    setPlannerState(prevState => ({
+      ...prevState,
+      selectedDates: new Set(),
+      isDataDirty: true, // Mark data as dirty if dates are cleared
+    }));
+  }, []);
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
@@ -429,16 +464,17 @@ export const PlanificadorPage: React.FC = () => {
             isLoadingRuc={isLoadingRuc}
             rucError={rucError}
             onCalcular={calcular}
+            onOpenBackupModal={handleOpenBackupModal}
           />
 
           <SeleccionFechas
             selectedDates={plannerState.selectedDates}
-            onCargarRespaldoClick={handleCargarRespaldoClick}
             fetchCalendarEvents={fetchCalendarEvents}
             handleDateClick={handleDateClick}
             handleDayCellMount={handleDayCellMount}
             onCalcular={calcular}
             isCalcularDisabled={isCalcularDisabled}
+            onClearSelectedDates={handleClearSelectedDates}
           />
 
           <ResultadosPlanner
@@ -451,6 +487,19 @@ export const PlanificadorPage: React.FC = () => {
           />
         </div>
       </main>
+
+      <BackupOptionsModal
+        isOpen={isBackupModalOpen}
+        onClose={handleCloseBackupModal}
+        onLoadAndEdit={() => {
+          setFileSelectionMode('loadAndEdit');
+          triggerFileInputClick();
+        }}
+        onCreateIdenticalCopy={() => {
+          setFileSelectionMode('createCopy');
+          triggerFileInputClick();
+        }}
+      />
     </div>
   );
 };

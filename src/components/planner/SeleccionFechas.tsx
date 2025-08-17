@@ -8,22 +8,22 @@ import { type DayCellContentArg } from '@fullcalendar/core';
 
 interface Props {
   selectedDates: Set<string>;
-  onCargarRespaldoClick: () => void;
   onCalcular: () => void;
   isCalcularDisabled: boolean;
   fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
   handleDateClick: (arg: DateClickArg) => void;
   handleDayCellMount: (arg: DayCellContentArg) => void;
+  onClearSelectedDates: () => void;
 }
 
 export const SeleccionFechas: React.FC<Props> = ({
   selectedDates,
-  onCargarRespaldoClick,
   onCalcular,
   isCalcularDisabled,
   fetchCalendarEvents,
   handleDateClick,
-  handleDayCellMount
+  handleDayCellMount,
+  onClearSelectedDates
 }) => {
 
   const getTooltipText = () => {
@@ -58,6 +58,14 @@ export const SeleccionFechas: React.FC<Props> = ({
             ]}
             dateClick={handleDateClick}
             dayCellDidMount={handleDayCellMount}
+            eventContent={(arg) => {
+              // If the event has no title, don't render it
+              if (!arg.event.title || arg.event.title.trim() === '') {
+                return false; // Prevents the event from rendering
+              }
+              // Otherwise, let FullCalendar render its default content
+              return true; // Or return a custom JSX element if needed
+            }}
         />
       </div>
 
@@ -95,11 +103,11 @@ export const SeleccionFechas: React.FC<Props> = ({
       <div className="flex justify-end gap-4 mt-6">
         <button
           type="button"
-          onClick={onCargarRespaldoClick}
-          className="btn-outline-planificador"
-          title="Cargar un estado guardado previamente"
+          onClick={onClearSelectedDates}
+          className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary"
+          title="Limpiar todas las fechas seleccionadas"
         >
-          Cargar Respaldo
+          Limpiar Fechas
         </button>
         <button
           type="button"
@@ -108,7 +116,7 @@ export const SeleccionFechas: React.FC<Props> = ({
           className={`font-bold py-2 px-6 rounded-lg text-lg transition-all transform ${
             isCalcularDisabled
               ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              : 'bg-planificador-light-primary hover:bg-blue-700 text-white hover:scale-105'
+              : 'bg-planificador-light-primary dark:bg-planificador-dark-primary text-white hover:bg-planificador-light-primary/90 dark:hover:bg-planificador-dark-primary/90 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary'
           }`}
           title={getTooltipText()}
         >

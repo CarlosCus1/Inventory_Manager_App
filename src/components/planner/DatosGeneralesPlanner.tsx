@@ -15,7 +15,7 @@ interface Props {
   rucCondicion: string | null;
   isLoadingRuc: boolean;
   rucError: string | null;
-  onCalcular: () => void;
+  onOpenBackupModal: () => void; // New prop
 }
 
 export const DatosGeneralesPlanner: React.FC<Props> = ({
@@ -27,7 +27,7 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
   rucCondicion,
   isLoadingRuc,
   rucError,
-  onCalcular
+  onOpenBackupModal
 }) => {
   return (
     <section id="datos-cliente" className="card">
@@ -113,10 +113,11 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
         <div className="lg:col-span-3 flex justify-end gap-4">
           <button
             type="button"
-            onClick={onCalcular}
-            className="btn-module-planificador"
+            onClick={onOpenBackupModal}
+            className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary"
+            title="Cargar un estado guardado previamente"
           >
-            Calcular
+            Cargar Respaldo
           </button>
         </div>
       </form>
