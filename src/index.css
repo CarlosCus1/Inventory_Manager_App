@@ -115,6 +115,71 @@
 }
 
 @layer components {
+  /* Enhanced glassmorphism and animations */
+  .navbar-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .navbar-glass {
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Floating animation keyframes */
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0px) translateX(0px) rotate(0deg); 
+      opacity: 0.3; 
+    }
+    25% { 
+      transform: translateY(-20px) translateX(10px) rotate(90deg); 
+      opacity: 0.6; 
+    }
+    50% { 
+      transform: translateY(-10px) translateX(-15px) rotate(180deg); 
+      opacity: 0.4; 
+    }
+    75% { 
+      transform: translateY(-30px) translateX(5px) rotate(270deg); 
+      opacity: 0.7; 
+    }
+  }
+
+  .animate-float {
+    animation: float linear infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 30s linear infinite;
+  }
+
+  /* Enhanced hover effects */
+  .group:hover .group-hover\:scale-110 {
+    transform: scale(1.1);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--panel);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fg);
+  }
+
   /* Botón base y primario. El padding más generoso se define en .btn-primary */
   /* Reemplazar alias 'btn' por utilidades explícitas para Tailwind v4 (evita unknown utility `btn`) */
   .btn {
@@ -142,7 +207,7 @@
     /* Meta ~25px: usamos px-5 (20px horizontales) y py-6 (~24px vertical) para sensación ~25px, 
        y gap inferior 20-24px según viewport */
     @apply shadow-md rounded-lg px-5 py-6 border mb-5 md:mb-4;
-    background-color: var(--panel);
+    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
     border-color: var(--border);
     color: var(--fg);
   }
@@ -221,7 +286,6 @@
 
   /* Accesos directos neutrales para superficies y texto si se desean en contenedores generales */
   .surface {
-    background-color: var(--panel);
     color: var(--fg); /* Texto global unificado */
   }
   .surface-contrast {
@@ -337,7 +401,8 @@
     display: none; /* Chrome/Safari/Opera */
   }
   .reel-card {
-    @apply min-w-[280px] snap-center rounded-2xl p-6 shadow-md bg-gray-800/90 border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
+    @apply min-w-[280px] snap-center rounded-2xl p-6 shadow-md border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
+    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
   }

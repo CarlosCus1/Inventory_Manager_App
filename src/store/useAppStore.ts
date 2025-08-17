@@ -17,6 +17,15 @@ type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 // --- Tipos Adicionales ---
 type Theme = 'light' | 'dark';
 
+// Module usage statistics interface
+interface ModuleStats {
+  devoluciones: number;
+  pedido: number;
+  inventario: number;
+  comparador: number;
+  planificador: number;
+}
+
 // --- 2. Definición de la forma del Estado (State) ---
 // Esta interfaz define todos los datos que nuestro store va a manejar.
 interface State {
@@ -24,6 +33,12 @@ interface State {
   theme: Theme;
   // Catálogo completo de productos, cargado desde el JSON.
   catalogo: IProducto[];
+  // Module usage statistics
+  moduleUsage: ModuleStats;
+  // Incomplete tasks counter
+  incompleteTasks: number;
+  // Last activity tracking
+  lastActivity: { [key: string]: Date };
   // Estado de los formularios. Será la parte que persistiremos en localStorage.
   formState: {
     // Un objeto para cada tipo de formulario, para mantenerlos separados.
@@ -55,6 +70,13 @@ interface State {
 interface Actions {
   // Cambia el tema entre 'light' y 'dark'.
   toggleTheme: () => void;
+  // Update module usage statistics
+  updateModuleUsage: (module: keyof ModuleStats) => void;
+  // Task management
+  addIncompleteTask: () => void;
+  completeTask: () => void;
+  // Activity tracking
+  recordActivity: (module: keyof ModuleStats) => void;
   // Carga el catálogo de productos desde un archivo JSON.
   cargarCatalogo: () => Promise<void>;
   // Actualiza un campo específico en el estado de un formulario.
@@ -85,6 +107,15 @@ interface Actions {
 const initialState: Omit<State, keyof Actions> = {
   theme: 'light',
   catalogo: [],
+  moduleUsage: {
+    devoluciones: 75,
+    pedido: 90,
+    inventario: 60,
+    comparador: 45,
+    planificador: 30,
+  },
+  incompleteTasks: 5,
+  lastActivity: {},
   formState: {
     devoluciones: { motivo: 'falla_fabrica' },
     pedido: {},
@@ -262,7 +293,29 @@ export const useAppStore = create<State & Actions>()(
         const data = await fetchHolidays(year);
         set({ holidays: data });
         return data;
-      }
+      },
+
+      updateModuleUsage: (module) => set((state) => ({
+        moduleUsage: {
+          ...state.moduleUsage,
+          [module]: Math.min(100, state.moduleUsage[module] + Math.random() * 10)
+        }
+      })),
+
+      recordActivity: (module) => set((state) => ({
+        lastActivity: {
+          ...state.lastActivity,
+          [module]: new Date()
+        }
+      })),
+
+      addIncompleteTask: () => set((state) => ({
+        incompleteTasks: state.incompleteTasks + 1
+      })),
+
+      completeTask: () => set((state) => ({
+        incompleteTasks: Math.max(0, state.incompleteTasks - 1)
+      }))
     }),
     {
       // --- Configuración de la Persistencia ---
@@ -270,7 +323,14 @@ export const useAppStore = create<State & Actions>()(
       name: 'app-storage',
       // Se especifica qué parte del estado queremos persistir.
       // En este caso, `formState` y `theme`. El catálogo y las listas no se guardan.
-      partialize: (state) => ({ formState: state.formState, theme: state.theme, listas: state.listas }),
+      partialize: (state) => ({ 
+        formState: state.formState, 
+        theme: state.theme, 
+        listas: state.listas,
+        moduleUsage: state.moduleUsage,
+        incompleteTasks: state.incompleteTasks,
+        lastActivity: state.lastActivity
+      }),
       // Se especifica que el almacenamiento a usar es `localStorage`.
       storage: createJSONStorage(() => localStorage),
     }

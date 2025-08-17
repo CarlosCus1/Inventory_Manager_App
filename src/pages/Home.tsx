@@ -117,10 +117,6 @@ const Home: React.FC = () => {
 
             {/* Contenedor de tarjetas con un grid más simétrico */}
             <section className="section-card relative">
-              <InteractiveBackground 
-                moduleStats={mockRootProps.moduleStats}
-                particleColors={mockRootProps.particleColors}
-              />
               <div className="px-[clamp(12px,4vw,40px)]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-center">
                   {items.map((item) => (

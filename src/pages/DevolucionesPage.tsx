@@ -158,7 +158,11 @@ export const DevolucionesPage: React.FC = () => {
 
   // --- H. Renderizado del Componente ---
   return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+    <div className="container mx-auto p-4 md:p-8 min-h-screen surface relative">
+      {/* Fondo radial decorativo */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 decorative-bg-radial">
+        <div className="h-full w-full opacity-60 blur-3xl" />
+      </div>
       <PageHeader
         title="Devoluciones & Logística Inversa"
         description="Gestiona y controla las devoluciones de productos, registrando motivos y estados para facilitar el proceso de logística inversa y generación de reportes detallados."
