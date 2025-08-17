@@ -1,8 +1,12 @@
 import React from 'react';
-import { StyledInput, type InputProps } from './ui/StyledInput'; // Assuming StyledInput is in ui folder
+import { Box, Typography, Stack, Alert } from '@mui/material';
+import { ModuleTextField } from './ui/ModuleTextField';
+import { ModuleButton } from './ui/ModuleButton';
+import { StyledInput, type InputProps } from './ui/StyledInput'; // Keep for compatibility
 
 // Extending InputProps to get variant type
 type VariantProp = InputProps['variant'];
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
 interface RucDniInputProps {
   documentType: 'ruc' | 'dni';
@@ -47,52 +51,92 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
   const inputPlaceholder = documentType === 'ruc' ? 'Ingrese RUC (11 dígitos)' : 'Ingrese DNI';
   const inputMaxLength = documentType === 'ruc' ? 11 : 8;
 
+  const moduleVariant = variant as ModuleVariant;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-2 mb-2">
-        {/* These buttons need styling that matches the variant */}
-        <button type="button" onClick={() => handleTypeChange('ruc')} className={`btn ${documentType === 'ruc' ? 'bg-sky-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>RUC</button>
-        <button type="button" onClick={() => handleTypeChange('dni')} className={`btn ${documentType === 'dni' ? 'bg-sky-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>DNI</button>
-      </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+        <ModuleButton
+          module={moduleVariant}
+          variant={documentType === 'ruc' ? 'contained' : 'outlined'}
+          size="small"
+          onClick={() => handleTypeChange('ruc')}
+        >
+          RUC
+        </ModuleButton>
+        <ModuleButton
+          module={moduleVariant}
+          variant={documentType === 'dni' ? 'contained' : 'outlined'}
+          size="small"
+          onClick={() => handleTypeChange('dni')}
+        >
+          DNI
+        </ModuleButton>
+      </Stack>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="documentNumber" className="form-label">
-          Número de Documento:
-        </label>
-        <StyledInput
-          id="documentNumber"
-          type="text"
-          placeholder={inputPlaceholder}
-          value={documentNumber}
-          onChange={handleNumberChange}
-          maxLength={inputMaxLength}
-          variant={variant}
-          disabled={isLoading}
-        />
-        {isLoading && <p className="text-sm text-sky-500">Buscando...</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
+      <ModuleTextField
+        module={moduleVariant}
+        label="Número de Documento"
+        placeholder={inputPlaceholder}
+        value={documentNumber}
+        onChange={handleNumberChange}
+        inputProps={{ maxLength: inputMaxLength }}
+        disabled={isLoading}
+        fullWidth
+      />
+      
+      {isLoading && (
+        <Typography variant="body2" color="info.main">
+          Buscando...
+        </Typography>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ fontSize: '0.875rem' }}>
+          {error}
+        </Alert>
+      )}
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="razonSocial" className="form-label">
-          Razón Social / Nombre:
-        </label>
-        <StyledInput
-          id="razonSocial"
-          type="text"
-          placeholder="Razón Social o Nombre"
-          value={razonSocial}
-          onChange={handleRazonSocialChange}
-          variant={variant}
-          readOnly={documentType === 'ruc' && isLoading}
-        />
-        {documentType === 'ruc' && rucEstado && rucCondicion && (
-          <div className="text-sm mt-1">
-            <p>Estado: <span className={`font-semibold ${rucEstado.toLowerCase().includes('activo') ? 'text-green-600' : 'text-red-600'}`}>{rucEstado}</span></p>
-            <p>Condición: <span className={`font-semibold ${rucCondicion.toLowerCase().includes('habido') ? 'text-green-600' : 'text-red-600'}`}>{rucCondicion}</span></p>
-          </div>
-        )}
-      </div>
-    </div>
+      <ModuleTextField
+        module={moduleVariant}
+        label="Razón Social / Nombre"
+        placeholder="Razón Social o Nombre"
+        value={razonSocial}
+        onChange={handleRazonSocialChange}
+        InputProps={{ readOnly: documentType === 'ruc' && isLoading }}
+        fullWidth
+      />
+      
+      {documentType === 'ruc' && rucEstado && rucCondicion && (
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="body2" component="div">
+            Estado: 
+            <Typography 
+              component="span" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: rucEstado.toLowerCase().includes('activo') ? 'success.main' : 'error.main',
+                ml: 0.5
+              }}
+            >
+              {rucEstado}
+            </Typography>
+          </Typography>
+          <Typography variant="body2" component="div">
+            Condición: 
+            <Typography 
+              component="span" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: rucCondicion.toLowerCase().includes('habido') ? 'success.main' : 'error.main',
+                ml: 0.5
+              }}
+            >
+              {rucCondicion}
+            </Typography>
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 };

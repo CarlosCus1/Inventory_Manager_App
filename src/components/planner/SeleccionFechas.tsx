@@ -1,8 +1,8 @@
 import React from 'react';
+import { Box, Typography, List, ListItem, ListItemText, Stack } from '@mui/material';
 import * as DateUtils from '../../utils/dateUtils';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import { ModuleCalendar } from '../ui/ModuleCalendar';
+import { ModuleButton } from '../ui/ModuleButton';
 import { type DateClickArg } from '@fullcalendar/interaction';
 import { type DayCellContentArg } from '@fullcalendar/core';
 
@@ -34,95 +34,158 @@ export const SeleccionFechas: React.FC<Props> = ({
   };
 
   return (
-    <section id="seleccion-fechas" className="card">
-      <h2 className="form-section-title title-planificador">2. Selección de Fechas</h2>
-      <div className="mb-4 w-full overflow-x-auto">
-        <FullCalendar
-            plugins={[dayGridPlugin, interactionPlugin]}
-            locale='es'
-            initialView='dayGridMonth'
-            height='auto'
-            fixedWeekCount={true}
-            headerToolbar={{
-              left: 'prev,today,next',
-              center: 'title',
-              right: ''
-            }}
-            buttonText={{
-              today: 'Hoy'
-            }}
-            eventSources={[
-              {
-                events: fetchCalendarEvents
-              }
-            ]}
-            dateClick={handleDateClick}
-            dayCellDidMount={handleDayCellMount}
-            eventContent={(arg) => {
-              // If the event has no title, don't render it
-              if (!arg.event.title || arg.event.title.trim() === '') {
-                return false; // Prevents the event from rendering
-              }
-              // Otherwise, let FullCalendar render its default content
-              return true; // Or return a custom JSX element if needed
-            }}
+    <Box
+      component="section"
+      id="seleccion-fechas"
+      sx={{
+        px: 2.5, // px-5 (20px)
+        py: 3,   // py-6 (24px)
+        mb: { xs: 2.5, md: 2 }, // mb-5 md:mb-4 (20px, 16px)
+        backgroundColor: 'background.paper', // This will adapt via theme
+        borderRadius: 1, // rounded-lg (8px)
+        boxShadow: 3, // shadow-md
+        border: '1px solid',
+        borderColor: 'divider', // Use theme.palette.divider for border color
+        color: 'text.primary' // Use theme.palette.text.primary for text color
+      }}
+    >
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        sx={{ 
+          mb: 3, 
+          fontWeight: 'bold',
+          color: 'info.main',
+          position: 'relative',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            bottom: '-6px',
+            width: '100%',
+            height: '4px',
+            backgroundColor: 'info.main',
+          }
+        }}
+      >
+        2. Selección de Fechas
+      </Typography>
+      
+      <Box sx={{ mb: 4 }}>
+        <ModuleCalendar
+          module="planificador"
+          selectedDates={selectedDates}
+          onDateClick={handleDateClick}
+          onDayCellMount={handleDayCellMount}
+          fetchCalendarEvents={fetchCalendarEvents}
         />
-      </div>
+      </Box>
 
-      <div className="fechas-seleccionadas">
-        <h3 className="text-lg font-semibold mb-2 title-planificador">Fechas Seleccionadas ({selectedDates.size})</h3>
-        <ul className="max-h-48 overflow-y-auto border border-sky-300 dark:border-sky-700 rounded-md p-2">
-          {Array.from(selectedDates)
-            .sort((a, b) => DateUtils.parsearFecha(a).getTime() - DateUtils.parsearFecha(b).getTime())
-            .map(fecha => {
-              const diasRestantes = DateUtils.diasDesdeHoy(fecha);
-              let textoDias = '';
-              switch (diasRestantes) {
-                case 0:
-                  textoDias = ' (Hoy)';
-                  break;
-                case 1:
-                  textoDias = ' (Mañana)';
-                  break;
-                case -1:
-                  textoDias = ' (Ayer)';
-                  break;
-                default:
-                  if (diasRestantes > 1) {
-                    textoDias = ` (en ${diasRestantes} días)`;
-                  } else {
-                    textoDias = ` (hace ${Math.abs(diasRestantes)} días)`;
-                  }
-                  break;
-              }
-              return <li key={fecha} className="py-1 border-b border-b-sky-200 dark:border-b-sky-800 last:border-b-0">{`${fecha}${textoDias}`}</li>;
-            })}
-        </ul>
-      </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h6" 
+          component="h3" 
+          sx={{ 
+            mb: 2, 
+            fontWeight: 'semibold',
+            color: 'info.main'
+          }}
+        >
+          Fechas Seleccionadas ({selectedDates.size})
+        </Typography>
+        
+        <Box
+          sx={{
+            maxHeight: '200px',
+            overflowY: 'auto',
+            border: '1px solid',
+            borderColor: 'info.light',
+            borderRadius: 1,
+            p: 1,
+            backgroundColor: 'background.default'
+          }}
+        >
+          <List dense>
+            {Array.from(selectedDates)
+              .sort((a, b) => DateUtils.parsearFecha(a).getTime() - DateUtils.parsearFecha(b).getTime())
+              .map(fecha => {
+                const diasRestantes = DateUtils.diasDesdeHoy(fecha);
+                let textoDias = '';
+                switch (diasRestantes) {
+                  case 0:
+                    textoDias = ' (Hoy)';
+                    break;
+                  case 1:
+                    textoDias = ' (Mañana)';
+                    break;
+                  case -1:
+                    textoDias = ' (Ayer)';
+                    break;
+                  default:
+                    if (diasRestantes > 1) {
+                      textoDias = ` (en ${diasRestantes} días)`;
+                    } else {
+                      textoDias = ` (hace ${Math.abs(diasRestantes)} días)`;
+                    }
+                    break;
+                }
+                return (
+                  <ListItem 
+                    key={fecha}
+                    sx={{ 
+                      py: 0.5,
+                      borderBottom: '1px solid',
+                      borderColor: 'info.light',
+                      '&:last-child': { borderBottom: 'none' }
+                    }}
+                  >
+                    <ListItemText 
+                      primary={`${fecha}${textoDias}`}
+                      sx={{ fontSize: '0.875rem' }}
+                    />
+                  </ListItem>
+                );
+              })}
+          </List>
+        </Box>
+      </Box>
 
-      <div className="flex justify-end gap-4 mt-6">
-        <button
-          type="button"
+      <Stack 
+        direction="row" 
+        justifyContent="flex-end" 
+        spacing={2}
+        sx={{ mt: 3 }}
+      >
+        <ModuleButton
+          module="planificador"
+          variant="outlined"
           onClick={onClearSelectedDates}
-          className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary"
           title="Limpiar todas las fechas seleccionadas"
         >
           Limpiar Fechas
-        </button>
-        <button
-          type="button"
+        </ModuleButton>
+        
+        <ModuleButton
+          module="planificador"
+          variant="contained"
+          size="large"
           onClick={onCalcular}
           disabled={isCalcularDisabled}
-          className={`font-bold py-2 px-6 rounded-lg text-lg transition-all transform ${
-            isCalcularDisabled
-              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              : 'bg-planificador-light-primary dark:bg-planificador-dark-primary text-white hover:bg-planificador-light-primary/90 dark:hover:bg-planificador-dark-primary/90 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary'
-          }`}
           title={getTooltipText()}
+          sx={{
+            fontSize: '1.125rem',
+            fontWeight: 'bold',
+            px: 3,
+            py: 1,
+            transform: isCalcularDisabled ? 'none' : 'scale(1)',
+            '&:hover': {
+              transform: isCalcularDisabled ? 'none' : 'scale(1.02)',
+            }
+          }}
         >
           Calcular
-        </button>
-      </div>
-    </section>
+        </ModuleButton>
+      </Stack>
+    </Box>
   );
 };

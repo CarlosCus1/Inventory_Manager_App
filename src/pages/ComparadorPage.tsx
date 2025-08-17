@@ -199,7 +199,7 @@ export const ComparadorPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="precios"
             showStockRef={false}
-            buttonClassName="btn-module-comparador ml-3"
+            buttonClassName="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary ml-3"
             themeClass="title-comparador btn-module-comparador"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {

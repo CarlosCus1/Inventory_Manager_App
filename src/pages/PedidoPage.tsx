@@ -183,7 +183,7 @@ export const PedidoPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="pedido"
             showStockRef={true}
-            buttonClassName="btn-module-pedido ml-3"
+            buttonClassName="bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary ml-3"
             themeClass="title-pedido btn-module-pedido"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {

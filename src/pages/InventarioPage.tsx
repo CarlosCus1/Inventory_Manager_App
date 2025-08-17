@@ -206,7 +206,7 @@ export const InventarioPage: React.FC = () => {
           />
           <LineSelectorModalTrigger
             moduloKey="inventario"
-            buttonClassName="btn-module-inventario ml-3"
+            buttonClassName="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3"
             themeClass="title-inventario btn-module-inventario"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {

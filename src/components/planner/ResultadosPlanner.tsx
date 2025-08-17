@@ -33,7 +33,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
   }
 
   return (
-    <section id="resultados" className="card">
+    <section id="resultados" className="section-card">
       <h2 className="form-section-title title-planificador">3. Resultados</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SummaryTable

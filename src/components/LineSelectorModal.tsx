@@ -127,6 +127,21 @@ function normalize(s: string) {
   return s.toLocaleLowerCase("es-PE");
 }
 
+const getModuleButtonClasses = (key: ModuloKey) => {
+  switch (key) {
+    case "devoluciones":
+      return "bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary";
+    case "pedido":
+      return "bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary";
+    case "inventario":
+      return "bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary";
+    case "comparador":
+      return "bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary";
+    default:
+      return "bg-gray-500 dark:bg-gray-700 text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-700"; // Default neutral color
+  }
+};
+
 /**
  * Modal de selección por línea:
  * Paso 1: elegir línea (única).
@@ -387,11 +402,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
             onClick={handleConfirm}
             disabled={!selectedLinea || selectedCodigos.size === 0}
             className={cn(
-              "px-4 py-2 rounded",
-              // usar la clase de botón del módulo si viene en themeClass (ej. btn-module-xyz)
-              themeClass?.includes("btn-module-")
-                ? themeClass.split(" ").find(c => c.startsWith("btn-module-"))
-                : "btn-module-inventario",
+              getModuleButtonClasses(moduloKey), // Use the helper function
               !selectedLinea || selectedCodigos.size === 0 ? "opacity-60 cursor-not-allowed" : ""
             )}
             aria-label="Agregar seleccionados"

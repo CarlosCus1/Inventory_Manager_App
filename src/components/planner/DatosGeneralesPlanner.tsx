@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyledInput } from '../ui/StyledInput';
-import { StyledSelect } from '../ui/StyledSelect';
-import { FormGroup, Label } from '../ui/FormControls';
+import { Box, Typography, Stack } from '@mui/material';
+import { ModuleTextField } from '../ui/ModuleTextField';
+import { ModuleSelect } from '../ui/ModuleSelect';
+import { ModuleButton } from '../ui/ModuleButton';
 import { RucDniInput } from '../RucDniInput';
 import { SucursalInput } from '../ui/SucursalInput';
 import type { IForm } from '../../interfaces';
@@ -29,12 +30,66 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
   rucError,
   onOpenBackupModal
 }) => {
-  return (
-    <section id="datos-cliente" className="card">
-      <h2 className="form-section-title title-planificador">1. Datos Generales</h2>
-      <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={(e) => e.preventDefault()}>
+  const selectOptions = [
+    { value: '', label: 'Seleccionar color...', disabled: true },
+    { value: 'rojo', label: 'Viniball (Rojo)' },
+    { value: 'azul', label: 'Vinifan (Azul)' },
+    { value: 'verde', label: 'Otros (Verde)' }
+  ];
 
-        <RucDniInput
+  return (
+    <Box
+      component="section"
+      id="datos-cliente"
+      sx={{
+        px: 2.5, // px-5 (20px)
+        py: 3,   // py-6 (24px)
+        mb: { xs: 2.5, md: 2 }, // mb-5 md:mb-4 (20px, 16px)
+        backgroundColor: 'background.paper', // This will adapt via theme
+        borderRadius: 1, // rounded-lg (8px)
+        boxShadow: 3, // shadow-md
+        border: '1px solid',
+        borderColor: 'divider', // Use theme.palette.divider for border color
+        color: 'text.primary' // Use theme.palette.text.primary for text color
+      }}
+    >
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        sx={{ 
+          mb: 3, 
+          fontWeight: 'bold',
+          color: 'info.main',
+          position: 'relative',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            bottom: '-6px',
+            width: '100%',
+            height: '4px',
+            backgroundColor: 'info.main',
+          }
+        }}
+      >
+        1. Datos Generales
+      </Typography>
+      
+      <Box
+        component="form"
+        onSubmit={(e) => e.preventDefault()}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: 'repeat(2, 1fr)',
+            lg: 'repeat(3, 1fr)'
+          },
+          gap: 3
+        }}
+      >
+        <Box sx={{ gridColumn: { lg: 'span 3' } }}>
+          <RucDniInput
             documentType={formState.documentType || 'ruc'}
             documentNumber={formState.documento_cliente || ''}
             razonSocial={formState.cliente || ''}
@@ -45,82 +100,75 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
             isLoading={isLoadingRuc}
             error={rucError}
             variant="planificador"
+          />
+        </Box>
+
+        <ModuleTextField
+          module="planificador"
+          label="Código de Cliente"
+          name="codigo_cliente"
+          value={formState.codigo_cliente || ''}
+          onChange={onFormChange}
+          placeholder="Opcional"
+          fullWidth
         />
 
-        <FormGroup>
-            <Label htmlFor="codigo_cliente">Código de Cliente</Label>
-            <StyledInput
-                type="text"
-                id="codigo_cliente"
-                name="codigo_cliente"
-                value={formState.codigo_cliente || ''}
-                onChange={onFormChange}
-                placeholder="Opcional"
-                variant="planificador"
-            />
-        </FormGroup>
-
-        <SucursalInput
+        <Box>
+          <SucursalInput
             value={formState.sucursal || ''}
             onChange={onFormChange}
             variant="planificador"
+          />
+        </Box>
+
+        <ModuleTextField
+          module="planificador"
+          label="Monto Total (S/)"
+          name="montoOriginal"
+          type="number"
+          inputProps={{ step: '0.01', min: '0' }}
+          required
+          value={formState.montoOriginal || ''}
+          onChange={onFormChange}
+          fullWidth
         />
 
-        <FormGroup>
-            <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
-            <StyledInput
-                id="montoOriginal"
-                name="montoOriginal"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                value={formState.montoOriginal || ''}
-                onChange={onFormChange}
-                variant="planificador"
-            />
-        </FormGroup>
+        <ModuleTextField
+          module="planificador"
+          label="Pedido"
+          name="pedido_planificador"
+          value={formState.pedido_planificador || ''}
+          onChange={onFormChange}
+          placeholder="Ej: Pedido de campaña"
+          fullWidth
+        />
 
-        <FormGroup>
-            <Label htmlFor="pedido_planificador">Pedido</Label>
-            <StyledInput
-                type="text"
-                id="pedido_planificador"
-                name="pedido_planificador"
-                value={formState.pedido_planificador || ''}
-                onChange={onFormChange}
-                placeholder="Ej: Pedido de campaña"
-                variant="planificador"
-            />
-        </FormGroup>
+        <ModuleSelect
+          module="planificador"
+          label="Línea para Reporte"
+          name="linea_planificador_color"
+          value={formState.linea_planificador_color || ''}
+          onChange={onFormChange}
+          options={selectOptions}
+          fullWidth
+        />
 
-        <FormGroup>
-            <Label htmlFor="linea_planificador_color">Línea para Reporte</Label>
-            <StyledSelect
-                id="linea_planificador_color"
-                name="linea_planificador_color"
-                value={formState.linea_planificador_color || ''}
-                onChange={onFormChange}
-                variant="planificador"
-            >
-                <option value="">Seleccionar color...</option>
-                <option value="rojo">Viniball (Rojo)</option>
-                <option value="azul">Vinifan (Azul)</option>
-                <option value="verde">Otros (Verde)</option>
-            </StyledSelect>
-        </FormGroup>
-
-        <div className="lg:col-span-3 flex justify-end gap-4">
-          <button
-            type="button"
+        <Stack 
+          direction="row" 
+          justifyContent="flex-end" 
+          spacing={2}
+          sx={{ gridColumn: { lg: 'span 3' }, mt: 2 }}
+        >
+          <ModuleButton
+            module="planificador"
+            variant="contained"
             onClick={onOpenBackupModal}
-            className="bg-planificador-light-primary dark:bg-planificador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-planificador-light-primary dark:focus:ring-planificador-dark-primary"
             title="Cargar un estado guardado previamente"
           >
             Cargar Respaldo
-          </button>
-        </div>
-      </form>
-    </section>
+          </ModuleButton>
+        </Stack>
+      </Box>
+    </Box>
   );
 };

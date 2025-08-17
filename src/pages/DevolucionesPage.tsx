@@ -216,7 +216,7 @@ export const DevolucionesPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="devoluciones"
             showStockRef={false}
-            buttonClassName="btn-module-devoluciones ml-3"
+            buttonClassName="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary ml-3"
             themeClass="title-devoluciones btn-module-devoluciones"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {

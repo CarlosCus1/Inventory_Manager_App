@@ -38,13 +38,25 @@ export async function fetchWithRetry(url: string, options: RequestInit = {}, ret
             );
             
             if (!response.ok) {
+                let errorMessage = `Error en el servidor: ${response.status}`;
+                let errorData: unknown = null;
                 try {
-                    const errorData = await response.json();
-                    throw new ApiError(errorData.message || `Error en el servidor: ${response.status}`, response.status, errorData);
-                } catch (e: unknown) {
-                    if (e instanceof ApiError) throw e;
-                    throw new ApiError(`Error en la comunicación con el servidor: ${response.status}`, response.status);
+                    // Try to parse as JSON first
+                    errorData = await response.json();
+                    errorMessage = (errorData as { message?: string }).message || errorMessage;
+                } catch (jsonError) {
+                    // If JSON parsing fails, try to read as text
+                    try {
+                        errorMessage = await response.text();
+                        if (errorMessage.length > 200) { // Truncate long HTML responses
+                            errorMessage = errorMessage.substring(0, 200) + '... (truncated HTML)';
+                        }
+                    } catch (textError) {
+                        // Fallback if even text reading fails
+                        errorMessage = `Error desconocido del servidor: ${response.status}`;
+                    }
                 }
+                throw new ApiError(errorMessage, response.status, errorData);
             }
             
             return response;
