@@ -1,42 +1,62 @@
-/* Custom styles for PlanificadorPage, especially for FullCalendar */
+/* Custom styles for PlanificadorPage. All FullCalendar specific styles are now handled by FullCalendar's default theme or global styles. */
 
-/* You can add global styles or overrides here if needed */
-/* For example, FullCalendar custom variables can be defined in :root */
-:root {
-    --fc-border-color: #e2e8f0; /* gray-200 */
-    --fc-daygrid-event-dot-width: 8px;
-    --fc-list-event-dot-width: 10px;
-    --fc-event-text-color: #ffffff;
+.fc-daygrid-day-events,
+.fc-daygrid-day-bottom {
+    display: none !important;
 }
 
-.dark {
-    --fc-border-color: #4a5568; /* gray-600 */
+.fc-daygrid-day-top {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    height: 100%; /* Make it take full height of its parent day cell */
+    width: 100%; /* Make it take full width of its parent day cell */
+}
+
+.fc-daygrid-day-number {
+    /* Keep any other styling like font-size, color etc. */
 }
 
 /* Calendar holiday styling */
 .fc-holiday {
-    background-color: orange !important; 
+    background-color: #ffedd5 !important; /* Light orange background */
+    color: #FF0000 !important; /* Red text for holidays */
 }
 
 /* Calendar selected day styling */
 .fc-day-selected {
-    background-color: #ebf8ff !important; /* sky-50 */
-    border-color: #38bdf8 !important; /* sky-400 */
+    background-color: transparent !important; /* Remove background from day cell */
+    border-color: transparent !important; /* Remove border from day cell */
+    color: #1e40af !important; /* Dark blue text */
 }
-.dark .fc-day-selected {
-    background-color: #0c4a6e !important; /* sky-900 */
+
+/* Apply the circle to the day number when its parent day cell is selected */
+.fc-day-selected .fc-daygrid-day-number {
+    position: relative; /* Needed for absolute positioning of pseudo-element */
+    z-index: 1; /* Ensure the number is above the circle */
+}
+
+.fc-day-selected .fc-daygrid-day-number::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px; /* Adjust size as needed */
+    height: 36px; /* Adjust size as needed */
+    background-color: #E0E0E0; /* Light gray filled circle */
+    border-radius: 50%;
+    z-index: -1; /* Place behind the date number */
 }
 
 .fc-day-sun .fc-daygrid-day-number {
-  color: red;
+  color: #FFA500; /* Orange for Sundays */
 }
 
 .fc-day-sat .fc-daygrid-day-number {
-  color: blue;
+  color: #0000FF; /* Blue for Saturdays */
 }
 
-.fc-holiday-event {
-  background-color: orange !important;
-  color: white;
-  font-weight: bold;
+.fc-col-header-cell-cushion {
+    font-family: sans-serif; /* Use a generic sans-serif font */
 }

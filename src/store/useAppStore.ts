@@ -283,12 +283,6 @@ export const useAppStore = create<State & Actions>()(
       },
 
       fetchHolidays: async (year) => {
-        const holidays = get().holidays;
-        // A simple check if holidays for any year are already loaded.
-        // A more robust implementation would check for the specific year.
-        if (holidays.length > 0) {
-          return holidays;
-        }
         const data = await fetchHolidays(year);
         set({ holidays: data });
         return data;
