@@ -1,0 +1,50 @@
+﻿<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Metadata del proyecto -->
+  <meta name="author" content="Carlos Cusi" />
+  <meta name="generator" content="Asistencia IA: OpenAI GPT, Google Gemini, OpenRouter" />
+  <meta name="description"
+    content="Gestión 360: Solución integral para la gestión operativa de inventario, pedidos, devoluciones y análisis de precios. Autor: Carlos Cusi. Asistencia IA: OpenAI GPT, Google Gemini, OpenRouter." />
+  <meta name="description"
+    content="Gestión 360: Una aplicación integral para optimizar la gestión de inventario, pedidos, devoluciones y análisis comparativo de precios." />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="author" content="Carlos Cusi" />
+  <!-- Anti-FOUC: aplicar tema guardado antes de cargar el bundle + logs bÃ¡sicos -->
+  <script>
+    (function () {
+      try {
+        var key = 'app_theme';
+        var theme = localStorage.getItem(key);
+        var root = document.documentElement;
+        var shouldDark = theme === 'dark';
+        if (shouldDark) {
+          root.classList.add('dark');
+        } else {
+          root.classList.remove('dark');
+        }
+        console.debug('[theme][anti-fouc] theme(localStorage)=', theme, 'html.classList.contains("dark")=', root.classList.contains('dark'));
+      } catch (e) {
+        console.warn('[theme][anti-fouc] error applying theme early:', e);
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Gestión 360</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  </body>
+
+</html>
+
+
