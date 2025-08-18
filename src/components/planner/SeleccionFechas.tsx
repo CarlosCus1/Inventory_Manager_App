@@ -12,7 +12,6 @@ interface Props {
   isCalcularDisabled: boolean;
   fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
   handleDateClick: (arg: DateClickArg) => void;
-  handleDayCellMount: (arg: DayCellContentArg) => void;
   onClearSelectedDates: () => void;
 }
 
@@ -22,7 +21,6 @@ export const SeleccionFechas: React.FC<Props> = ({
   isCalcularDisabled,
   fetchCalendarEvents,
   handleDateClick,
-  handleDayCellMount,
   onClearSelectedDates
 }) => {
 
@@ -76,7 +74,6 @@ export const SeleccionFechas: React.FC<Props> = ({
           module="planificador"
           selectedDates={selectedDates}
           onDateClick={handleDateClick}
-          onDayCellMount={handleDayCellMount}
           fetchCalendarEvents={fetchCalendarEvents}
         />
       </Box>

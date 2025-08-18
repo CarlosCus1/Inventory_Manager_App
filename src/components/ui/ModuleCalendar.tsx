@@ -14,7 +14,6 @@ interface ModuleCalendarProps {
   module: ModuleVariant;
   selectedDates?: Set<string>;
   onDateClick?: (arg: DateClickArg) => void;
-  onDayCellMount?: (arg: DayCellContentArg) => void;
   fetchCalendarEvents?: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
 }
 
@@ -119,8 +118,7 @@ const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ them
       },
       
       '& .fc-day-selected': {
-        backgroundColor: `${colors?.main || theme.palette.primary.main}15`,
-        
+        /* The background is now handled by the ::before pseudo-element on the number */
         '& .fc-daygrid-day-number': {
           backgroundColor: colors?.main || theme.palette.primary.main,
           color: colors?.contrastText || theme.palette.primary.contrastText,
@@ -179,7 +177,6 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
   module,
   selectedDates,
   onDateClick,
-  onDayCellMount,
   fetchCalendarEvents
 }) => {
   const dayCellClassNames = (arg: DayCellContentArg) => {
@@ -211,7 +208,6 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
           eventSources={fetchCalendarEvents ? [{ events: fetchCalendarEvents }] : []}
           dateClick={onDateClick}
           dayCellClassNames={dayCellClassNames}
-          dayCellDidMount={onDayCellMount}
           eventContent={(arg) => {
             if (!arg.event.title || arg.event.title.trim() === '') {
               return false;

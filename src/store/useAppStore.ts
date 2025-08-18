@@ -284,7 +284,7 @@ export const useAppStore = create<State & Actions>()(
 
       fetchHolidays: async (year) => {
         const data = await fetchHolidays(year);
-        set({ holidays: data });
+        // Do not set state here to prevent infinite loops
         return data;
       },
 
