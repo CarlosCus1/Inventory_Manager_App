@@ -81,6 +81,8 @@ interface Holiday {
  * @param {number} year - El año para el cual se solicitan los feriados.
  * @returns {Promise<Holiday[]>} - Una promesa que resuelve a un array de objetos feriado.
  */
+const API_BASE_URL = 'http://localhost:5000';
+
 export async function fetchHolidays(year: number): Promise<Holiday[]> {
     // Hardcoded holidays for 2025 as per user request
     if (year === 2025) {
@@ -105,7 +107,7 @@ export async function fetchHolidays(year: number): Promise<Holiday[]> {
 
     try {
         const timestamp = new Date().getTime();
-        const response = await fetchWithRetry(`/api/getHolidays?year=${year}&t=${timestamp}`);
+        const response = await fetchWithRetry(`${API_BASE_URL}/api/getHolidays?year=${year}&t=${timestamp}`);
         return await response.json();
     } catch (error) {
         console.error('Error al obtener los feriados:', error);
@@ -119,7 +121,7 @@ export async function fetchHolidays(year: number): Promise<Holiday[]> {
  * @returns {Promise<RucData>} - La respuesta de la API.
  */
 export async function consultarRuc(numero: string): Promise<RucData> {
-    const response = await fetchWithRetry(`/api/consultar-ruc?numero=${encodeURIComponent(numero)}`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/consultar-ruc?numero=${encodeURIComponent(numero)}`);
     return response.json();
 }
 
@@ -140,7 +142,7 @@ interface CalculationResult {
  * @returns {Promise<CalculationResult>} Resultados del cálculo
  */
 export async function calcular(data: CalculationData): Promise<CalculationResult> {
-    const response = await fetchWithRetry('/api/calculate', {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/calculate`, {
         method: 'POST',
         body: JSON.stringify(data)
     });
@@ -153,7 +155,8 @@ export async function calcular(data: CalculationData): Promise<CalculationResult
  * @returns {Promise<Blob>} Un blob con el contenido del archivo .xlsx.
  */
 export async function generarReporte(data: Record<string, unknown>): Promise<Blob> {
-    const response = await fetchWithRetry('/api/generate-excel', {
+    // The backend is running on port 5000
+    const response = await fetchWithRetry('http://localhost:5000/export-xlsx', {
         method: 'POST',
         body: JSON.stringify(data)
     });
@@ -161,14 +164,15 @@ export async function generarReporte(data: Record<string, unknown>): Promise<Blo
 }
 
 /**
- * Genera el reporte en formato JSON.
+ * Genera un backup en formato JSON.
  * @param {Record<string, unknown>} data - Datos para el reporte.
  * @returns {Promise<Blob>} Un blob con el contenido del archivo .json.
  */
 export async function generarReporteJson(data: Record<string, unknown>): Promise<Blob> {
-    const response = await fetchWithRetry('/api/generate-json', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-    return response.blob();
+    // No need to call a backend endpoint for this, we have all the data on the client.
+    // Create a JSON string from the data.
+    const jsonString = JSON.stringify(data, null, 2); // Pretty print the JSON
+    // Create a blob from the JSON string.
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    return Promise.resolve(blob);
 }

@@ -1,4 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+import colors from './src/theme/muiTheme';
+
+const muiPalette = colors.palette;
+
 export default {
   darkMode: 'class',
   content: [
@@ -11,18 +15,21 @@ export default {
     'bg-pedido-light-secondary', 'dark:bg-pedido-dark-secondary',
     'bg-inventario-light-secondary', 'dark:bg-inventario-dark-secondary',
     'bg-comparador-light-secondary', 'dark:bg-comparador-dark-secondary',
+    'bg-planificador-light-secondary', 'dark:bg-planificador-dark-secondary',
 
     // Anillos de foco por módulo (botones/enlaces)
     'focus:ring-devoluciones-light-primary', 'dark:focus:ring-devoluciones-dark-primary',
     'focus:ring-pedido-light-primary', 'dark:focus:ring-pedido-dark-primary',
     'focus:ring-inventario-light-primary', 'dark:focus:ring-inventario-dark-primary',
     'focus:ring-comparador-light-primary', 'dark:focus:ring-comparador-dark-primary',
+    'focus:ring-planificador-light-primary', 'dark:focus:ring-planificador-dark-primary',
 
     // Títulos/énfasis por módulo usados en PageHeader
     'text-devoluciones-light-primary', 'dark:text-devoluciones-dark-primary',
     'text-pedido-light-primary', 'dark:text-pedido-dark-primary',
     'text-inventario-light-primary', 'dark:text-inventario-dark-primary',
     'text-comparador-light-primary', 'dark:text-comparador-dark-primary',
+    'text-planificador-light-primary', 'dark:text-planificador-dark-primary',
   ],
   theme: {
     extend: {
@@ -31,55 +38,55 @@ export default {
       },
       colors: {
         // General background and text colors for light/dark mode
-        'light-bg': '#F8FAFC', // slate-50
-        'dark-bg': '#1A202C', // gray-900
-        'light-text': '#1F2937', // gray-800
-        'dark-text': '#E5E7EB', // gray-200
+        'light-bg': muiPalette.background.default, 
+        'dark-bg': muiPalette.grey[900], 
+        'light-text': muiPalette.text.primary, 
+        'dark-text': muiPalette.grey[200],
 
         // Paleta para Devoluciones (rojo)
         'devoluciones': {
-          'light-primary': '#DC2626', // red-600
-          'light-secondary': '#FEE2E2', // red-100
-          'dark-primary': '#F87171', // red-400
-          'dark-secondary': '#7F1D1D', // red-900
-          'light-text': '#DC2626', // red-600
-          'dark-text': '#FEE2E2', // red-100
+          'light-primary': muiPalette.devoluciones.main,
+          'light-secondary': muiPalette.devoluciones.light,
+          'dark-primary': muiPalette.devoluciones.dark,
+          'dark-secondary': muiPalette.devoluciones.dark,
+          'light-text': muiPalette.devoluciones.main,
+          'dark-text': muiPalette.devoluciones.light,
         },
         // Paleta para Pedido (azul)
         'pedido': {
-          'light-primary': '#2563EB', // blue-600
-          'light-secondary': '#DBEAFE', // blue-100
-          'dark-primary': '#60A5FA', // blue-400
-          'dark-secondary': '#1E3A8A', // blue-900
-          'light-text': '#2563EB', // blue-600
-          'dark-text': '#DBEAFE', // blue-100
+          'light-primary': muiPalette.pedido.main,
+          'light-secondary': muiPalette.pedido.light,
+          'dark-primary': muiPalette.pedido.dark,
+          'dark-secondary': muiPalette.pedido.dark,
+          'light-text': muiPalette.pedido.main,
+          'dark-text': muiPalette.pedido.light,
         },
         // Paleta para Inventario (verde)
         'inventario': {
-          'light-primary': '#16A34A', // green-600
-          'light-secondary': '#DCFCE7', // green-100
-          'dark-primary': '#4ADE80', // green-400
-          'dark-secondary': '#14532D', // green-900
-          'light-text': '#16A34A', // green-600
-          'dark-text': '#DCFCE7', // green-100
+          'light-primary': muiPalette.inventario.main,
+          'light-secondary': muiPalette.inventario.light,
+          'dark-primary': muiPalette.inventario.dark,
+          'dark-secondary': muiPalette.inventario.dark,
+          'light-text': muiPalette.inventario.main,
+          'dark-text': muiPalette.inventario.light,
         },
         // Paleta para Comparador (naranja)
         'comparador': {
-          'light-primary': '#EA580C', // orange-600
-          'light-secondary': '#FFEDD5', // orange-100
-          'dark-primary': '#FB923C', // orange-400
-          'dark-secondary': '#7C2D12', // orange-900
-          'light-text': '#EA580C', // orange-600
-          'dark-text': '#FFEDD5', // orange-100
+          'light-primary': muiPalette.comparador.main,
+          'light-secondary': muiPalette.comparador.light,
+          'dark-primary': muiPalette.comparador.dark,
+          'dark-secondary': muiPalette.comparador.dark,
+          'light-text': muiPalette.comparador.main,
+          'dark-text': muiPalette.comparador.light,
         },
         // Paleta para Planificador (azul cielo)
         'planificador': {
-          'light-primary': '#0284C7', // sky-600
-          'light-secondary': '#E0F2FE', // sky-100
-          'dark-primary': '#38BDF8', // sky-400
-          'dark-secondary': '#0C4A6E', // sky-900
-          'light-text': '#0284C7',
-          'dark-text': '#E0F2FE',
+          'light-primary': muiPalette.planificador.main,
+          'light-secondary': muiPalette.planificador.light,
+          'dark-primary': muiPalette.planificador.dark,
+          'dark-secondary': muiPalette.planificador.dark,
+          'light-text': muiPalette.planificador.main,
+          'dark-text': muiPalette.planificador.light,
         },
       },
     },

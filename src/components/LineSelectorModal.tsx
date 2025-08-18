@@ -35,7 +35,11 @@ export function LineSelectorModalTrigger({
     <>
       <button
         onClick={() => setOpen(true)}
-        className={cn("ml-3 px-3 py-2 text-sm rounded", buttonClassName)}
+        className={cn(
+          "ml-3 px-3 py-2 text-sm rounded",
+          buttonClassName,
+          themeClass // Apply themeClass here to ensure it's passed down
+        )}
         aria-label="Elegir línea"
         title="Elegir línea"
         type="button"
@@ -179,7 +183,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
   const [selectedCodigos, setSelectedCodigos] = useState<Set<string>>(new Set());
 
   const lineas = useMemo(() => (data ? getUniqueSortedLineas(data) : []), [data]);
-  const variant = moduloKey === 'precios' ? 'comparador' : moduloKey;
+  const variant = moduloKey === 'precios' ? 'precios' : moduloKey;
 
   const productosDeLinea = useMemo(() => {
     if (!data || !selectedLinea) return [];
@@ -246,29 +250,29 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
       aria-label="Seleccionar productos por línea"
     >
       {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+        <div
+          className="absolute inset-0 bg-gray-800"
+          onClick={onClose}
+          aria-hidden="true"
+        />
 
       {/* Modal */}
-      <div className="relative surface surface-border rounded-md shadow-lg max-w-2xl w-[92%] max-h-[85vh] flex flex-col">
+      <div className="relative surface surface-border rounded-md shadow-lg max-w-2xl w-[92%] max-h-[85vh] flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
         {/* Header */}
         <div
           className={cn(
             "p-4 border-b",
             // Subrayado/acento por módulo: agrega una línea inferior del color del módulo si viene themeClass
-            themeClass?.includes("btn-module-inventario") ? "border-b-2 border-green-500" :
-            themeClass?.includes("btn-module-comparador") ? "border-b-2 border-orange-500" :
-            themeClass?.includes("btn-module-devoluciones") ? "border-b-2 border-red-500" :
-            themeClass?.includes("btn-module-pedido") ? "border-b-2 border-blue-500" :
+            themeClass?.includes("btn-module-inventario") ? "border-b-2 border-inventario-light-primary" :
+            themeClass?.includes("btn-module-comparador") ? "border-b-2 border-comparador-light-primary" :
+            themeClass?.includes("btn-module-devoluciones") ? "border-b-2 border-devoluciones-light-primary" :
+            themeClass?.includes("btn-module-pedido") ? "border-b-2 border-pedido-light-primary" :
             ""
           )}
           style={{ borderColor: "var(--border)" }}
         >
           <div className="flex items-center justify-between">
-            <h2 className={cn("text-xl font-bold", themeClass?.includes("title-") ? themeClass.split(" ").find(c => c.startsWith("title-")) : undefined)}>Seleccionar por línea</h2>
+            <h2 className={cn("text-xl font-bold", themeClass?.includes("title-") ? themeClass.split(" ").find(c => c.startsWith("title-")) : undefined)} style={{ color: 'var(--fg)' }}>Seleccionar por línea</h2>
             <button
               onClick={onClose}
               aria-label="Cerrar modal"
@@ -392,7 +396,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
           <button
             onClick={onClose}
             className="px-3 py-2 rounded border hover:opacity-90"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: "var(--border)", color: 'var(--fg)' }}
             aria-label="Cancelar selección"
             title="Cancelar"
           >

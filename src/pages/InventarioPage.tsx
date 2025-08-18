@@ -57,7 +57,7 @@ export const InventarioPage: React.FC = () => {
   const handleExport = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/export-xlsx', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/export-xlsx`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -229,7 +229,7 @@ export const InventarioPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3"
+            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Añadir Manualmente
           </button>
@@ -267,7 +267,7 @@ export const InventarioPage: React.FC = () => {
           <button
             onClick={handleExport}
             disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador_personal}
-            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary mt-4 md:mt-0 w-full md:w-auto"
+            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary mt-4 md:mt-0 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Inventario (XLSX)'}
           </button>

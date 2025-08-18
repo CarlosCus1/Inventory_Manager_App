@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 // Middleware de Zustand para persistir parte del estado en un almacenamiento.
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDB';
 // Interfaces de datos que hemos definido.
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
 import { consultarRuc, fetchHolidays } from '../utils/api';
@@ -154,21 +155,33 @@ export const useAppStore = create<State & Actions>()(
       },
 
       cargarCatalogo: async () => {
-        // Si ya se está cargando o si el catálogo ya tiene datos, no hacer nada.
         if (get().loading || get().catalogo.length > 0) return;
 
         set({ loading: true, error: null });
         try {
+          // 1. Try to load from IndexedDB first
+          const indexedDBCatalog = await getCatalogFromIndexedDB();
+          if (indexedDBCatalog && indexedDBCatalog.length > 0) {
+            console.log('Catálogo cargado desde IndexedDB.');
+            set({ catalogo: indexedDBCatalog, loading: false });
+            return; // Catalog loaded from IndexedDB, no need to fetch from network
+          }
+
+          // 2. If not in IndexedDB, fetch from network
           const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
-          console.log(`Intentando cargar catálogo desde: ${url}`);
+          console.log(`Intentando cargar catálogo desde la red: ${url}`);
           const response = await fetch(url);
-          console.log('Respuesta de fetch:', response);
           if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`No se pudo cargar el catálogo de productos. Estado: ${response.status}, Mensaje: ${errorText}`);
           }
           const data: IProducto[] = await response.json();
-          console.log('Datos cargados:', data);
+          console.log('Datos cargados desde la red:', data);
+
+          // 3. Save to IndexedDB for future use
+          await saveCatalogToIndexedDB(data);
+          console.log('Catálogo guardado en IndexedDB.');
+
           set({ catalogo: data, loading: false });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Un error desconocido ocurrió.';

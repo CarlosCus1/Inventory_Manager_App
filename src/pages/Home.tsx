@@ -70,15 +70,39 @@ const Card: React.FC<{
   // Simplificación de clases dinámicas usando template literals.
   // Esto es más limpio y mantenible que las cadenas de ternarios.
   const titleClass = `title-${variant}`;
-  const btnClass = `btn-module-${variant}`;
+  const btnClass = `btn btn-module-${variant}`;
   const cardMod = `reel-card reel-card--${variant}`;
 
+  const buttonStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '600',
+    borderRadius: '0.5rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    transition: 'all 0.2s ease-in-out',
+    padding: '0.5rem 1rem',
+    color: '#ffffff',
+    textDecoration: 'none', // to remove the underline
+  };
+
+  const variantColors = {
+    devoluciones: ModuleColor.DEVOLUCIONES,
+    pedido: ModuleColor.PEDIDO,
+    inventario: ModuleColor.INVENTARIO,
+    comparador: ModuleColor.COMPARADOR,
+    planificador: ModuleColor.PLANIFICADOR,
+  };
+
+  buttonStyle.backgroundColor = variantColors[variant];
+
+
   return (
-    <div className={`${cardMod} surface surface-border p-6 ring-1 ring-[var(--border)] flex flex-col h-full`}>
-      <h3 className={`reel-card__title ${titleClass}`}>{title}</h3>
-      <p className="reel-card__desc mb-5 flex-grow">{desc}</p>
+    <div className={`${cardMod} flex flex-col h-full`}>
+      <h3 className={`reel-card__title ${titleClass} pt-2 pl-2`}>{title}</h3>
+      <p className="reel-card__desc mb-5 flex-grow px-5 pt-2">{desc}</p>
       <div className="flex justify-center mt-1.5">
-        <Link to={to} className={btnClass} aria-label={`Ir a ${title}`}>
+        <Link to={to} className={btnClass} style={buttonStyle} aria-label={`Ir a ${title}`}>
           Ir al módulo
         </Link>
       </div>

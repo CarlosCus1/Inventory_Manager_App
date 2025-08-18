@@ -41,8 +41,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
             {isOutOfStock && (
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                     style={{ 
-                      backgroundColor: 'color-mix(in oklab, rgb(239 68 68) 20%, var(--panel) 80%)',
-                      color: 'rgb(239 68 68)'
+                      backgroundColor: `color-mix(in oklab, theme('colors.devoluciones.light-primary') 20%, var(--panel) 80%)`,
+                      color: `theme('colors.devoluciones.light-primary')`
                     }}>
                 Agotado
               </span>

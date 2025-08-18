@@ -1,13 +1,14 @@
 /*
  * src/index.css
  *
- * Este es el archivo de estilos principal para Tailwind CSS v4.
- * En v4, solo necesitamos importar Tailwind CSS.
+ * Este es el archivo de estilos principal para Tailwind CSS v3.
+ * Necesitamos importar las capas base, componentes y utilidades.
  */
-@import "tailwindcss";
-
-/* Google Fonts import for Inter font family */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Capa base: asegurar que el tema por clase en <html> gane prioridad frente a media queries externas
    y estilos inyectados por extensiones. Solo se fija fondo/texto base; el resto lo manejan las clases Tailwind. */
@@ -16,7 +17,7 @@
   :root {
     --bg: #ffffff;       /* fondo base light */
     --fg: #111827;       /* texto base light (gray-900) */
-    --panel: #ffffff;    /* superficies claras */
+    --panel: #f8f8f8;    /* superficies claras (light gray for modals/cards) */
     --panel-dark: #1f2937; /* gray-800 aprox */
     --border: #e5e7eb;   /* gray-200 */
 
@@ -343,38 +344,38 @@
   .btn-module-devoluciones {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-red-600 hover:bg-red-700 focus:ring-red-600;
+           text-white bg-devoluciones-light-primary hover:bg-devoluciones-dark-primary focus:ring-devoluciones-light-primary;
   }
   .btn-outline-devoluciones {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-red-300 border border-red-500/40 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400;
+           text-devoluciones-light-primary border border-devoluciones-light-primary/40 hover:border-devoluciones-dark-primary focus:outline-none focus:ring-2 focus:ring-devoluciones-light-primary;
   }
   .btn-module-pedido {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-600;
+           text-white bg-pedido-light-primary hover:bg-pedido-dark-primary focus:ring-pedido-light-primary;
   }
   .btn-outline-pedido {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-blue-300 border border-blue-500/40 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400;
+           text-pedido-light-primary border border-pedido-light-primary/40 hover:border-pedido-dark-primary focus:outline-none focus:ring-2 focus:ring-pedido-light-primary;
   }
   .btn-module-inventario {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-600;
+           text-white bg-inventario-light-primary hover:bg-inventario-dark-primary focus:ring-inventario-light-primary;
   }
   .btn-outline-inventario {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400;
+           text-inventario-light-primary border border-inventario-light-primary/40 hover:border-inventario-dark-primary focus:outline-none focus:ring-2 focus:ring-inventario-light-primary;
   }
   .btn-module-comparador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-amber-600 hover:bg-amber-700 focus:ring-amber-600;
+           text-white bg-comparador-light-primary hover:bg-comparador-dark-primary focus:ring-comparador-light-primary;
   }
   .btn-outline-comparador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-amber-300 border border-amber-500/40 hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400;
+           text-comparador-light-primary border border-comparador-light-primary/40 hover:border-comparador-dark-primary focus:outline-none focus:ring-2 focus:ring-comparador-light-primary;
   }
 
 
@@ -404,7 +405,7 @@
     display: none; /* Chrome/Safari/Opera */
   }
   .reel-card {
-    @apply min-w-[280px] snap-center rounded-2xl p-6 shadow-md border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
+    @apply min-w-[280px] snap-center rounded-2xl px-6 py-6 shadow-md border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
     background-color: color-mix(in oklab, var(--panel) 90%, transparent);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
@@ -439,23 +440,23 @@
 
   /* Títulos con alto contraste sobre fondo oscuro y subrayado de color del módulo (4px) */
   .title-devoluciones { @apply inline-block relative; color: var(--heading); }
-  .title-devoluciones::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(239 68 68); bottom: -6px; }
+  .title-devoluciones::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.devoluciones.light-primary'); bottom: -6px; }
   .title-pedido       { @apply inline-block relative; color: var(--heading); }
-  .title-pedido::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(59 130 246); bottom: -6px; }
+  .title-pedido::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.pedido.light-primary'); bottom: -6px; }
   .title-inventario   { @apply inline-block relative; color: var(--heading); }
-  .title-inventario::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(16 185 129); bottom: -6px; }
+  .title-inventario::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.inventario.light-primary'); bottom: -6px; }
   .title-comparador   { @apply inline-block relative; color: var(--heading); }
-  .title-comparador::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: rgb(245 158 11); bottom: -6px; }
+  .title-comparador::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.comparador.light-primary'); bottom: -6px; }
 
   .btn-module-planificador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
            focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-sky-600 hover:bg-sky-700 focus:ring-sky-600;
+           text-white bg-planificador-light-primary hover:bg-planificador-dark-primary focus:ring-planificador-light-primary;
   }
 
   .btn-outline-planificador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-sky-300 border border-sky-500/40 hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400;
+           text-planificador-light-primary border border-planificador-light-primary/40 hover:border-planificador-dark-primary focus:outline-none focus:ring-2 focus:ring-planificador-light-primary;
   }
 
   .page-planificador {
@@ -472,7 +473,7 @@
     left: 0;
     width: 100%;
     height: 4px;
-    background: rgb(14 165 233); /* sky-500 */
+    background: theme('colors.planificador.light-primary');
     bottom: -6px;
   }
 
@@ -482,7 +483,7 @@
 
   /* FullCalendar Theming */
   .fc {
-    /* Calendar container */
+    /* Calendar container - keep neutral, but ensure good contrast */
     background-color: var(--panel);
     color: var(--fg);
     border-radius: 0.5rem;
@@ -490,15 +491,15 @@
   }
 
   .fc .fc-toolbar-title {
-    /* Calendar title */
+    /* Calendar title - align with module heading */
     color: var(--heading);
   }
 
   .fc .fc-button {
-    /* Calendar buttons */
+    /* Calendar buttons - use module primary color for primary actions, neutral for others */
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2;
-    background-color: var(--input-bg);
-    color: var(--input-fg);
+    background-color: var(--input-bg); /* Neutral background for most buttons */
+    color: var(--input-fg); /* Neutral text color */
     border-color: var(--input-border);
   }
 
@@ -507,13 +508,13 @@
   }
 
   .fc .fc-button-primary {
-    /* Primary buttons like 'today' */
-    background-color: var(--link);
-    color: var(--on-primary-color); /* Assuming on-primary-color is white */
+    /* Primary buttons like 'today' - use planificador primary color */
+    background-color: theme('colors.planificador.light-primary');
+    color: #ffffff; /* White text for contrast */
   }
 
   .fc .fc-button-primary:hover {
-    background-color: color-mix(in oklab, var(--link) 90%, var(--fg) 10%);
+    background-color: theme('colors.planificador.dark-primary');
   }
 
   .fc-daygrid-day {
@@ -523,20 +524,36 @@
   }
 
   .fc-day-today {
-    /* Today's date */
-    background-color: color-mix(in oklab, var(--panel) 90%, var(--link) 10%);
+    /* Today's date - use a lighter shade of planificador primary */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.planificador.light-primary') 10%); /* Mix panel with sky-600 */
+    border: 1px solid theme('colors.planificador.light-primary'); /* Add a subtle border */
   }
 
   .fc-day-selected {
-    /* Selected date */
-    background-color: color-mix(in oklab, var(--panel) 80%, var(--link) 20%);
-    border: 2px solid var(--link);
+    /* Selected date - use planificador primary for the circle, white text */
+    /* Change background to a lighter sky blue, remove !important */
+    background-color: color-mix(in oklab, var(--panel) 80%, theme('colors.planificador.light-primary') 20%); /* Lighter sky blue */
+    border: 2px solid theme('colors.planificador.light-primary'); /* Keep the border */
+    color: #ffffff !important; /* White text for selected date */
+  }
+
+  .fc-day-selected .fc-daygrid-day-number::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    background-color: theme('colors.planificador.light-primary');
+    border-radius: 50%;
+    z-index: -1;
   }
 
   .fc-holiday {
-    /* Holiday date */
-    background-color: color-mix(in oklab, var(--panel) 90%, var(--error-color) 10%);
-    color: var(--error-color);
+    /* Holiday date - use a subtle background, keep red text for recognition */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 5%); /* Very light red mix */
+    color: theme('colors.devoluciones.light-primary') !important; /* Keep red text */
     font-weight: bold;
   }
 
@@ -551,12 +568,12 @@
   }
 
   .fc-day-sun {
-    /* Sundays */
-    color: var(--error-color);
+    /* Sundays - use a subtle red for weekend, or a neutral color */
+    color: theme('colors.devoluciones.light-primary'); /* Keep red for Sundays for now, or change to neutral */
   }
 
   .fc-col-header-cell {
-    /* Day names (Mon, Tue, etc.) */
+    /* Day names (Mon, Tue, etc.) - use a darker panel color for contrast */
     background-color: var(--panel-dark);
     color: var(--fg);
   }
@@ -572,9 +589,9 @@
   }
 
   .fc-event {
-    /* Events */
-    background-color: var(--link);
-    color: var(--on-primary-color);
+    /* Events - use planificador primary color */
+    background-color: theme('colors.planificador.light-primary');
+    color: #ffffff; /* White text for contrast */
     border-radius: 0.25rem;
     padding: 0.25rem;
     font-size: 0.75rem;
@@ -582,7 +599,7 @@
 
   .fc-event-title {
     /* Event title */
-    color: var(--on-primary-color);
+    color: #ffffff; /* White text for contrast */
   }
 
   /* Data Table Styling */
@@ -636,22 +653,22 @@
   }
 
   .status-ok {
-    background-color: color-mix(in oklab, var(--panel) 90%, #10B981 10%); /* Green-ish */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.inventario.light-primary') 10%); /* Green-ish */
     color: var(--text-success);
   }
 
   .dark .status-ok {
-    background-color: color-mix(in oklab, var(--panel) 90%, #34D399 10%); /* Lighter green */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.inventario.light-primary') 10%); /* Lighter green */
     color: var(--text-success);
   }
 
   .status-error {
-    background-color: color-mix(in oklab, var(--panel) 90%, #EF4444 10%); /* Red-ish */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 10%); /* Red-ish */
     color: var(--text-error);
   }
 
   .dark .status-error {
-    background-color: color-mix(in oklab, var(--panel) 90%, #F87171 10%); /* Lighter red */
+    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 10%); /* Lighter red */
     color: var(--text-error);
   }
 }

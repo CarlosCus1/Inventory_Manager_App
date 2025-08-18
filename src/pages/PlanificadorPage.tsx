@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { CollapsiblePanel } from '../components/ui/CollapsiblePanel';
 
 import * as DateUtils from '../utils/dateUtils';
 import { calcular as calcularApi, generarReporte, generarReporteJson } from '../utils/api';
@@ -69,7 +70,7 @@ export const PlanificadorPage: React.FC = () => {
     handleRazonSocialManualChange,
   } = useRucDni('planificador');
 
-  const feriadosCargados = useRef(new Map<string, string>());
+  const [holidays, setHolidays] = useState(new Map<string, string>());
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileSelectionMode, setFileSelectionMode] = useState<'loadAndEdit' | 'createCopy' | null>(null);
@@ -77,28 +78,42 @@ export const PlanificadorPage: React.FC = () => {
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
     try {
-      const year = fetchInfo.start.getFullYear();
-      console.log('Fetching holidays for year:', year);
-      const feriados = await fetchHolidays(year) as Array<{ date: string; name: string }>;
-      console.log('Fetched holidays:', feriados);
+        const year = fetchInfo.start.getFullYear();
+        const feriadosArray = await fetchHolidays(year) as Array<{ date: string; name: string }>;
+        
+        const newHolidays = new Map<string, string>();
+        feriadosArray.forEach((feriado) => {
+            const [y, m, d] = feriado.date.split('-');
+            const formattedDate = `${d}/${m}/${y}`;
+            newHolidays.set(formattedDate, feriado.name);
+        });
+        // Compare newHolidays with current holidays to prevent unnecessary state updates
+        let holidaysChanged = false;
+        if (newHolidays.size !== holidays.size) {
+            holidaysChanged = true;
+        } else {
+            for (const [key, value] of newHolidays) {
+                if (holidays.get(key) !== value) {
+                    holidaysChanged = true;
+                    break;
+                }
+            }
+        }
 
-      feriadosCargados.current.clear();
-      feriadosCargados.current.clear();
-      feriados.forEach((feriado) => {
-        feriadosCargados.current.set(feriado.date, feriado.name);
-      });
-      console.log('Feriados cargados en ref:', feriadosCargados.current);
+        if (holidaysChanged) {
+            setHolidays(newHolidays);
+        }
 
-      successCallback([]); // Pass an empty array of events to FullCalendar for holidays
+        successCallback([]);
     } catch (error) {
-      console.error('Error al cargar eventos del calendario:', error);
-      failureCallback(error as Error);
+        console.error('Error al cargar eventos del calendario:', error);
+        failureCallback(error as Error);
     }
-  }, [fetchHolidays]);
+  }, [fetchHolidays, holidays]);
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
-    const isHoliday = feriadosCargados.current.has(dateStr);
+    const isHoliday = holidays.has(dateStr);
     const isSunday = arg.date.getDay() === 0;
 
     if (DateUtils.esPasado(arg.date) || isSunday || isHoliday) {
@@ -111,41 +126,30 @@ export const PlanificadorPage: React.FC = () => {
         newSelectedDates.delete(dateStr);
       } else {
         if (newSelectedDates.size >= MAX_FECHAS) {
-          return prevState; // Return previous state if max dates reached
+          return prevState;
         }
         newSelectedDates.add(dateStr);
       }
-      // No direct classList manipulation here, React will re-render based on state
       return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
-  }, [feriadosCargados]);
+  }, [holidays]);
 
   const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
-    console.log('handleDayCellMount called for:', arg.date);
     const dateStr = DateUtils.formatearFecha(arg.date);
-    
-    // Apply class if the date is selected
-    if (plannerState.selectedDates.has(dateStr)) {
-      arg.el.classList.add('fc-day-selected');
-    }
 
-    // Apply class and tooltip if the date is a holiday
-    if (feriadosCargados.current.has(dateStr)) {
-      console.log('Holiday found:', dateStr, feriadosCargados.current.get(dateStr));
+    if (holidays.has(dateStr)) {
       arg.el.classList.add('fc-holiday');
-      arg.el.setAttribute('title', feriadosCargados.current.get(dateStr) || '');
+      arg.el.setAttribute('title', holidays.get(dateStr) || '');
     }
 
-    // Apply class for Sundays
     if (arg.date.getDay() === 0) {
       arg.el.classList.add('fc-day-sun');
     }
 
-    // Apply class for Saturdays
     if (arg.date.getDay() === 6) {
       arg.el.classList.add('fc-day-sat');
     }
-  }, [plannerState.selectedDates, feriadosCargados]);
+  }, [holidays]);
 
   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -219,13 +223,19 @@ export const PlanificadorPage: React.FC = () => {
     const pedido = formState.pedido_planificador || '';
     const fechas = Array.from(plannerState.selectedDates);
 
-    const { fieldErrors, generalErrors, isValid, uiData, montoTotal, fechasValidas } = FormValidator.validate({
+    const validationResult = FormValidator.validate({
       monto,
       fechas,
       ruc: ruc.trim(),
       razonSocial: razonSocial.trim(),
       pedido: pedido.trim()
     });
+    const fieldErrors = validationResult?.fieldErrors || [];
+    const generalErrors = validationResult?.generalErrors || [];
+    const isValid = validationResult?.isValid || false;
+    const uiData = validationResult?.uiData || {};
+    const montoTotal = validationResult?.montoTotal;
+    const fechasValidas = validationResult?.fechasValidas;
 
     return {
       fieldErrors,
@@ -268,7 +278,7 @@ export const PlanificadorPage: React.FC = () => {
     try {
       // mostrarLoading(true, 'Calculando distribución...');
       const { montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
-      const resultado = await calcularApi({ ..._getAndValidateFormData().payload, ...uiData });
+      const resultado = await calcularApi({ montoTotal, fechasValidas, razonSocial });
 
       // Update local state with calculation results
       setPlannerState(prevState => ({
@@ -293,21 +303,24 @@ export const PlanificadorPage: React.FC = () => {
   }, [_getAndValidateFormData]);
 
   const handleExportAjustado = useCallback(async (dataToExport?: any) => { // Added dataToExport parameter
-    const payload = dataToExport || { // Use provided data or construct from state
+    const cleanPayload = {
       tipo: 'planificador',
-      form: formState,
-      // The backend expects a 'montosAsignados' key in the main data object
-      montosAsignados: montosAjustados,
-      fechasOrdenadas: plannerState.fechasOrdenadas,
-      resumenMensual: plannerState.resumenMensual,
-      montoOriginal: formState.montoOriginal,
-      razonSocial: formState.cliente,
-      // Pass other necessary data from formState
-      codigoCliente: formState.codigo_cliente,
-      ruc: formState.documento_cliente,
-      linea: formState.linea_planificador_color,
-      pedido: formState.pedido_planificador,
+      form: {
+        linea_planificador_color: String(formState.linea_planificador_color || ''),
+      },
+      list: [],
+      montosAsignados: { ...montosAjustados },
+      fechasOrdenadas: [...plannerState.fechasOrdenadas],
+      resumenMensual: { ...plannerState.resumenMensual },
+      montoOriginal: Number(formState.montoOriginal || 0),
+      razonSocial: String(formState.cliente || ''),
+      codigoCliente: String(formState.codigo_cliente || ''),
+      ruc: String(formState.documento_cliente || ''),
+      linea: String(formState.linea_planificador_color || ''),
+      pedido: String(formState.pedido_planificador || ''),
     };
+    
+    const payload = dataToExport || cleanPayload;
 
     try {
       // Export XLSX
@@ -428,8 +441,28 @@ export const PlanificadorPage: React.FC = () => {
     }));
   }, []);
 
+  // Function to clear the entire module's state
+  const handleClearModule = useCallback(() => {
+    setPlannerState({
+      selectedDates: new Set(),
+      fechasOrdenadas: [],
+      montosAsignados: {},
+      resumenMensual: {},
+      isDataDirty: false,
+    });
+    setErrors({});
+    setMontosAjustados({});
+    setCalcularDisabled(true);
+    // Clear global form state for planificador
+    const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+    formFieldsToClear.forEach(field => {
+      actualizarFormulario('planificador', field, ''); // Assuming empty string is the default clear value
+    });
+    // Optionally clear calendar selections or reset calendar view if needed
+  }, [actualizarFormulario]);
+
   return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+    <div className="container mx-auto p-4 md:p-8 surface">
       <PageHeader
         title="Planificador de Vencimientos"
         description="Distribuye montos en el tiempo de forma equitativa, con selección de fechas en calendario y opción de ajuste manual para cada vencimiento."
@@ -454,39 +487,46 @@ export const PlanificadorPage: React.FC = () => {
 
         {/* Page Content */}
         <div className="space-y-8">
-          <DatosGeneralesPlanner
-            formState={formState}
-            onFormChange={handleFormChange}
-            onRucDniChange={handleRucDniChange}
-            onRazonSocialManualChange={handleRazonSocialManualChange}
-            rucEstado={rucEstado}
-            rucCondicion={rucCondicion}
-            isLoadingRuc={isLoadingRuc}
-            rucError={rucError}
-            onCalcular={calcular}
-            onOpenBackupModal={handleOpenBackupModal}
-          />
+          <CollapsiblePanel title="1. Datos Generales" defaultCollapsed={true}>
+            <DatosGeneralesPlanner
+              formState={formState}
+              onFormChange={handleFormChange}
+              onRucDniChange={handleRucDniChange}
+              onRazonSocialManualChange={handleRazonSocialManualChange}
+              rucEstado={rucEstado}
+              rucCondicion={rucCondicion}
+              isLoadingRuc={isLoadingRuc}
+              rucError={rucError}
+              onOpenBackupModal={handleOpenBackupModal}
+            />
+          </CollapsiblePanel>
 
-          <SeleccionFechas
-            selectedDates={plannerState.selectedDates}
-            fetchCalendarEvents={fetchCalendarEvents}
-            handleDateClick={handleDateClick}
-            handleDayCellMount={handleDayCellMount}
-            onCalcular={calcular}
-            isCalcularDisabled={isCalcularDisabled}
-            onClearSelectedDates={handleClearSelectedDates}
-          />
+          <CollapsiblePanel title="2. Selección de Fechas" defaultCollapsed={true}>
+            <SeleccionFechas
+              selectedDates={plannerState.selectedDates}
+              fetchCalendarEvents={fetchCalendarEvents}
+              handleDateClick={handleDateClick}
+              handleDayCellMount={handleDayCellMount}
+              onCalcular={calcular}
+              isCalcularDisabled={isCalcularDisabled}
+              onClearSelectedDates={handleClearSelectedDates}
+            />
+          </CollapsiblePanel>
 
-          <ResultadosPlanner
-            resumenMensual={plannerState.resumenMensual}
-            montoOriginal={Number(formState.montoOriginal) || 0}
-            montosAsignados={montosAjustados} // Usar los montos ajustados para la tabla
-            linea={formState.linea_planificador_color || ''}
-            onMontoAjustadoChange={handleMontoAjustadoChange}
-            onExportAjustado={handleExportAjustado}
-          />
+          <CollapsiblePanel title="3. Resultados" defaultCollapsed={true}>
+            <ResultadosPlanner
+              resumenMensual={plannerState.resumenMensual}
+              montoOriginal={Number(formState.montoOriginal) || 0}
+              montosAsignados={montosAjustados}
+              linea={formState.linea_planificador_color || ''}
+              onMontoAjustadoChange={handleMontoAjustadoChange}
+              onExportAjustado={handleExportAjustado}
+            />
+          </CollapsiblePanel>
         </div>
       </main>
+
+      
 
       <BackupOptionsModal
         isOpen={isBackupModalOpen}
@@ -503,3 +543,4 @@ export const PlanificadorPage: React.FC = () => {
     </div>
   );
 };
+

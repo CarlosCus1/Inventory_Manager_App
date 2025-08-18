@@ -222,7 +222,7 @@ export const ComparadorPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary ml-3"
+            className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Añadir Manualmente
           </button>
@@ -266,7 +266,7 @@ export const ComparadorPage: React.FC = () => {
             <button
               onClick={handleExport}
               disabled={isSubmitting || lista.length === 0 || !formState.colaborador_personal}
-              className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary w-full md:w-auto"
+              className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Generando...' : 'Descargar Comparación (XLSX)'}
             </button>

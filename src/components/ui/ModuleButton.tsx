@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { moduleColors } from '../../theme/muiTheme';
+
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
@@ -12,7 +12,7 @@ interface ModuleButtonProps extends Omit<React.ComponentProps<typeof Button>, 'c
 }
 
 const StyledModuleButton = styled(Button)<{ module: ModuleVariant }>(({ theme, module }) => {
-  const colors = module === 'default' ? theme.palette.primary : moduleColors[module as keyof typeof moduleColors];
+  const colors = module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette];
   
   return {
     borderRadius: theme.shape.borderRadius,

@@ -29,7 +29,7 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
   return (
     <div className="card">
       <h3 className="form-section-title">Detalle por Fecha (Ajuste Manual)</h3>
-      <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-panel dark:bg-panel-dark rounded">
+      <div id="tabla-detalle-horizontal" className="flex overflow-x-auto overflow-y-auto max-h-96 space-x-4 p-2 bg-panel dark:bg-panel-dark rounded">
         {sortedMonthKeys.map(monthKey => {
           const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + item.amount, 0);
           const monthDisplay = DateUtils.formatearMesAnioDisplay(monthKey);

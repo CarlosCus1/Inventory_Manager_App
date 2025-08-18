@@ -6,7 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { type DateClickArg } from '@fullcalendar/interaction';
 import { type DayCellContentArg } from '@fullcalendar/core';
-import { moduleColors } from '../../theme/muiTheme';
+
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
@@ -19,7 +19,7 @@ interface ModuleCalendarProps {
 }
 
 const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ theme, module }) => {
-  const colors = module === 'default' ? theme.palette.primary : moduleColors[module as keyof typeof moduleColors];
+  const colors = module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette];
   
   return {
     padding: theme.spacing(2),
@@ -182,6 +182,15 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
   onDayCellMount,
   fetchCalendarEvents
 }) => {
+  const dayCellClassNames = (arg: DayCellContentArg) => {
+    const classNames = [];
+    const dateStr = `${String(arg.date.getDate()).padStart(2, '0')}/${String(arg.date.getMonth() + 1).padStart(2, '0')}/${arg.date.getFullYear()}`;
+    if (selectedDates?.has(dateStr)) {
+      classNames.push('fc-day-selected');
+    }
+    return classNames;
+  };
+
   return (
     <StyledCalendarContainer module={module}>
       <Box sx={{ width: '100%', overflow: 'auto' }}>
@@ -201,6 +210,7 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
           }}
           eventSources={fetchCalendarEvents ? [{ events: fetchCalendarEvents }] : []}
           dateClick={onDateClick}
+          dayCellClassNames={dayCellClassNames}
           dayCellDidMount={onDayCellMount}
           eventContent={(arg) => {
             if (!arg.event.title || arg.event.title.trim() === '') {

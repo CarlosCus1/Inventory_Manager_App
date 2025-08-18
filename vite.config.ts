@@ -6,4 +6,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2048, // Increased to 2MB
   },
+  optimizeDeps: {
+    include: ['tailwindcss', '@tailwindcss/postcss'],
+  },
 });

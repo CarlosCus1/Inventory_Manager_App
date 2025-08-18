@@ -12,7 +12,6 @@ interface Props {
   isCalcularDisabled: boolean;
   fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
   handleDateClick: (arg: DateClickArg) => void;
-  handleDayCellMount: (arg: DayCellContentArg) => void;
   onClearSelectedDates: () => void;
 }
 
@@ -22,7 +21,6 @@ export const SeleccionFechas: React.FC<Props> = ({
   isCalcularDisabled,
   fetchCalendarEvents,
   handleDateClick,
-  handleDayCellMount,
   onClearSelectedDates
 }) => {
 
@@ -38,15 +36,7 @@ export const SeleccionFechas: React.FC<Props> = ({
       component="section"
       id="seleccion-fechas"
       sx={{
-        px: 2.5, // px-5 (20px)
-        py: 3,   // py-6 (24px)
-        mb: { xs: 2.5, md: 2 }, // mb-5 md:mb-4 (20px, 16px)
-        backgroundColor: 'background.paper', // This will adapt via theme
-        borderRadius: 1, // rounded-lg (8px)
-        boxShadow: 3, // shadow-md
-        border: '1px solid',
-        borderColor: 'divider', // Use theme.palette.divider for border color
-        color: 'text.primary' // Use theme.palette.text.primary for text color
+        // Padding and styling are handled by the parent CollapsiblePanel's section-card
       }}
     >
       <Typography 
@@ -76,7 +66,6 @@ export const SeleccionFechas: React.FC<Props> = ({
           module="planificador"
           selectedDates={selectedDates}
           onDateClick={handleDateClick}
-          onDayCellMount={handleDayCellMount}
           fetchCalendarEvents={fetchCalendarEvents}
         />
       </Box>
@@ -102,7 +91,7 @@ export const SeleccionFechas: React.FC<Props> = ({
             borderColor: 'info.light',
             borderRadius: 1,
             p: 1,
-            backgroundColor: 'background.default'
+                        backgroundColor: 'var(--panel)' // Use theme variable for background
           }}
         >
           <List dense>

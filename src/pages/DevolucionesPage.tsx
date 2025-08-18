@@ -239,7 +239,7 @@ export const DevolucionesPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary ml-3"
+            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Añadir Manualmente
           </button>
@@ -278,7 +278,7 @@ export const DevolucionesPage: React.FC = () => {
           <button
             onClick={handleExport}
             disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.motivo}
-            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary mt-4 md:mt-0 w-full md:w-auto"
+            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary mt-4 md:mt-0 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Reporte (XLSX)'}
           </button>

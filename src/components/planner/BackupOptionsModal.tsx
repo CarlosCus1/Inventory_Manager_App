@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ModuleButton } from '../ui/ModuleButton';
 
 interface BackupOptionsModalProps {
   isOpen: boolean;
@@ -20,30 +21,36 @@ export const BackupOptionsModal: React.FC<BackupOptionsModalProps> = ({
       <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm mx-auto dark:bg-gray-800">
         <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Opciones de Respaldo</h3>
         <div className="space-y-4">
-          <button
+          <ModuleButton // Use ModuleButton
+            module="planificador" // Specify the module
+            variant="contained" // Or "outlined" if preferred
             onClick={() => {
               onLoadAndEdit();
               onClose();
             }}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+            className="w-full" // Keep w-full for full width
           >
             Cargar y Editar
-          </button>
-          <button
+          </ModuleButton>
+          <ModuleButton // Use ModuleButton
+            module="planificador" // Specify the module
+            variant="contained" // Or "outlined" if preferred
             onClick={() => {
               onCreateIdenticalCopy();
               onClose();
             }}
-            className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:bg-green-700 dark:hover:bg-green-800"
+            className="w-full" // Keep w-full for full width
           >
             Crear Copia Idéntica
-          </button>
-          <button
+          </ModuleButton>
+          <ModuleButton // Use ModuleButton
+            module="planificador" // Specify the module
+            variant="outlined" // Use outlined for a secondary action
             onClick={onClose}
-            className="w-full bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="w-full" // Keep w-full for full width
           >
             Cancelar
-          </button>
+          </ModuleButton>
         </div>
       </div>
     </div>

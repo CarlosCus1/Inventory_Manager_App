@@ -4,10 +4,42 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     mode: 'light',
+    // Module-specific color palette integrated directly
+    devoluciones: {
+      main: '#DC2626',
+      light: '#ef4444',
+      dark: '#b91c1c',
+      contrastText: '#ffffff'
+    },
+    pedido: {
+      main: '#2563EB',
+      light: '#3b82f6',
+      dark: '#1d4ed8',
+      contrastText: '#ffffff'
+    },
+    inventario: {
+      main: '#16A34A',
+      light: '#22c55e',
+      dark: '#15803d',
+      contrastText: '#ffffff'
+    },
+    comparador: {
+      main: '#EA580C',
+      light: '#f97316',
+      dark: '#c2410c',
+      contrastText: '#ffffff'
+    },
+    planificador: {
+      main: '#0EA5E9',
+      light: '#0ea5e9',
+      dark: '#0284c7',
+      contrastText: '#ffffff'
+    },
+    // Standard MUI palette colors, aligned with module colors where applicable
     primary: {
-      main: '#1976d2', // Default blue
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#2563EB', // Aligned with pedido
+      light: '#3b82f6',
+      dark: '#1d4ed8',
       contrastText: '#ffffff'
     },
     secondary: {
@@ -17,27 +49,27 @@ const theme = createTheme({
       contrastText: '#ffffff'
     },
     error: {
-      main: '#DC2626', // Devoluciones red
+      main: '#DC2626', // Aligned with devoluciones
       light: '#ef5350',
-      dark: '#c62828',
+      dark: '#b91c1c',
       contrastText: '#ffffff'
     },
     warning: {
-      main: '#EA580C', // Comparador orange
+      main: '#EA580C', // Aligned with comparador
       light: '#ff9800',
-      dark: '#e65100',
+      dark: '#c2410c',
       contrastText: '#ffffff'
     },
     info: {
-      main: '#0EA5E9', // Planificador sky
+      main: '#0EA5E9', // Aligned with planificador
       light: '#29b6f6',
-      dark: '#0277bd',
+      dark: '#0284c7',
       contrastText: '#ffffff'
     },
     success: {
-      main: '#16A34A', // Inventario green
+      main: '#16A34A', // Aligned with inventario
       light: '#4caf50',
-      dark: '#2e7d32',
+      dark: '#15803d',
       contrastText: '#ffffff'
     },
     text: {
@@ -127,39 +159,5 @@ const theme = createTheme({
     '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
   ]
 });
-
-// Module-specific color palette
-export const moduleColors = {
-  devoluciones: {
-    main: '#DC2626',
-    light: '#ef4444',
-    dark: '#b91c1c',
-    contrastText: '#ffffff'
-  },
-  pedido: {
-    main: '#2563EB',
-    light: '#3b82f6',
-    dark: '#1d4ed8',
-    contrastText: '#ffffff'
-  },
-  inventario: {
-    main: '#16A34A',
-    light: '#22c55e',
-    dark: '#15803d',
-    contrastText: '#ffffff'
-  },
-  comparador: {
-    main: '#EA580C',
-    light: '#f97316',
-    dark: '#c2410c',
-    contrastText: '#ffffff'
-  },
-  planificador: {
-    main: '#0EA5E9',
-    light: '#0ea5e9',
-    dark: '#0284c7',
-    contrastText: '#ffffff'
-  }
-};
 
 export default theme;
