@@ -90,9 +90,13 @@
 }
 
 /* Calendar holiday styling */
-.fc-holiday {
-    background-color: #ffedd5 !important; /* Light orange background */
-    color: #FF0000 !important; /* Red text for holidays */
+.fc-holiday-event {
+  background-color: #ffedd5 !important; /* Light orange background */
+  color: #c2410c !important; /* Dark orange text for contrast */
+}
+
+.fc .fc-daygrid-day-frame {
+  min-height: 40px;
 }
 
 /* Calendar selected day styling */

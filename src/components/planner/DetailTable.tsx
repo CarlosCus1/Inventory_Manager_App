@@ -3,20 +3,20 @@ import * as DateUtils from '../../utils/dateUtils'; // Adjust path as needed
 import { StyledInput } from '../ui/StyledInput';
 
 interface DetailTableProps {
-  montosAsignados: Record<string, number>;
+  montosAsignadosStr: Record<string, string>;
   onMontoChange: (fecha: string, nuevoMonto: string) => void;
 }
 
-export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMontoChange }) => {
-  const montosPorMes: Record<string, Array<{ date: string; amount: number }>> = {};
-  for (const fechaStr in montosAsignados) {
+export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignadosStr, onMontoChange }) => {
+  const montosPorMes: Record<string, Array<{ date: string; amount: string }>> = {};
+  for (const fechaStr in montosAsignadosStr) {
     const monthKey = DateUtils.obtenerMesAnio(fechaStr);
     if (!montosPorMes[monthKey]) {
       montosPorMes[monthKey] = [];
     }
     montosPorMes[monthKey].push({
       date: fechaStr,
-      amount: montosAsignados[fechaStr] || 0,
+      amount: montosAsignadosStr[fechaStr] || '',
     });
   }
 
@@ -31,7 +31,7 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
       <h3 className="form-section-title">Detalle por Fecha (Ajuste Manual)</h3>
       <div id="tabla-detalle-horizontal" className="flex overflow-x-auto space-x-4 p-2 bg-panel dark:bg-panel-dark rounded">
         {sortedMonthKeys.map(monthKey => {
-          const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + item.amount, 0);
+          const monthTotal = montosPorMes[monthKey].reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
           const monthDisplay = DateUtils.formatearMesAnioDisplay(monthKey);
           const yearShort = monthKey.substring(2, 4);
           const sortedDatesInMonth = montosPorMes[monthKey].sort((a, b) => DateUtils.parsearFecha(a.date).getTime() - DateUtils.parsearFecha(b.date).getTime());
@@ -48,7 +48,7 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignados, onMon
                     <StyledInput
                       type="number"
                       step="0.01"
-                      value={item.amount.toFixed(2)}
+                      value={item.amount}
                       onChange={(e) => onMontoChange(item.date, e.target.value)}
                       variant="planificador"
                       className="w-28 text-right"
