@@ -182,6 +182,15 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
   onDayCellMount,
   fetchCalendarEvents
 }) => {
+  const dayCellClassNames = (arg: DayCellContentArg) => {
+    const classNames = [];
+    const dateStr = `${String(arg.date.getDate()).padStart(2, '0')}/${String(arg.date.getMonth() + 1).padStart(2, '0')}/${arg.date.getFullYear()}`;
+    if (selectedDates?.has(dateStr)) {
+      classNames.push('fc-day-selected');
+    }
+    return classNames;
+  };
+
   return (
     <StyledCalendarContainer module={module}>
       <Box sx={{ width: '100%', overflow: 'auto' }}>
@@ -201,6 +210,7 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
           }}
           eventSources={fetchCalendarEvents ? [{ events: fetchCalendarEvents }] : []}
           dateClick={onDateClick}
+          dayCellClassNames={dayCellClassNames}
           dayCellDidMount={onDayCellMount}
           eventContent={(arg) => {
             if (!arg.event.title || arg.event.title.trim() === '') {
