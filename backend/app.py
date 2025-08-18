@@ -21,7 +21,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 app = Flask(__name__)
 # Permitimos solicitudes CORS de cualquier origen para el desarrollo
 # En producción, se recomienda restringir esto a dominios específicos
-CORS(app, expose_headers=["Content-Disposition"])
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, expose_headers=["Content-Disposition"])
 
 # --- 3. Configuración de Estilos y Datos ---
 # Un diccionario para centralizar los colores y estilos de los encabezados.
@@ -343,6 +343,106 @@ def _generate_planner_report(writer: pd.ExcelWriter, data: Dict[str, Any], chart
 
 
 # --- 5. Definición de Endpoints ---
+
+@app.route('/api/calculate', methods=['POST'])
+def calculate():
+    """
+    Endpoint para calcular la distribución de montos.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body must be JSON"}), 400
+
+        monto_total_str = data.get('montoTotal')
+        fechas_validas = data.get('fechasValidas')
+
+        if not monto_total_str or not fechas_validas:
+            return jsonify({"error": "Faltan 'montoTotal' o 'fechasValidas' en la petición"}), 400
+
+        try:
+            monto_total = float(monto_total_str)
+        except (ValueError, TypeError):
+            return jsonify({"error": "'montoTotal' debe ser un número válido"}), 400
+
+        if not isinstance(fechas_validas, list) or len(fechas_validas) == 0:
+            return jsonify({"error": "'fechasValidas' debe ser una lista no vacía de fechas"}), 400
+
+        num_fechas = len(fechas_validas)
+        monto_base = monto_total / num_fechas
+
+        # Redondear a 2 decimales
+        monto_base_redondeado = round(monto_base, 2)
+
+        montos_asignados = {fecha: monto_base_redondeado for fecha in fechas_validas}
+
+        # Ajustar el último pago para que la suma total sea exacta
+        total_calculado = sum(montos_asignados.values())
+        diferencia = round(monto_total - total_calculado, 2)
+
+        if diferencia != 0 and fechas_validas:
+            ultima_fecha = fechas_validas[-1]
+            montos_asignados[ultima_fecha] += diferencia
+            montos_asignados[ultima_fecha] = round(montos_asignados[ultima_fecha], 2)
+
+        # Calcular resumen mensual
+        resumen_mensual = {}
+        for fecha_str, monto in montos_asignados.items():
+            try:
+                # Se asume que el formato de fecha es 'DD/MM/YYYY'
+                fecha_obj = datetime.strptime(fecha_str, '%d/%m/%Y')
+                mes_anio = fecha_obj.strftime('%Y-%m') # Formato 'YYYY-MM'
+
+                if mes_anio in resumen_mensual:
+                    resumen_mensual[mes_anio] += monto
+                else:
+                    resumen_mensual[mes_anio] = monto
+            except ValueError:
+                # Manejar fechas con formato incorrecto si es necesario
+                app.logger.warning(f"Formato de fecha inválido encontrado: {fecha_str}")
+                continue # O manejar el error de otra forma
+
+        # Redondear los totales mensuales a 2 decimales
+        for mes, total in resumen_mensual.items():
+            resumen_mensual[mes] = round(total, 2)
+
+        return jsonify({
+            "montosAsignados": montos_asignados,
+            "resumenMensual": resumen_mensual,
+            "fechasValidas": sorted(fechas_validas, key=lambda d: datetime.strptime(d, '%d/%m/%Y'))
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error en /api/calculate: {e}")
+        return jsonify({"error": f"Ocurrió un error interno: {str(e)}"}), 500
+
+
+@app.route('/api/consultar-ruc', methods=['GET'])
+def consultar_ruc():
+    """
+    Endpoint mock para consultar RUC/DNI.
+    """
+    numero = request.args.get('numero', '')
+    if not numero.isdigit():
+        return jsonify({"error": "El número de documento debe contener solo dígitos."}), 400
+
+    if len(numero) == 11:
+        # Simula una respuesta para un RUC
+        return jsonify({
+            "razonSocial": f"EMPRESA FICTICIA {numero}",
+            "estado": "ACTIVO",
+            "condicion": "HABIDO"
+        })
+    elif len(numero) == 8:
+        # Simula una respuesta para un DNI
+        return jsonify({
+            "razonSocial": f"PERSONA FICTICIA {numero}",
+            "estado": "ACTIVO",
+            "condicion": "HABIDO"
+        })
+    else:
+        return jsonify({"error": "El número de documento debe tener 8 u 11 dígitos."}), 400
+
 
 @app.route('/api/getHolidays', methods=['GET'])
 def get_holidays():

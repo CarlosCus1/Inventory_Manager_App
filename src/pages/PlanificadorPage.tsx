@@ -69,7 +69,7 @@ export const PlanificadorPage: React.FC = () => {
     handleRazonSocialManualChange,
   } = useRucDni('planificador');
 
-  const feriadosCargados = useRef(new Map<string, string>());
+  const [holidays, setHolidays] = useState(new Map<string, string>());
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileSelectionMode, setFileSelectionMode] = useState<'loadAndEdit' | 'createCopy' | null>(null);
@@ -77,28 +77,27 @@ export const PlanificadorPage: React.FC = () => {
   // Function to fetch calendar events (holidays)
   const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
     try {
-      const year = fetchInfo.start.getFullYear();
-      console.log('Fetching holidays for year:', year);
-      const feriados = await fetchHolidays(year) as Array<{ date: string; name: string }>;
-      console.log('Fetched holidays:', feriados);
+        const year = fetchInfo.start.getFullYear();
+        const feriadosArray = await fetchHolidays(year) as Array<{ date: string; name: string }>;
 
-      feriadosCargados.current.clear();
-      feriadosCargados.current.clear();
-      feriados.forEach((feriado) => {
-        feriadosCargados.current.set(feriado.date, feriado.name);
-      });
-      console.log('Feriados cargados en ref:', feriadosCargados.current);
+        const newHolidays = new Map<string, string>();
+        feriadosArray.forEach((feriado) => {
+            const [y, m, d] = feriado.date.split('-');
+            const formattedDate = `${d}/${m}/${y}`;
+            newHolidays.set(formattedDate, feriado.name);
+        });
+        setHolidays(newHolidays);
 
-      successCallback([]); // Pass an empty array of events to FullCalendar for holidays
+        successCallback([]);
     } catch (error) {
-      console.error('Error al cargar eventos del calendario:', error);
-      failureCallback(error as Error);
+        console.error('Error al cargar eventos del calendario:', error);
+        failureCallback(error as Error);
     }
   }, [fetchHolidays]);
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
-    const isHoliday = feriadosCargados.current.has(dateStr);
+    const isHoliday = holidays.has(dateStr);
     const isSunday = arg.date.getDay() === 0;
 
     if (DateUtils.esPasado(arg.date) || isSunday || isHoliday) {
@@ -111,41 +110,30 @@ export const PlanificadorPage: React.FC = () => {
         newSelectedDates.delete(dateStr);
       } else {
         if (newSelectedDates.size >= MAX_FECHAS) {
-          return prevState; // Return previous state if max dates reached
+          return prevState;
         }
         newSelectedDates.add(dateStr);
       }
-      // No direct classList manipulation here, React will re-render based on state
       return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
-  }, [feriadosCargados]);
+  }, [holidays]);
 
   const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
-    console.log('handleDayCellMount called for:', arg.date);
     const dateStr = DateUtils.formatearFecha(arg.date);
-    
-    // Apply class if the date is selected
-    if (plannerState.selectedDates.has(dateStr)) {
-      arg.el.classList.add('fc-day-selected');
-    }
 
-    // Apply class and tooltip if the date is a holiday
-    if (feriadosCargados.current.has(dateStr)) {
-      console.log('Holiday found:', dateStr, feriadosCargados.current.get(dateStr));
+    if (holidays.has(dateStr)) {
       arg.el.classList.add('fc-holiday');
-      arg.el.setAttribute('title', feriadosCargados.current.get(dateStr) || '');
+      arg.el.setAttribute('title', holidays.get(dateStr) || '');
     }
 
-    // Apply class for Sundays
     if (arg.date.getDay() === 0) {
       arg.el.classList.add('fc-day-sun');
     }
 
-    // Apply class for Saturdays
     if (arg.date.getDay() === 6) {
       arg.el.classList.add('fc-day-sat');
     }
-  }, [plannerState.selectedDates, feriadosCargados]);
+  }, [holidays]);
 
   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -268,7 +256,7 @@ export const PlanificadorPage: React.FC = () => {
     try {
       // mostrarLoading(true, 'Calculando distribución...');
       const { montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
-      const resultado = await calcularApi({ ..._getAndValidateFormData().payload, ...uiData });
+      const resultado = await calcularApi({ montoTotal, fechasValidas, razonSocial });
 
       // Update local state with calculation results
       setPlannerState(prevState => ({
@@ -293,21 +281,24 @@ export const PlanificadorPage: React.FC = () => {
   }, [_getAndValidateFormData]);
 
   const handleExportAjustado = useCallback(async (dataToExport?: any) => { // Added dataToExport parameter
-    const payload = dataToExport || { // Use provided data or construct from state
+    const cleanPayload = {
       tipo: 'planificador',
-      form: formState,
-      // The backend expects a 'montosAsignados' key in the main data object
-      montosAsignados: montosAjustados,
-      fechasOrdenadas: plannerState.fechasOrdenadas,
-      resumenMensual: plannerState.resumenMensual,
-      montoOriginal: formState.montoOriginal,
-      razonSocial: formState.cliente,
-      // Pass other necessary data from formState
-      codigoCliente: formState.codigo_cliente,
-      ruc: formState.documento_cliente,
-      linea: formState.linea_planificador_color,
-      pedido: formState.pedido_planificador,
+      form: {
+        linea_planificador_color: String(formState.linea_planificador_color || ''),
+      },
+      list: [],
+      montosAsignados: { ...montosAjustados },
+      fechasOrdenadas: [...plannerState.fechasOrdenadas],
+      resumenMensual: { ...plannerState.resumenMensual },
+      montoOriginal: Number(formState.montoOriginal || 0),
+      razonSocial: String(formState.cliente || ''),
+      codigoCliente: String(formState.codigo_cliente || ''),
+      ruc: String(formState.documento_cliente || ''),
+      linea: String(formState.linea_planificador_color || ''),
+      pedido: String(formState.pedido_planificador || ''),
     };
+
+    const payload = dataToExport || cleanPayload;
 
     try {
       // Export XLSX
