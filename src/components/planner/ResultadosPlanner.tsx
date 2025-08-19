@@ -8,6 +8,7 @@ interface Props {
   resumenMensual: Record<string, number>;
   montoOriginal: number;
   montosAsignados: Record<string, number>;
+  montosAsignadosStr: Record<string, string>;
   linea: string;
   onMontoAjustadoChange: (fecha: string, nuevoMonto: string) => void;
   onExportAjustado: () => void;
@@ -17,6 +18,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
   resumenMensual,
   montoOriginal,
   montosAsignados,
+  montosAsignadosStr,
   linea,
   onMontoAjustadoChange,
   onExportAjustado,
@@ -49,7 +51,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
           />
           <div className="lg:col-span-2">
             <DetailTable
-              montosAsignados={montosAsignados}
+              montosAsignadosStr={montosAsignadosStr}
               onMontoChange={onMontoAjustadoChange}
             />
             <div className="mt-4 flex justify-end items-center gap-4">

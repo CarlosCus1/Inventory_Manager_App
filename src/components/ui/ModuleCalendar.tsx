@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Paper } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, type PaletteColor } from '@mui/material/styles';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -14,13 +14,20 @@ interface ModuleCalendarProps {
   module: ModuleVariant;
   selectedDates?: Set<string>;
   onDateClick?: (arg: DateClickArg) => void;
-  onDayCellMount?: (arg: DayCellContentArg) => void;
   fetchCalendarEvents?: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
+  onDayCellMount?: (arg: DayCellContentArg) => void;
 }
 
 const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ theme, module }) => {
-  const colors = module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette];
+  const moduleColor = module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette];
   
+  // Type guard to ensure we are working with a PaletteColor object.
+  // This prevents errors if a palette key (e.g., 'mode') resolves to a string instead of an object.
+  const colors: PaletteColor =
+    moduleColor && typeof moduleColor === 'object' && 'main' in moduleColor && 'contrastText' in moduleColor
+      ? (moduleColor as PaletteColor)
+      : theme.palette.primary;
+
   return {
     padding: theme.spacing(2),
     borderRadius: theme.shape.borderRadius,
@@ -119,8 +126,7 @@ const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ them
       },
       
       '& .fc-day-selected': {
-        backgroundColor: `${colors?.main || theme.palette.primary.main}15`,
-        
+        /* The background is now handled by the ::before pseudo-element on the number */
         '& .fc-daygrid-day-number': {
           backgroundColor: colors?.main || theme.palette.primary.main,
           color: colors?.contrastText || theme.palette.primary.contrastText,
@@ -179,8 +185,8 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
   module,
   selectedDates,
   onDateClick,
-  onDayCellMount,
-  fetchCalendarEvents
+  fetchCalendarEvents,
+  onDayCellMount
 }) => {
   const dayCellClassNames = (arg: DayCellContentArg) => {
     const classNames = [];
@@ -210,7 +216,6 @@ export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
           }}
           eventSources={fetchCalendarEvents ? [{ events: fetchCalendarEvents }] : []}
           dateClick={onDateClick}
-          dayCellClassNames={dayCellClassNames}
           dayCellDidMount={onDayCellMount}
           eventContent={(arg) => {
             if (!arg.event.title || arg.event.title.trim() === '') {

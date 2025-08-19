@@ -20,13 +20,13 @@ import { BackupOptionsModal } from '../components/planner/BackupOptionsModal';
 
 // This could be a helper function inside PlanificadorPage or in a utility file
 const readFileContent = async (file: File) => {
-  return new Promise((resolve, reject) => {
+  return new Promise<any>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
         resolve(data);
-      } catch (e) {
+      } catch (_e) {
         reject(new Error("Error parsing JSON file."));
       }
     };
@@ -55,9 +55,12 @@ export const PlanificadorPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
+  const [montosAjustadosStr, setMontosAjustadosStr] = useState<Record<string, string>>({});
   const [isCalcularDisabled, setCalcularDisabled] = useState(true);
+  
+  
+  
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-  const fetchHolidays = useAppStore(state => state.fetchHolidays);
   const formState = useAppStore(state => state.formState.planificador);
   const actualizarFormulario = useAppStore(state => state.actualizarFormulario);
 
@@ -70,22 +73,28 @@ export const PlanificadorPage: React.FC = () => {
     handleRazonSocialManualChange,
   } = useRucDni('planificador');
 
-  const [holidays, setHolidays] = useState(new Map<string, string>());
   const btnCalcularRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileSelectionMode, setFileSelectionMode] = useState<'loadAndEdit' | 'createCopy' | null>(null);
 
+  const fetchHolidaysAction = useAppStore(state => state.fetchHolidays);
+  const fetchHolidaysRef = useRef(fetchHolidaysAction);
+
+  useEffect(() => {
+    fetchHolidaysRef.current = fetchHolidaysAction;
+  }, [fetchHolidaysAction]);
+
   // Function to fetch calendar events (holidays)
-  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
+  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
     try {
-        const year = fetchInfo.start.getFullYear();
-        const feriadosArray = await fetchHolidays(year) as Array<{ date: string; name: string }>;
+        const year = fetchInfo.start.getFullYear();        
+        const feriadosArray = await fetchHolidaysRef.current(year) as Array<{ date: string; name: string }>;
         
-        const newHolidays = new Map<string, string>();
+        
+        
+        // The API returns dates in "DD/MM/YYYY" format, which is what we need.
         feriadosArray.forEach((feriado) => {
-            const [y, m, d] = feriado.date.split('-');
-            const formattedDate = `${d}/${m}/${y}`;
-            newHolidays.set(formattedDate, feriado.name);
+            newHolidays.set(feriado.date, feriado.name);
         });
         // Compare newHolidays with current holidays to prevent unnecessary state updates
         let holidaysChanged = false;
@@ -109,7 +118,7 @@ export const PlanificadorPage: React.FC = () => {
         console.error('Error al cargar eventos del calendario:', error);
         failureCallback(error as Error);
     }
-  }, [fetchHolidays, holidays]);
+  }, [holidays]);
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
@@ -121,6 +130,7 @@ export const PlanificadorPage: React.FC = () => {
     }
 
     setPlannerState(prevState => {
+      const dateStr = DateUtils.formatearFecha(arg.date);
       const newSelectedDates = new Set(prevState.selectedDates);
       if (newSelectedDates.has(dateStr)) {
         newSelectedDates.delete(dateStr);
@@ -161,15 +171,19 @@ export const PlanificadorPage: React.FC = () => {
   }, [actualizarFormulario, errors]); // Added errors to dependencies
 
   const handleMontoAjustadoChange = useCallback((fecha: string, nuevoMonto: string) => {
+    // Update the string representation directly
+    setMontosAjustadosStr(prev => ({
+      ...prev,
+      [fecha]: nuevoMonto,
+    }));
+
+    // Update the numeric value for calculations, handling empty strings or partial numbers
     const montoNumerico = parseFloat(nuevoMonto);
-    if (isNaN(montoNumerico)) {
-      // Si el valor no es un número, se podría manejar el error o simplemente no actualizar
-      // Por ahora, lo guardaremos como está para permitir la limpieza del campo
-    }
     setMontosAjustados(prev => ({
       ...prev,
       [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
     }));
+
     setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
   }, []);
 
@@ -233,9 +247,6 @@ export const PlanificadorPage: React.FC = () => {
     const fieldErrors = validationResult?.fieldErrors || [];
     const generalErrors = validationResult?.generalErrors || [];
     const isValid = validationResult?.isValid || false;
-    const uiData = validationResult?.uiData || {};
-    const montoTotal = validationResult?.montoTotal;
-    const fechasValidas = validationResult?.fechasValidas;
 
     return {
       fieldErrors,
@@ -249,7 +260,7 @@ export const PlanificadorPage: React.FC = () => {
   }, [formState, plannerState.selectedDates]);
 
   const calcular = useCallback(async () => {
-      const { fieldErrors, generalErrors, isValid, uiData } = _getAndValidateFormData();
+      const { fieldErrors, generalErrors, isValid, montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
 
     if (!isValid) {
       const newErrors = fieldErrors.reduce((acc, error) => {
@@ -277,23 +288,23 @@ export const PlanificadorPage: React.FC = () => {
 
     try {
       // mostrarLoading(true, 'Calculando distribución...');
-      const { montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
       const resultado = await calcularApi({ montoTotal, fechasValidas, razonSocial });
 
       // Update local state with calculation results
       setPlannerState(prevState => ({
         ...prevState,
-        fechasOrdenadas: resultado.fechasValidas,
+        fechasOrdenadas: fechasValidas,
         montosAsignados: resultado.montosAsignados,
         resumenMensual: resultado.resumenMensual,
         isDataDirty: false
       }));
       // Initialize adjusted amounts with the calculated ones
+      const montosStr = Object.entries(resultado.montosAsignados).reduce((acc, [key, value]) => {
+        acc[key] = value.toFixed(2);
+        return acc;
+      }, {} as Record<string, string>);
       setMontosAjustados(resultado.montosAsignados);
-
-      // Form data is already in the global store, so no need to set it here.
-
-      // mostrarResults(); // Now handled by React rendering
+      setMontosAjustadosStr(montosStr);
     } catch (error) {
       console.error('Error en cálculo:', error);
       // mostrarToast((error as Error).message || 'Error al realizar el cálculo', 'error');
@@ -343,11 +354,13 @@ export const PlanificadorPage: React.FC = () => {
       jsonA.click();
       jsonA.remove();
 
+      handleClearModule();
+
     } catch (error) {
       console.error("Error al exportar:", error);
       alert("No se pudo generar el archivo de reporte. Verifique que el servidor backend esté funcionando.");
     }
-  }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual]);
+  }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual, handleClearModule]);
 
   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -518,6 +531,7 @@ export const PlanificadorPage: React.FC = () => {
               resumenMensual={plannerState.resumenMensual}
               montoOriginal={Number(formState.montoOriginal) || 0}
               montosAsignados={montosAjustados}
+              montosAsignadosStr={montosAjustadosStr}
               linea={formState.linea_planificador_color || ''}
               onMontoAjustadoChange={handleMontoAjustadoChange}
               onExportAjustado={handleExportAjustado}
@@ -543,4 +557,3 @@ export const PlanificadorPage: React.FC = () => {
     </div>
   );
 };
-
