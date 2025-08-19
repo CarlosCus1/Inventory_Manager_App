@@ -56,6 +56,7 @@ export const PlanificadorPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
   const [montosAjustadosStr, setMontosAjustadosStr] = useState<Record<string, string>>({});
+  const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
   const [isCalcularDisabled, setCalcularDisabled] = useState(true);
   
   
@@ -89,7 +90,7 @@ export const PlanificadorPage: React.FC = () => {
     try {
         const year = fetchInfo.start.getFullYear();        
         const feriadosArray = await fetchHolidaysRef.current(year) as Array<{ date: string; name: string }>;
-        
+        const newHolidays = new Map<string, string>();
         
         
         // The API returns dates in "DD/MM/YYYY" format, which is what we need.
@@ -313,6 +314,25 @@ export const PlanificadorPage: React.FC = () => {
     }
   }, [_getAndValidateFormData]);
 
+  const handleClearModule = useCallback(() => {
+    setPlannerState({
+      selectedDates: new Set(),
+      fechasOrdenadas: [],
+      montosAsignados: {},
+      resumenMensual: {},
+      isDataDirty: false,
+    });
+    setErrors({});
+    setMontosAjustados({});
+    setCalcularDisabled(true);
+    // Clear global form state for planificador
+    const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+    formFieldsToClear.forEach(field => {
+      actualizarFormulario('planificador', field, ''); // Assuming empty string is the default clear value
+    });
+    // Optionally clear calendar selections or reset calendar view if needed
+  }, [actualizarFormulario]);
+
   const handleExportAjustado = useCallback(async (dataToExport?: any) => { // Added dataToExport parameter
     const cleanPayload = {
       tipo: 'planificador',
@@ -453,26 +473,6 @@ export const PlanificadorPage: React.FC = () => {
       isDataDirty: true, // Mark data as dirty if dates are cleared
     }));
   }, []);
-
-  // Function to clear the entire module's state
-  const handleClearModule = useCallback(() => {
-    setPlannerState({
-      selectedDates: new Set(),
-      fechasOrdenadas: [],
-      montosAsignados: {},
-      resumenMensual: {},
-      isDataDirty: false,
-    });
-    setErrors({});
-    setMontosAjustados({});
-    setCalcularDisabled(true);
-    // Clear global form state for planificador
-    const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
-    formFieldsToClear.forEach(field => {
-      actualizarFormulario('planificador', field, ''); // Assuming empty string is the default clear value
-    });
-    // Optionally clear calendar selections or reset calendar view if needed
-  }, [actualizarFormulario]);
 
   return (
     <div className="container mx-auto p-4 md:p-8 surface">

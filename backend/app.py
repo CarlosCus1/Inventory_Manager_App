@@ -16,6 +16,12 @@ import io
 import unicodedata
 from typing import Any, Dict, List, Optional
 from openpyxl.worksheet.worksheet import Worksheet
+from report_generators.base_generator import BaseReportGenerator
+from report_generators.inventario_generator import InventarioReportGenerator
+from report_generators.pedido_generator import PedidoReportGenerator
+from report_generators.devoluciones_generator import DevolucionesReportGenerator
+from report_generators.precios_generator import PreciosReportGenerator
+from report_generators.planificador_generator import PlanificadorReportGenerator
 
 # --- 2. Inicialización de la aplicación Flask ---
 app = Flask(__name__)
