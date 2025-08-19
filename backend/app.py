@@ -159,13 +159,6 @@ def get_holidays():
         # Esto evita que los servidores de desarrollo devuelvan index.html en un 404.
         return jsonify([])
 
-from report_generators.base_generator import BaseReportGenerator
-from report_generators.inventario_generator import InventarioReportGenerator
-from report_generators.pedido_generator import PedidoReportGenerator
-from report_generators.devoluciones_generator import DevolucionesReportGenerator
-from report_generators.precios_generator import PreciosReportGenerator
-from report_generators.planificador_generator import PlanificadorReportGenerator
-
 REPORT_GENERATORS = {
     'inventario': InventarioReportGenerator,
     'pedido': PedidoReportGenerator,
