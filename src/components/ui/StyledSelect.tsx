@@ -2,7 +2,7 @@ import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const selectVariants = cva(
-  'w-full px-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 select bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50', // Combined base and global class
+  'w-full px-3 py-0 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 select bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50', // Combined base and global class
   {
     variants: {
       variant: {
@@ -11,6 +11,7 @@ const selectVariants = cva(
         inventario: 'border-green-300 focus:ring-green-500 focus:border-green-500',
         comparador: 'border-orange-300 focus:ring-orange-500 focus:border-orange-500',
         planificador: 'border-sky-300 focus:ring-sky-500 focus:border-sky-500',
+        precios: 'border-purple-300 focus:ring-purple-500 focus:border-purple-500',
         default: 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500',
       },
     },

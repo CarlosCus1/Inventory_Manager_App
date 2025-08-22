@@ -1,5 +1,6 @@
 import React from 'react';
 import type { IProducto } from '../interfaces';
+import { formatDecimal } from '../stringFormatters';
 // Define las props que el componente ProductCard aceptará.
 interface ProductCardProps {
   product: IProducto;
@@ -51,7 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <h2 className="text-2xl font-bold mt-1">{nombre}</h2>
           <p className="mt-2"><span className="font-semibold">Código:</span> {codigo}</p>
           <p className={`${isOutOfStock ? '' : ''}`}>
-            <span className="font-semibold">Stock:</span> {stock_referencial} unidades
+            <span className="font-semibold">Stock:</span> {formatDecimal(stock_referencial)} unidades
           </p>
         </div>
         

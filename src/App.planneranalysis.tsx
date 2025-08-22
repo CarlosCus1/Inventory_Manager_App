@@ -11,6 +11,8 @@ import { ModuleTextField } from './components/ui/ModuleTextField';
 import { ModuleSelect } from './components/ui/ModuleSelect';
 import { ModuleCalendar } from './components/ui/ModuleCalendar';
 import type { IForm } from './interfaces';
+import type { DateClickArg } from '@fullcalendar/interaction';
+import type { DayCellMountArg } from '@fullcalendar/core';
 
 const createEmotionCache = () => {
   return createCache({
@@ -39,7 +41,7 @@ function App() {
   const [formState, setFormState] = React.useState<IForm>(mockFormState);
   const [selectedDates, setSelectedDates] = React.useState(mockSelectedDates);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState(prev => ({
       ...prev,
@@ -63,7 +65,7 @@ function App() {
     }));
   };
 
-  const handleDateClick = (arg: any) => {
+  const handleDateClick = (arg: DateClickArg) => {
     const dateStr = arg.dateStr;
     const newSelectedDates = new Set(selectedDates);
     
@@ -76,14 +78,15 @@ function App() {
     setSelectedDates(newSelectedDates);
   };
 
-  const handleDayCellMount = (arg: any) => {
+  const handleDayCellMount = (arg: DayCellMountArg) => {
     if (selectedDates.has(arg.date.toISOString().split('T')[0])) {
       arg.el.classList.add('fc-day-selected');
     }
   };
 
-  const fetchCalendarEvents = (info: any, successCallback: any, failureCallback: any) => {
+  const fetchCalendarEvents = (info: { start: Date; end: Date; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
     // Mock calendar events
+    console.log('Fetching events from', info.start, 'to', info.end, failureCallback);
     successCallback([]);
   };
 

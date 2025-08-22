@@ -17,6 +17,8 @@ import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
 import { StyledInput } from '../components/ui/StyledInput';
 import { StyledSelect } from '../components/ui/StyledSelect';
+import { useToast } from '../contexts/ToastContext';
+import { formatDecimal } from '../stringFormatters';
 
 
 // --- 2. Definición del Componente de Página ---
@@ -51,7 +53,7 @@ export const DevolucionesPage: React.FC = () => {
   const totales = useMemo(() => {
     const totalUnidades = lista.reduce((sum, item) => sum + Number(item.cantidad), 0);
     const totalPeso = lista.reduce((sum, item) => sum + (Number(item.peso) * Number(item.cantidad)), 0);
-    return { totalUnidades, totalPeso: totalPeso.toFixed(2) }; // Se formatea el peso a 2 decimales.
+    return { totalUnidades, totalPeso };
   }, [lista]);
 
   // --- F. Definición de las Columnas para DataTable ---
@@ -68,8 +70,7 @@ export const DevolucionesPage: React.FC = () => {
     { header: 'Código', accessor: 'codigo' },
     { header: 'Cod. EAN', accessor: 'cod_ean' },
     { header: 'Nombre', accessor: 'nombre' },
-    {
-      header: 'Cantidad',
+    { header: 'Cantidad',
       accessor: 'cantidad',
       cellRenderer: (item) => (
         <input
@@ -78,11 +79,12 @@ export const DevolucionesPage: React.FC = () => {
           placeholder="0"
           value={item.cantidad}
           onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
-          className="input-module-devoluciones w-full"
+          className="input input-module-devoluciones w-full text-gray-900 dark:text-gray-100"
         />
       )
     },
-    { header: 'Peso', accessor: 'peso' },
+    { header: 'Cant. por Caja', accessor: 'cantidad_por_caja', cellRenderer: (item) => <span>{formatDecimal(item.cantidad_por_caja ?? 0)}</span> },
+    { header: 'Peso', accessor: 'peso', cellRenderer: (item) => <span>{formatDecimal(item.peso)}</span> },
     {
       header: 'Observaciones',
       accessor: 'observaciones',
@@ -93,7 +95,7 @@ export const DevolucionesPage: React.FC = () => {
           placeholder="Añadir observaciones"
           value={item.observaciones ?? ''}
           onChange={(e) => handleInputChange(item.codigo, 'observaciones', e.target.value)}
-          className="input-module-devoluciones w-full"
+          className="input input-module-devoluciones w-full text-gray-900 dark:text-gray-100"
         />
       )
     },
@@ -103,7 +105,7 @@ export const DevolucionesPage: React.FC = () => {
       cellRenderer: (item) => (
         <button
           onClick={() => eliminarProductoDeLista('devoluciones', item.codigo)}
-          className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary"
+          className="btn btn-module-devoluciones"
           aria-label={`Eliminar ${item.nombre}`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
         </button>
@@ -111,8 +113,15 @@ export const DevolucionesPage: React.FC = () => {
     }
   ], [handleInputChange, eliminarProductoDeLista]);
 
+  const { addToast } = useToast(); // Initialize useToast
+
   // --- G. Lógica de Exportación a Excel ---
   const handleExport = async () => {
+    if (!formState.documento_cliente || !formState.cliente || !formState.motivo) {
+      addToast('Por favor, complete los campos obligatorios (Documento Cliente, Cliente, Motivo) antes de descargar.', 'warning');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch('http://localhost:5000/export-xlsx', {
@@ -149,7 +158,7 @@ export const DevolucionesPage: React.FC = () => {
       resetearModulo('devoluciones');
     } catch (error) {
       console.error("Error al exportar a Excel:", error);
-      alert("No se pudo generar el archivo de Excel. Verifique que el servidor backend esté funcionando.");
+      addToast("No se pudo generar el archivo de Excel. Verifique que el servidor backend esté funcionando.", 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -216,7 +225,7 @@ export const DevolucionesPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="devoluciones"
             showStockRef={false}
-            buttonClassName="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary ml-3"
+            buttonClassName="btn btn-module-devoluciones ml-3"
             themeClass="title-devoluciones btn-module-devoluciones"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
@@ -239,7 +248,7 @@ export const DevolucionesPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-module-devoluciones ml-3"
           >
             Añadir Manualmente
           </button>
@@ -272,13 +281,13 @@ export const DevolucionesPage: React.FC = () => {
         {/* Totales y Botón de Descarga */}
         <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-lg font-semibold">
-            <span>Total Unidades: <span className="font-extrabold title-devoluciones">{totales.totalUnidades}</span></span>
-            <span className="ml-6">Total Peso: <span className="font-extrabold title-devoluciones">{totales.totalPeso} kg</span></span>
+            <span>Total Unidades: <span className="font-extrabold title-devoluciones">{formatDecimal(totales.totalUnidades)}</span></span>
+            <span className="ml-6">Total Peso: <span className="font-extrabold title-devoluciones">{formatDecimal(totales.totalPeso)} kg</span></span>
           </div>
           <button
             onClick={handleExport}
             disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.motivo}
-            className="bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary mt-4 md:mt-0 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-module-devoluciones mt-4 md:mt-0 w-full md:w-auto"
           >
             {isSubmitting ? 'Generando...' : 'Descargar Reporte (XLSX)'}
           </button>

@@ -17,16 +17,18 @@ import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
 import './PlanificadorPage.css';
 import PageHeader from '../components/PageHeader';
 import { BackupOptionsModal } from '../components/planner/BackupOptionsModal';
+import { useToast } from '../contexts/ToastContext';
+import { messages } from '../utils/messages';
 
 // This could be a helper function inside PlanificadorPage or in a utility file
 const readFileContent = async (file: File) => {
-  return new Promise<any>((resolve, reject) => {
+  return new Promise<Record<string, unknown>>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
         resolve(data);
-      } catch (_e) {
+      } catch {
         reject(new Error("Error parsing JSON file."));
       }
     };
@@ -46,11 +48,12 @@ interface PlannerState {
 }
 
 export const PlanificadorPage: React.FC = () => {
+  const { addToast } = useToast();
   const [plannerState, setPlannerState] = useState<PlannerState>({
-    selectedDates: new Set(),
+    selectedDates: new Set([]),
     fechasOrdenadas: [],
-    montosAsignados: {},
-    resumenMensual: {},
+    montosAsignados: {} as Record<string, number>,
+    resumenMensual: {} as Record<string, number>,
     isDataDirty: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,7 +89,7 @@ export const PlanificadorPage: React.FC = () => {
   }, [fetchHolidaysAction]);
 
   // Function to fetch calendar events (holidays)
-  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
+  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string }>) => void, failureCallback: (error: Error) => void) => {
     try {
         const year = fetchInfo.start.getFullYear();        
         const feriadosArray = await fetchHolidaysRef.current(year) as Array<{ date: string; name: string }>;
@@ -114,7 +117,7 @@ export const PlanificadorPage: React.FC = () => {
             setHolidays(newHolidays);
         }
 
-        successCallback([]);
+        successCallback(feriadosArray); // Pass the actual feriadosArray to successCallback
     } catch (error) {
         console.error('Error al cargar eventos del calendario:', error);
         failureCallback(error as Error);
@@ -126,7 +129,16 @@ export const PlanificadorPage: React.FC = () => {
     const isHoliday = holidays.has(dateStr);
     const isSunday = arg.date.getDay() === 0;
 
-    if (DateUtils.esPasado(arg.date) || isSunday || isHoliday) {
+    if (DateUtils.esPasado(arg.date)) {
+      addToast(messages.pastDateError, 'error');
+      return;
+    }
+    if (isSunday) {
+      addToast(messages.sundayError, 'error');
+      return;
+    }
+    if (isHoliday) {
+      addToast(messages.holidayError(holidays.get(dateStr)!), 'error');
       return;
     }
 
@@ -143,7 +155,7 @@ export const PlanificadorPage: React.FC = () => {
       }
       return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
     });
-  }, [holidays]);
+  }, [holidays, addToast]);
 
   const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
     const dateStr = DateUtils.formatearFecha(arg.date);
@@ -162,7 +174,7 @@ export const PlanificadorPage: React.FC = () => {
     }
   }, [holidays]);
 
-  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     actualizarFormulario('planificador', name as keyof IForm, value);
     if (errors[name]) {
@@ -279,8 +291,7 @@ export const PlanificadorPage: React.FC = () => {
       setErrors(newErrors);
 
       if (generalErrors.length > 0) {
-        // Here you might want to use a toast notification library
-        alert(`Por favor revise los siguientes puntos:\n- ${generalErrors.join('\n- ')}`);
+        addToast(generalErrors.join('\n'), 'error');
       }
       return;
     }
@@ -312,18 +323,18 @@ export const PlanificadorPage: React.FC = () => {
     } finally {
       // mostrarLoading(false);
     }
-  }, [_getAndValidateFormData]);
+  }, [_getAndValidateFormData, addToast]);
 
   const handleClearModule = useCallback(() => {
     setPlannerState({
-      selectedDates: new Set(),
+      selectedDates: new Set([]),
       fechasOrdenadas: [],
-      montosAsignados: {},
-      resumenMensual: {},
+      montosAsignados: {} as Record<string, number>,
+      resumenMensual: {} as Record<string, number>,
       isDataDirty: false,
     });
     setErrors({});
-    setMontosAjustados({});
+    setMontosAjustados({} as Record<string, number>);
     setCalcularDisabled(true);
     // Clear global form state for planificador
     const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
@@ -333,7 +344,7 @@ export const PlanificadorPage: React.FC = () => {
     // Optionally clear calendar selections or reset calendar view if needed
   }, [actualizarFormulario]);
 
-  const handleExportAjustado = useCallback(async (dataToExport?: any) => { // Added dataToExport parameter
+  const handleExportAjustado = useCallback(async (dataToExport?: Record<string, unknown>) => { // Added dataToExport parameter
     const cleanPayload = {
       tipo: 'planificador',
       form: {
@@ -345,8 +356,8 @@ export const PlanificadorPage: React.FC = () => {
       resumenMensual: { ...plannerState.resumenMensual },
       montoOriginal: Number(formState.montoOriginal || 0),
       razonSocial: String(formState.cliente || ''),
-      codigoCliente: String(formState.codigo_cliente || ''),
-      ruc: String(formState.documento_cliente || ''),
+      codigoCliente: formState.codigo_cliente || '',
+      ruc: formState.documento_cliente || '',
       linea: String(formState.linea_planificador_color || ''),
       pedido: String(formState.pedido_planificador || ''),
     };
@@ -395,8 +406,8 @@ export const PlanificadorPage: React.FC = () => {
           const localPlannerUpdate: Partial<PlannerState> = {
               selectedDates: new Set(data.selectedDates || []),
               fechasOrdenadas: data.fechasOrdenadas || [],
-              montosAsignados: data.montosAsignados || {},
-              resumenMensual: data.resumenMensual || {},
+              montosAsignados: (data.montosAsignados || {}) as Record<string, number>,
+              resumenMensual: (data.resumenMensual || {}) as Record<string, number>,
               isDataDirty: false,
           };
           setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
@@ -469,7 +480,7 @@ export const PlanificadorPage: React.FC = () => {
   const handleClearSelectedDates = useCallback(() => {
     setPlannerState(prevState => ({
       ...prevState,
-      selectedDates: new Set(),
+      selectedDates: new Set([]),
       isDataDirty: true, // Mark data as dirty if dates are cleared
     }));
   }, []);

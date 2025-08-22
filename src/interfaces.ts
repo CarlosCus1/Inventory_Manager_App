@@ -39,6 +39,12 @@ export const ProductoSchema = z.object({
   /** Cantidad de stock disponible como referencia. */
   stock_referencial: z.number().int('El stock debe ser un número entero.').nonnegative(),
 
+  /** Precio de referencia del producto. */
+  precio_referencial: z.number().nonnegative('El precio de referencia no puede ser negativo.').optional(),
+
+  /** Cantidad de unidades por caja o empaque master. */
+  cantidad_por_caja: z.number().int('La cantidad por caja debe ser un número entero.').positive('La cantidad por caja debe ser mayor a cero.').optional(),
+
   /** Palabras clave para facilitar la búsqueda del producto. */
   keywords: z.array(z.string()),
 });
@@ -58,6 +64,9 @@ export const ProductoEditadoSchema = ProductoSchema.extend({
 
   /** Un objeto para almacenar los precios de la competencia. */
   precios: z.record(z.string(), z.number()).optional(),
+
+  /** Precio sugerido para el producto. */
+  precio_sugerido: z.number().nonnegative('El precio sugerido no puede ser negativo.').optional(),
 });
 
 /** @type IProductoEditado - Inferred type for an edited product. */
@@ -129,4 +138,10 @@ export interface RucData {
   estado: string;
   condicion: string;
   allowManual?: boolean;
+}
+
+export interface ValidationRule {
+  type: 'required' | 'isNumeric' | 'isValidDate' | 'isDni' | 'isRuc' | 'maxLength' | 'minLength';
+  value?: number;
+  message: string;
 }

@@ -13,7 +13,9 @@ import { StyledInput } from './ui/StyledInput';
 import { RucDniInput } from './RucDniInput';
 import { SucursalInput } from './ui/SucursalInput';
 import { useRucDni } from '../hooks/useRucDni';
-import type { IForm } from '../interfaces';
+import { useFormValidation } from '../hooks/useFormValidation'; // New import
+import { useToast } from '../contexts/ToastContext'; // New import
+import type { IForm, ValidationRule } from '../interfaces';
 
 // --- 2. Definición de las Props del Componente ---
 interface Props {
@@ -39,15 +41,42 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
     rucEstado,
     rucCondicion,
     isLoadingRuc,
-    rucError,
     handleRucDniChange,
     handleRazonSocialManualChange,
   } = useRucDni(tipo);
 
+  const { validate } = useFormValidation(); // Initialize useFormValidation
+  const { addToast } = useToast(); // Initialize useToast
 
   // --- C. Lógica de Manejo de Cambios y Validación ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    let rules: ValidationRule[] = [];
+    if (name === 'fecha') {
+      rules = [
+        { type: 'required', message: 'La fecha es obligatoria.' },
+        { type: 'isValidDate', message: 'La fecha no es válida.' }
+      ];
+    } else if (name === 'codigo_cliente') {
+      rules = [{ type: 'isNumeric', message: 'El código de cliente debe ser numérico.' }];
+    } else if (name === 'documento_cliente') {
+      if (formState.documentType === 'dni') {
+        rules = [{ type: 'isDni', message: 'El DNI debe tener 8 dígitos.' }];
+      } else if (formState.documentType === 'ruc') {
+        rules = [{ type: 'isRuc', message: 'El RUC debe tener 11 dígitos.' }];
+      }
+    }
+    // Add rules for other fields as needed
+
+    const { isValid, errorMessage } = validate(value, rules);
+
+    if (!isValid) {
+      addToast(errorMessage!, 'error');
+      // Optionally, prevent updating the form state if invalid
+      // return;
+    }
+
     // Se actualiza el estado global en Zustand.
     actualizarFormulario(tipo, name as keyof IForm, value);
   };
@@ -65,7 +94,9 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
   // --- E. Renderizado del Componente ---
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold mb-4 form-section-title">Datos Generales</h2>
+      <h2 className={`text-2xl font-bold mb-4 form-section-title title-${variant}`}>
+        Datos Generales
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* --- Campos Comunes --- */}
         <RucDniInput
@@ -77,7 +108,6 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, children }) => {
           rucEstado={rucEstado}
           rucCondicion={rucCondicion}
           isLoading={isLoadingRuc}
-          error={rucError}
           variant={variant}
         />
 

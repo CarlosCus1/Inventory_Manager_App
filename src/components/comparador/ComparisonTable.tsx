@@ -30,9 +30,11 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
             {competidores.map((comp) => (
               <th key={comp} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">{comp}</th>
             ))}
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Precio Sugerido</th>
             {competidores.slice(1).map((comp) => (
               <th key={`pct-${comp}`} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% vs {competidores[0]}</th>
             ))}
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% vs Sugerido</th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Acción</th>
           </tr>
         </thead>
@@ -52,6 +54,14 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   />
                 </td>
               ))}
+              <td key={`${item.codigo}-sugerido`} className="px-6 py-4 whitespace-nowrap">
+                <PriceInput
+                  initialValue={item.precio_sugerido ?? null}
+                  onPriceChange={(value) => onPriceChange(item.codigo, 'precio_sugerido', value)}
+                  competidor="Sugerido"
+                  item={item}
+                />
+              </td>
               {competidores.slice(1).map((comp) => {
                 const keyPct = `% vs ${comp}`;
                 const valorPct = (item as unknown as Record<string, string | undefined>)[keyPct] || 'N/A';
@@ -61,6 +71,9 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   </td>
                 );
               })}
+              <td key={`pct-${item.codigo}-sugerido`} className={`px-6 py-4 whitespace-nowrap ${getPercentageCellClass((item as unknown as Record<string, string | undefined>)['% vs Sugerido'] || 'N/A')}`}>
+                {(item as unknown as Record<string, string | undefined>)['% vs Sugerido'] || 'N/A'}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <button
                   onClick={() => onDelete(item.codigo)}

@@ -6,55 +6,8 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ModuleType, ModuleColor } from '../enums';
+import { ModuleColor } from '../enums';
 // Removed unused import: import InteractiveBackground from '../components/background/InteractiveBackground';
-
-export const mockRootProps = {
-  phoneNumber: "998104169",
-  supportMessage: "Hola, necesito información sobre el Gestor de Inventario",
-  moduleStats: [
-    { 
-      name: "Devoluciones", 
-      usage: 75, 
-      color: ModuleColor.DEVOLUCIONES,
-      module: ModuleType.DEVOLUCIONES
-    },
-    { 
-      name: "Pedidos", 
-      usage: 90, 
-      color: ModuleColor.PEDIDO,
-      module: ModuleType.PEDIDO  
-    },
-    { 
-      name: "Inventario", 
-      usage: 60, 
-      color: ModuleColor.INVENTARIO,
-      module: ModuleType.INVENTARIO
-    },
-    { 
-      name: "Comparador", 
-      usage: 45, 
-      color: ModuleColor.COMPARADOR,
-      module: ModuleType.COMPARADOR
-    },
-    { 
-      name: "Planificador", 
-      usage: 30, 
-      color: ModuleColor.PLANIFICADOR,
-      module: ModuleType.PLANIFICADOR
-    }
-  ],
-  particleColors: [
-    ModuleColor.DEVOLUCIONES,
-    ModuleColor.PEDIDO, 
-    ModuleColor.INVENTARIO,
-    ModuleColor.COMPARADOR,
-    ModuleColor.PLANIFICADOR
-  ],
-  currentDateTime: new Date('2024-01-15T15:30:45'),
-  appVersion: "v3.0"
-};
-
 
 const Card: React.FC<{
   to: string;

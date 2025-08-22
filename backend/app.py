@@ -225,4 +225,4 @@ def export_xlsx():
 # --- 6. Bloque de Ejecución Principal ---
 if __name__ == '__main__':
     # La ejecución en modo debug es útil durante el desarrollo.
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

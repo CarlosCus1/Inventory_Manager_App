@@ -44,14 +44,14 @@ export async function fetchWithRetry(url: string, options: RequestInit = {}, ret
                     // Try to parse as JSON first
                     errorData = await response.json();
                     errorMessage = (errorData as { message?: string }).message || errorMessage;
-                } catch (jsonError) {
+                } catch {
                     // If JSON parsing fails, try to read as text
                     try {
                         errorMessage = await response.text();
                         if (errorMessage.length > 200) { // Truncate long HTML responses
                             errorMessage = errorMessage.substring(0, 200) + '... (truncated HTML)';
                         }
-                    } catch (textError) {
+                    } catch {
                         // Fallback if even text reading fails
                         errorMessage = `Error desconocido del servidor: ${response.status}`;
                     }

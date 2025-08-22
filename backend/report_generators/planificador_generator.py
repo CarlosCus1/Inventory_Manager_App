@@ -49,16 +49,22 @@ class PlanificadorReportGenerator(BaseReportGenerator):
         } for i, fecha in enumerate(fechas_ordenadas)]
         df_detalle = pd.DataFrame(detalle_data)
 
+        # Escribir Datos Generales primero
         df_info.to_excel(self.writer, sheet_name="Reporte Dashboard", startrow=2, index=False, header=False)
-        df_resumen.to_excel(self.writer, sheet_name="Reporte Dashboard", startrow=len(df_info) + 4, index=False)
+        
+        # Escribir Resumen Mensual después de Datos Generales
+        resumen_start_row = len(df_info) + 4
+        df_resumen.to_excel(self.writer, sheet_name="Reporte Dashboard", startrow=resumen_start_row, index=False)
+        
+        # Escribir Detalle en hoja separada
         df_detalle.to_excel(self.writer, sheet_name="Detalle de Pagos", index=False)
 
         ws_dashboard = self.writer.sheets["Reporte Dashboard"]
         ws_detalle = self.writer.sheets["Detalle de Pagos"]
 
-        color_hex_fill = STYLE_CONFIG['pedido']['header_color'] # Using 'pedido' color for main fill as in original
+        color_hex_fill = STYLE_CONFIG['pedido']['header_color']
         
-        # Main title style
+        # Titulo principal
         ws_dashboard.merge_cells('A1:C1')
         cell = ws_dashboard['A1']
         cell.value = "DISTRIBUCION DE MONTOS POR FECHA"

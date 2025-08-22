@@ -4,7 +4,7 @@ import * as DateUtils from '../../utils/dateUtils';
 import { ModuleCalendar } from '../ui/ModuleCalendar';
 import { ModuleButton } from '../ui/ModuleButton';
 import { type DateClickArg } from '@fullcalendar/interaction';
-import { type DayCellContentArg } from '@fullcalendar/core';
+import { type DayCellMountArg } from '@fullcalendar/core';
 
 interface Props {
   selectedDates: Set<string>;
@@ -12,6 +12,7 @@ interface Props {
   isCalcularDisabled: boolean;
   fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
   handleDateClick: (arg: DateClickArg) => void;
+  handleDayCellMount: (arg: DayCellMountArg) => void;
   onClearSelectedDates: () => void;
 }
 

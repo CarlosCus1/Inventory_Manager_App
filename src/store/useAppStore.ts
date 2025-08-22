@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 // Middleware de Zustand para persistir parte del estado en un almacenamiento.
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDB';
+import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDb';
 // Interfaces de datos que hemos definido.
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
 import { consultarRuc, fetchHolidays } from '../utils/api';
@@ -28,7 +28,7 @@ interface ModuleStats {
 
 // --- 2. Definición de la forma del Estado (State) ---
 // Esta interfaz define todos los datos que nuestro store va a manejar.
-interface State {
+export interface State {
   // Tema actual de la aplicación (claro u oscuro).
   theme: Theme;
   // Catálogo completo de productos, cargado desde el JSON.
@@ -47,6 +47,7 @@ interface State {
     inventario: IForm;
     precios: IForm;
     planificador: IForm;
+    comparador: IForm;
   };
   // Listas de productos para cada módulo.
   listas: {
@@ -55,6 +56,7 @@ interface State {
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
     planificador: IProductoEditado[];
+    comparador: IProductoEditado[];
   };
   // Indica si el catálogo de productos se está cargando.
   loading: boolean;
@@ -122,6 +124,7 @@ const initialState: Omit<State, keyof Actions> = {
     inventario: {},
     precios: {},
     planificador: {},
+    comparador: {},
   },
   listas: {
     devoluciones: [],
@@ -129,6 +132,7 @@ const initialState: Omit<State, keyof Actions> = {
     inventario: [],
     precios: [],
     planificador: [],
+    comparador: [],
   },
   loading: false,
   error: null,

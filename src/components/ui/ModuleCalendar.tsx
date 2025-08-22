@@ -5,17 +5,17 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { type DateClickArg } from '@fullcalendar/interaction';
-import { type DayCellContentArg } from '@fullcalendar/core';
+import { type DayCellMountArg } from '@fullcalendar/core';
 
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
 interface ModuleCalendarProps {
   module: ModuleVariant;
-  selectedDates?: Set<string>;
+  selectedDates: Set<string>;
   onDateClick?: (arg: DateClickArg) => void;
-  fetchCalendarEvents?: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
-  onDayCellMount?: (arg: DayCellContentArg) => void;
+  fetchCalendarEvents?: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string; }>) => void, failureCallback: (error: Error) => void) => void;
+  onDayCellMount?: (arg: DayCellMountArg) => void;
 }
 
 const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ theme, module }) => {
@@ -183,19 +183,10 @@ const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ them
 
 export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
   module,
-  selectedDates,
   onDateClick,
   fetchCalendarEvents,
   onDayCellMount
 }) => {
-  const dayCellClassNames = (arg: DayCellContentArg) => {
-    const classNames = [];
-    const dateStr = `${String(arg.date.getDate()).padStart(2, '0')}/${String(arg.date.getMonth() + 1).padStart(2, '0')}/${arg.date.getFullYear()}`;
-    if (selectedDates?.has(dateStr)) {
-      classNames.push('fc-day-selected');
-    }
-    return classNames;
-  };
 
   return (
     <StyledCalendarContainer module={module}>

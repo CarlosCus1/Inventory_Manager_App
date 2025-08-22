@@ -35,6 +35,8 @@
     --link: #1D4ED8;           /* blue-700 */
     --text-success: #065F46;    /* Darker green for success */
     --text-error: #991B1B;      /* Darker red for error */
+    --lt-color-gray-100: #f8f9fc;
+    --lt-color-contrast: #000000; /* Assuming --lt-co is --lt-color-contrast. Please confirm. */
   }
   :root.dark {
     --bg: #111827;       /* fondo base dark (gray-900) */
@@ -63,6 +65,9 @@
   html {
     background-color: var(--bg);
     color: var(--fg); /* Texto global: SIEMPRE usa var(--fg) */
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    -webkit-tap-highlight-color: transparent;
   }
   html.dark {
     background-color: var(--bg);
@@ -255,7 +260,11 @@
   }
   .form-section-title {
     /* Compactar ligeramente el espacio de títulos dentro de cards/secciones */
-    @apply text-lg font-bold mb-2;
+    @apply text-lg font-bold mb-2 pb-2;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    border-color: transparent; /* Color por defecto, se sobreescribe por módulo */
+    color: var(--heading);
   }
   /* Subtítulos H2 por sección también claros por defecto */
   /* Removed h2 { color: inherit; } to ensure consistent heading color */
@@ -410,12 +419,6 @@
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
   }
-  .reel-card--devoluciones { @apply outline-none ring-0; }
-  .reel-card--pedido       { @apply outline-none ring-0; }
-  .reel-card--inventario   { @apply outline-none ring-0; }
-  .reel-card--comparador   { @apply outline-none ring-0; }
-  .reel-card__title { @apply text-lg md:text-xl font-extrabold mb-1.5 md:mb-2; }
-  .reel-card__desc  { @apply text-sm; color: var(--fg); opacity: 0.8; } /* Descripción con leve atenuación pero texto global */
 
   /* Orden rombo (grid) para pantallas grandes */
   .diamond-grid {
@@ -434,19 +437,27 @@
     .diamond-d { grid-row: 3; }
   }
 }
+  .reel-card--devoluciones { @apply outline-none ring-0; }
+  .reel-card--pedido       { @apply outline-none ring-0; }
+  .reel-card--inventario   { @apply outline-none ring-0; }
+  .reel-card--comparador   { @apply outline-none ring-0; }
+  .reel-card__title {
+    @apply text-lg md:text-xl font-extrabold mb-1.5 md:mb-2 pb-2;
+    border-bottom-width: 4px;
+    border-bottom-style: solid;
+    border-color: transparent;
+  }
+  .reel-card__desc  { @apply text-sm; color: var(--fg); opacity: 0.8; } /* Descripción con leve atenuación pero texto global */
   .page-pedido      { @apply min-h-screen py-3; }
   .page-inventario  { @apply min-h-screen py-3; }
   .page-comparador  { @apply min-h-screen py-3; }
 
-  /* Títulos con alto contraste sobre fondo oscuro y subrayado de color del módulo (4px) */
-  .title-devoluciones { @apply inline-block relative; color: var(--heading); }
-  .title-devoluciones::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.devoluciones.light-primary'); bottom: -6px; }
-  .title-pedido       { @apply inline-block relative; color: var(--heading); }
-  .title-pedido::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.pedido.light-primary'); bottom: -6px; }
-  .title-inventario   { @apply inline-block relative; color: var(--heading); }
-  .title-inventario::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.inventario.light-primary'); bottom: -6px; }
-  .title-comparador   { @apply inline-block relative; color: var(--heading); }
-  .title-comparador::after { content: ""; position: absolute; left: 0; width: 100%; height: 4px; background: theme('colors.comparador.light-primary'); bottom: -6px; }
+  /* Títulos con color de borde por módulo */
+  .title-devoluciones { border-color: theme('colors.devoluciones.light-primary'); }
+  .title-pedido       { border-color: theme('colors.pedido.light-primary'); }
+  .title-inventario   { border-color: theme('colors.inventario.light-primary'); }
+  .title-comparador   { border-color: theme('colors.comparador.light-primary'); }
+  .title-planificador { border-color: theme('colors.planificador.light-primary'); }
 
   .btn-module-planificador {
     @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
@@ -461,20 +472,6 @@
 
   .page-planificador {
     @apply min-h-screen py-3;
-  }
-
-  .title-planificador {
-    @apply inline-block relative; color: var(--heading);
-  }
-
-  .title-planificador::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: theme('colors.planificador.light-primary');
-    bottom: -6px;
   }
 
   .reel-card--planificador {

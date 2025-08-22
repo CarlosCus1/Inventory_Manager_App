@@ -13,6 +13,7 @@ interface ModuleStat {
 interface InteractiveBackgroundProps {
   moduleStats: ModuleStat[];
   particleColors: string[];
+  className?: string;
 }
 
 const InteractiveBackground: React.FC<InteractiveBackgroundProps> = ({ 

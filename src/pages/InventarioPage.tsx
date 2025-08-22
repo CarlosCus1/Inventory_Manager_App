@@ -16,6 +16,9 @@ import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { FormGroup, Label } from '../components/ui/FormControls';
 import { StyledInput } from '../components/ui/StyledInput';
+import { useToast } from '../contexts/ToastContext';
+
+import { formatDecimal } from '../stringFormatters';
 
 // --- 2. Definición del Componente de Página ---
 export const InventarioPage: React.FC = () => {
@@ -54,7 +57,15 @@ export const InventarioPage: React.FC = () => {
   }, [lista]);
 
   // --- F. Lógica de Exportación a Excel ---
+  const { addToast } = useToast(); // Initialize useToast
+
+  // --- F. Lógica de Exportación a Excel ---
   const handleExport = async () => {
+    if (!formState.documento_cliente || !formState.cliente || !formState.colaborador_personal) {
+      addToast('Por favor, complete los campos obligatorios (Documento Cliente, Cliente, Colaborador/Personal) antes de descargar.', 'warning');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/export-xlsx`, {
@@ -82,7 +93,7 @@ export const InventarioPage: React.FC = () => {
 
     } catch (error) {
       console.error("Error al exportar a Excel:", error);
-      alert("No se pudo generar el archivo de Excel. Verifique que el servidor backend esté funcionando.");
+      addToast("No se pudo generar el archivo de Excel. Verifique que el servidor backend esté funcionando.", 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,8 +110,7 @@ export const InventarioPage: React.FC = () => {
     { header: 'Código', accessor: 'codigo' },
     { header: 'Cod. EAN', accessor: 'cod_ean' },
     { header: 'Nombre', accessor: 'nombre' },
-    {
-      header: 'Cantidad',
+    { header: 'Cantidad',
       accessor: 'cantidad',
       cellRenderer: (item) => (
         <input
@@ -108,11 +118,12 @@ export const InventarioPage: React.FC = () => {
           min={0}
           value={Number(item.cantidad) || 0}
           onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
-          className="input input-module-inventario w-24 text-right"
+          className="input input-module-inventario w-24 text-right text-gray-900 dark:text-gray-100"
           aria-label={`Cantidad para ${item.nombre}`}
         />
       )
     },
+    { header: 'Cant. por Caja', accessor: 'cantidad_por_caja', cellRenderer: (item) => <span>{formatDecimal(item.cantidad_por_caja ?? 0)}</span> },
     {
       header: 'Línea',
       accessor: 'linea',
@@ -121,7 +132,7 @@ export const InventarioPage: React.FC = () => {
           type="text"
           value={String(item.linea ?? '')}
           onChange={(e) => handleInputChange(item.codigo, 'linea', e.target.value)}
-          className="input input-module-inventario w-40"
+          className="input input-module-inventario w-40 text-gray-900 dark:text-gray-100"
           aria-label={`Línea para ${item.nombre}`}
         />
       )
@@ -134,7 +145,7 @@ export const InventarioPage: React.FC = () => {
           type="text"
           value={String(item.observaciones ?? '')}
           onChange={(e) => handleInputChange(item.codigo, 'observaciones', e.target.value)}
-          className="input input-module-inventario w-full"
+          className="input input-module-inventario w-full text-gray-900 dark:text-gray-100"
           aria-label={`Observaciones para ${item.nombre}`}
         />
       )
@@ -145,7 +156,7 @@ export const InventarioPage: React.FC = () => {
       cellRenderer: (item) => (
         <button
           onClick={() => eliminarProductoDeLista('inventario', item.codigo)}
-          className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary"
+          className="btn btn-module-inventario"
           aria-label={`Eliminar ${item.nombre}`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -168,7 +179,7 @@ export const InventarioPage: React.FC = () => {
         <DatosGeneralesForm tipo="inventario">
           {/* Campos específicos para Inventario */}
           <FormGroup>
-            <Label htmlFor="colaborador_personal">Colaborador / Personal</Label>
+            <Label htmlFor="colaborador_personal">Colaborador</Label>
             <StyledInput
               type="text"
               id="colaborador_personal"
@@ -261,7 +272,7 @@ export const InventarioPage: React.FC = () => {
         />
         <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-lg font-semibold">
-            <span>Total Cantidades: <span className="font-extrabold title-inventario">{totales.totalCantidades}</span></span>
+            <span>Total Cantidades: <span className="font-extrabold title-inventario">{formatDecimal(totales.totalCantidades)}</span></span>
             <span className="ml-6">Total Líneas: <span className="font-extrabold title-inventario">{totales.totalLineas}</span></span>
           </div>
           <button

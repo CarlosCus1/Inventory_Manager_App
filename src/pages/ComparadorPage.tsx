@@ -145,7 +145,7 @@ export const ComparadorPage: React.FC = () => {
       <section className="section-card">
         <DatosGeneralesForm tipo="precios">
           <FormGroup>
-            <Label htmlFor="colaborador_personal">Colaborador / Personal</Label>
+            <Label htmlFor="colaborador_personal">Colaborador</Label>
             <StyledInput
               type="text"
               id="colaborador_personal"
@@ -199,7 +199,7 @@ export const ComparadorPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="precios"
             showStockRef={false}
-            buttonClassName="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary ml-3"
+            buttonClassName="btn btn-module-comparador ml-3"
             themeClass="title-comparador btn-module-comparador"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
@@ -222,7 +222,7 @@ export const ComparadorPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-module-comparador ml-3"
           >
             Añadir Manualmente
           </button>
@@ -266,7 +266,7 @@ export const ComparadorPage: React.FC = () => {
             <button
               onClick={handleExport}
               disabled={isSubmitting || lista.length === 0 || !formState.colaborador_personal}
-              className="bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-module-comparador w-full md:w-auto"
             >
               {isSubmitting ? 'Generando...' : 'Descargar Comparación (XLSX)'}
             </button>

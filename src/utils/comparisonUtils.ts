@@ -19,10 +19,21 @@ export function calculateDataWithPercentages(
           porcentajes[`% vs ${competidores[i]}`] = 'N/A';
         }
       }
+
+      // Calculate % vs Sugerido
+      const precioSugerido = producto.precio_sugerido || 0;
+      if (precioSugerido > 0) {
+        const ratioSugerido = (p1 / precioSugerido) - 1;
+        porcentajes['% vs Sugerido'] = `${(ratioSugerido * 100).toFixed(2)}%`;
+      } else {
+        porcentajes['% vs Sugerido'] = 'N/A';
+      }
+
     } else {
       for (let i = 1; i < competidores.length; i++) {
         porcentajes[`% vs ${competidores[i]}`] = 'N/A';
       }
+      porcentajes['% vs Sugerido'] = 'N/A';
     }
 
     return { ...producto, ...porcentajes } as (IProductoEditado & Record<string, string | number | undefined>);
@@ -34,6 +45,7 @@ export function calculateSummary(
   competidores: string[]
 ) {
   const pctHeaders = competidores.slice(1).map((comp) => `% vs ${comp}`);
+  pctHeaders.push('% vs Sugerido'); // Add the new suggested price percentage header
   const valores: number[] = [];
 
   for (const row of dataWithPercentages) {

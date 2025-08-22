@@ -8,10 +8,11 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-type ModuloKey = "inventario" | "devoluciones" | "pedido" | "precios";
+import type { ModuleVariant } from "../types";
+import type { State } from "../store/useAppStore";
 
 type LineSelectorModalTriggerProps = {
-  moduloKey: ModuloKey;
+  moduloKey: keyof State['listas'];
   showStockRef?: boolean; // mostrar columna de stock en el modal (solo Pedido)
   buttonClassName?: string; // clases del botón (paleta por módulo)
   themeClass?: string; // clases para heredar color del módulo (título/CTA)
@@ -64,7 +65,7 @@ export function LineSelectorModalTrigger({
 }
 
 type LineSelectorModalProps = {
-  moduloKey: ModuloKey;
+  moduloKey: keyof State['listas'];
   showStockRef: boolean;
   themeClass?: string;
   onClose: () => void;
@@ -131,21 +132,6 @@ function normalize(s: string) {
   return s.toLocaleLowerCase("es-PE");
 }
 
-const getModuleButtonClasses = (key: ModuloKey) => {
-  switch (key) {
-    case "devoluciones":
-      return "bg-devoluciones-light-primary dark:bg-devoluciones-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-devoluciones-light-primary dark:focus:ring-devoluciones-dark-primary";
-    case "pedido":
-      return "bg-pedido-light-primary dark:bg-pedido-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pedido-light-primary dark:focus:ring-pedido-dark-primary";
-    case "inventario":
-      return "bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary";
-    case "comparador":
-      return "bg-comparador-light-primary dark:bg-comparador-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comparador-light-primary dark:focus:ring-comparador-dark-primary";
-    default:
-      return "bg-gray-500 dark:bg-gray-700 text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-700"; // Default neutral color
-  }
-};
-
 /**
  * Modal de selección por línea:
  * Paso 1: elegir línea (única).
@@ -156,7 +142,7 @@ const getModuleButtonClasses = (key: ModuloKey) => {
 function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onConfirm }: LineSelectorModalProps) {
   // Store
   const lista = useAppStore((s) => {
-    switch (moduloKey) {
+    switch (moduloKey as keyof State['listas']) {
       case "inventario":
         return s.listas.inventario;
       case "precios":
@@ -165,6 +151,10 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
         return s.listas.devoluciones;
       case "pedido":
         return s.listas.pedido;
+      case "comparador":
+        return s.listas.comparador;
+      case "planificador":
+        return s.listas.planificador;
       default:
         return [];
     }
@@ -260,19 +250,15 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
       <div className="relative surface surface-border rounded-md shadow-lg max-w-2xl w-[92%] max-h-[85vh] flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
         {/* Header */}
         <div
-          className={cn(
-            "p-4 border-b",
-            // Subrayado/acento por módulo: agrega una línea inferior del color del módulo si viene themeClass
-            themeClass?.includes("btn-module-inventario") ? "border-b-2 border-inventario-light-primary" :
-            themeClass?.includes("btn-module-comparador") ? "border-b-2 border-comparador-light-primary" :
-            themeClass?.includes("btn-module-devoluciones") ? "border-b-2 border-devoluciones-light-primary" :
-            themeClass?.includes("btn-module-pedido") ? "border-b-2 border-pedido-light-primary" :
-            ""
-          )}
-          style={{ borderColor: "var(--border)" }}
+          className="p-4 border-b border-[var(--border)]"
         >
           <div className="flex items-center justify-between">
-            <h2 className={cn("text-xl font-bold", themeClass?.includes("title-") ? themeClass.split(" ").find(c => c.startsWith("title-")) : undefined)} style={{ color: 'var(--fg)' }}>Seleccionar por línea</h2>
+            <h2 className={cn(
+              "form-section-title text-xl !mb-0", // Use base class, adjust size, and remove margin-bottom
+              themeClass?.split(" ").find(c => c.startsWith("title-"))
+            )}>
+              Seleccionar por línea
+            </h2>
             <button
               onClick={onClose}
               aria-label="Cerrar modal"
@@ -406,8 +392,7 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
             onClick={handleConfirm}
             disabled={!selectedLinea || selectedCodigos.size === 0}
             className={cn(
-              getModuleButtonClasses(moduloKey), // Use the helper function
-              !selectedLinea || selectedCodigos.size === 0 ? "opacity-60 cursor-not-allowed" : ""
+              themeClass?.split(" ").find(c => c.startsWith("btn-module-"))
             )}
             aria-label="Agregar seleccionados"
             title="Agregar seleccionados"

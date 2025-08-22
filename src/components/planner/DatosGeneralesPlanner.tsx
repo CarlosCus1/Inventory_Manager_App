@@ -6,10 +6,11 @@ import { ModuleButton } from '../ui/ModuleButton';
 import { RucDniInput } from '../RucDniInput';
 import { SucursalInput } from '../ui/SucursalInput';
 import type { IForm } from '../../interfaces';
+import type { SelectChangeEvent } from '@mui/material';
 
 interface Props {
   formState: IForm; // Pass the whole form state for simplicity
-  onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onRucDniChange: (type: 'ruc' | 'dni', number: string, social: string) => void;
   onRazonSocialManualChange: (social: string) => void;
   rucEstado: string | null;
@@ -140,7 +141,10 @@ export const DatosGeneralesPlanner: React.FC<Props> = ({
           label="Línea para Reporte"
           name="linea_planificador_color"
           value={formState.linea_planificador_color || ''}
-          onChange={onFormChange}
+          onChange={(e: SelectChangeEvent<string | number>) => {
+            const target = e.target as HTMLInputElement; // Cast to HTMLInputElement to access name
+            onFormChange({ target: { name: target.name, value: target.value } } as React.ChangeEvent<HTMLInputElement>);
+          }}
           options={selectOptions}
           fullWidth
         />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ModuleButton } from '../ui/ModuleButton';
 
 interface BackupOptionsModalProps {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextField } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, type PaletteColor } from '@mui/material/styles';
 
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
@@ -10,7 +10,7 @@ interface ModuleTextFieldProps extends Omit<React.ComponentProps<typeof TextFiel
 }
 
 const StyledModuleTextField = styled(TextField)<{ module: ModuleVariant }>(({ theme, module }) => {
-  const colors = module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette];
+  const colors = (module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette]) as PaletteColor;
   
   return {
     '& .MuiOutlinedInput-root': {

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Box, Typography, Stack, Alert } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
 import { ModuleTextField } from './ui/ModuleTextField';
 import { ModuleButton } from './ui/ModuleButton';
-import { StyledInput, type InputProps } from './ui/StyledInput'; // Keep for compatibility
+import { type InputProps } from './ui/StyledInput'; // Keep for compatibility
 
 // Extending InputProps to get variant type
 type VariantProp = InputProps['variant'];
@@ -15,10 +15,10 @@ interface RucDniInputProps {
   rucEstado?: string | null;
   rucCondicion?: string | null;
   isLoading?: boolean;
-  error?: string | null;
   onDocumentChange: (type: 'ruc' | 'dni', number: string, razonSocial: string) => void;
   onRazonSocialChange: (social: string) => void;
   variant?: VariantProp; // Use the same variant prop as StyledInput
+  error?: string | null; // Add this line
 }
 
 export const RucDniInput: React.FC<RucDniInputProps> = ({
@@ -28,7 +28,6 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
   rucEstado,
   rucCondicion,
   isLoading = false,
-  error = null,
   onDocumentChange,
   onRazonSocialChange,
   variant = 'default'
@@ -89,12 +88,6 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
         <Typography variant="body2" color="info.main">
           Buscando...
         </Typography>
-      )}
-      
-      {error && (
-        <Alert severity="error" sx={{ fontSize: '0.875rem' }}>
-          {error}
-        </Alert>
       )}
 
       <ModuleTextField
