@@ -6,12 +6,16 @@ const selectVariants = cva(
   {
     variants: {
       variant: {
-        devoluciones: 'border-red-300 focus:ring-red-500 focus:border-red-500',
-        pedido: 'border-blue-300 focus:ring-blue-500 focus:border-blue-500',
-        inventario: 'border-green-300 focus:ring-green-500 focus:border-green-500',
-        comparador: 'border-orange-300 focus:ring-orange-500 focus:border-orange-500',
-        planificador: 'border-sky-300 focus:ring-sky-500 focus:border-sky-500',
-        precios: 'border-purple-300 focus:ring-purple-500 focus:border-purple-500',
+        devoluciones: 'border-devoluciones-light-secondary focus:ring-devoluciones-light-primary focus:border-devoluciones-light-primary',
+        pedido: 'border-pedido-light-secondary focus:ring-pedido-light-primary focus:border-pedido-light-primary',
+        inventario: 'border-inventario-light-secondary focus:ring-inventario-light-primary focus:border-inventario-light-primary',
+        comparador: 'border-comparador-light-secondary focus:ring-comparador-light-primary focus:border-comparador-light-primary',
+        planificador: 'border-planificador-light-secondary focus:ring-planificador-light-primary focus:focus:border-planificador-light-primary',
+        // Note: 'precios' variant in StyledSelect was using 'purple-300'.
+        // Since 'precios' maps to 'comparador' in DatosGeneralesForm,
+        // I'll align 'precios' here with 'comparador' colors for consistency.
+        // If 'precios' needs a distinct color, it should be defined in muiTheme.ts and tailwind.config.js
+        precios: 'border-comparador-light-secondary focus:ring-comparador-light-primary focus:border-comparador-light-primary',
         default: 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500',
       },
     },

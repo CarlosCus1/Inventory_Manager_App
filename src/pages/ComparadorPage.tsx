@@ -9,14 +9,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
-import type { IProducto, IForm } from '../interfaces';
+import type { IProducto, IForm, FieldConfig } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { calculateDataWithPercentages, calculateSummary } from '../utils/comparisonUtils';
 import { ComparisonTable } from '../components/comparador/ComparisonTable';
-import { FormGroup, Label } from '../components/ui/FormControls';
-import { StyledInput } from '../components/ui/StyledInput';
 
 // --- 2. Definición del Componente de Página ---
 export const ComparadorPage: React.FC = () => {
@@ -75,9 +72,6 @@ export const ComparadorPage: React.FC = () => {
     actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
   };
 
-  const handleFormChange = useFormChangeHandler('precios');
-
-
   const dataConPorcentajes = useMemo(() => {
     return calculateDataWithPercentages(lista, competidores);
   }, [lista, competidores]);
@@ -134,6 +128,15 @@ export const ComparadorPage: React.FC = () => {
     return 'text-[var(--text-primary)] font-semibold';
   };
 
+  const fieldConfig: FieldConfig = {
+    showRucDni: true,
+    showCodigoCliente: true,
+    showSucursal: true,
+    showFecha: true,
+    showColaborador: true,
+    showMarcas: true,
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
       <PageHeader
@@ -143,46 +146,7 @@ export const ComparadorPage: React.FC = () => {
       />
 
       <section className="section-card">
-        <DatosGeneralesForm tipo="precios">
-          <FormGroup>
-            <Label htmlFor="colaborador_personal">Colaborador</Label>
-            <StyledInput
-              type="text"
-              id="colaborador_personal"
-              name="colaborador_personal"
-              value={formState.colaborador_personal || ''}
-              onChange={handleFormChange}
-              placeholder="Nombre del colaborador"
-              variant="comparador"
-            />
-          </FormGroup>
-          {/* Loop to generate Marca inputs */}
-          {Array.from({ length: 5 }).map((_, i) => (
-            <FormGroup key={i}>
-              <Label htmlFor={`marca${i + 1}`}>{`Marca ${i + 1}`}</Label>
-              <StyledInput
-                type="text"
-                id={`marca${i + 1}`}
-                name={`marca${i + 1}`}
-                value={formState[`marca${i + 1}` as keyof IForm] as string || ''}
-                onChange={handleFormChange}
-                placeholder={`Marca ${i + 1}`}
-                variant="comparador"
-              />
-            </FormGroup>
-          ))}
-          <FormGroup>
-            <Label htmlFor="fecha">Fecha</Label>
-            <StyledInput
-              type="date"
-              id="fecha"
-              name="fecha"
-              value={formState.fecha || ''}
-              onChange={handleFormChange}
-              variant="comparador"
-            />
-          </FormGroup>
-        </DatosGeneralesForm>
+        <DatosGeneralesForm tipo="precios" formState={formState} fieldConfig={fieldConfig} />
       </section>
 
       <section className="section-card">

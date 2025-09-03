@@ -10,14 +10,10 @@ import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IProducto, IProductoEditado, FieldConfig } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
-import { FormGroup, Label } from '../components/ui/FormControls';
-import { StyledInput } from '../components/ui/StyledInput';
 import { useToast } from '../contexts/ToastContext';
-
 import { formatDecimal } from '../stringFormatters';
 
 // --- 2. Definición del Componente de Página ---
@@ -59,7 +55,6 @@ export const InventarioPage: React.FC = () => {
   // --- F. Lógica de Exportación a Excel ---
   const { addToast } = useToast(); // Initialize useToast
 
-  // --- F. Lógica de Exportación a Excel ---
   const handleExport = async () => {
     if (!formState.documento_cliente || !formState.cliente || !formState.colaborador_personal) {
       addToast('Por favor, complete los campos obligatorios (Documento Cliente, Cliente, Colaborador/Personal) antes de descargar.', 'warning');
@@ -103,8 +98,6 @@ export const InventarioPage: React.FC = () => {
   const handleInputChange = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
     actualizarProductoEnLista('inventario', codigo, campo, valor);
   }, [actualizarProductoEnLista]);
-
-  const handleFormChange = useFormChangeHandler('inventario');
 
   const columns: IColumn<IProductoEditado>[] = useMemo(() => [
     { header: 'Código', accessor: 'codigo' },
@@ -167,6 +160,14 @@ export const InventarioPage: React.FC = () => {
     },
   ], [handleInputChange, eliminarProductoDeLista]);
 
+  const fieldConfig: FieldConfig = {
+    showRucDni: true,
+    showCodigoCliente: true,
+    showSucursal: true,
+    showFecha: true,
+    showColaborador: true,
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
       <PageHeader
@@ -176,32 +177,7 @@ export const InventarioPage: React.FC = () => {
       />
 
       <section className="section-card">
-        <DatosGeneralesForm tipo="inventario">
-          {/* Campos específicos para Inventario */}
-          <FormGroup>
-            <Label htmlFor="colaborador_personal">Colaborador</Label>
-            <StyledInput
-              type="text"
-              id="colaborador_personal"
-              name="colaborador_personal"
-              value={formState.colaborador_personal || ''}
-              onChange={handleFormChange}
-              placeholder="Nombre del colaborador"
-              variant="inventario"
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="fecha">Fecha</Label>
-            <StyledInput
-              type="date"
-              id="fecha"
-              name="fecha"
-              value={formState.fecha || ''}
-              onChange={handleFormChange}
-              variant="inventario"
-            />
-          </FormGroup>
-        </DatosGeneralesForm>
+        <DatosGeneralesForm tipo="inventario" fieldConfig={fieldConfig} formState={formState} />
       </section>
 
       <section className="section-card">

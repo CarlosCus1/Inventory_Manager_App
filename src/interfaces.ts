@@ -131,6 +131,23 @@ export const FormSchema = z.object({
 export type IForm = z.infer<typeof FormSchema>;
 
 /**
+ * @description Defines which fields to show in the universal DatosGeneralesForm.
+ */
+export interface FieldConfig {
+  showRucDni?: boolean;
+  showCodigoCliente?: boolean;
+  showSucursal?: boolean;
+  showFecha?: boolean;
+  showColaborador?: boolean;
+  showMotivo?: boolean;
+  showMarcas?: boolean;
+  showMontoOriginal?: boolean;
+  showPedidoPlanificador?: boolean;
+  showLineaPlanificadorColor?: boolean;
+  showCargarRespaldo?: boolean;
+}
+
+/**
  * @description Interface for the data returned by the RUC lookup API.
  */
 export interface RucData {

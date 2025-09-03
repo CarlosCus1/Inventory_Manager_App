@@ -10,7 +10,7 @@ interface Props {
   selectedDates: Set<string>;
   onCalcular: () => void;
   isCalcularDisabled: boolean;
-  fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => void;
+  fetchCalendarEvents: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string }>) => void, failureCallback: (error: Error) => void) => void;
   handleDateClick: (arg: DateClickArg) => void;
   handleDayCellMount: (arg: DayCellMountArg) => void;
   onClearSelectedDates: () => void;

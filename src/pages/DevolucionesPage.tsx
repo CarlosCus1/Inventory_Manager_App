@@ -10,16 +10,11 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IProducto, IProductoEditado, FieldConfig } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
-import { FormGroup, Label } from '../components/ui/FormControls';
-import { StyledInput } from '../components/ui/StyledInput';
-import { StyledSelect } from '../components/ui/StyledSelect';
 import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
-
 
 // --- 2. Definición del Componente de Página ---
 export const DevolucionesPage: React.FC = () => {
@@ -32,24 +27,20 @@ export const DevolucionesPage: React.FC = () => {
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
-  const setMotivoDevolucion = useAppStore((state) => state.setMotivoDevolucion);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- C. Carga inicial de datos ---
-  // Se asegura de que el catálogo de productos se cargue una sola vez.
   useEffect(() => {
     cargarCatalogo();
   }, [cargarCatalogo]);
 
   // --- D. Lógica de Búsqueda ---
-  // Se utiliza el hook personalizado `useSearch` para filtrar el catálogo.
   const searchResults = useSearch(catalogo, searchTerm);
 
   // --- E. Cálculos para los Totales ---
-  // `useMemo` optimiza el rendimiento recalculando solo si la lista cambia.
   const totales = useMemo(() => {
     const totalUnidades = lista.reduce((sum, item) => sum + Number(item.cantidad), 0);
     const totalPeso = lista.reduce((sum, item) => sum + (Number(item.peso) * Number(item.cantidad)), 0);
@@ -57,14 +48,10 @@ export const DevolucionesPage: React.FC = () => {
   }, [lista]);
 
   // --- F. Definición de las Columnas para DataTable ---
-  // `useCallback` para que la función no se recree en cada render.
   const handleInputChange = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
     const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
     actualizarProductoEnLista('devoluciones', codigo, campo, valorFinal);
   }, [actualizarProductoEnLista]);
-
-  // Handler para los campos del formulario de datos generales
-  const handleFormChange = useFormChangeHandler('devoluciones');
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -164,6 +151,14 @@ export const DevolucionesPage: React.FC = () => {
     }
   };
 
+  const fieldConfig: FieldConfig = {
+    showRucDni: true,
+    showCodigoCliente: true,
+    showSucursal: true,
+    showFecha: true,
+    showMotivo: true,
+  };
+
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface relative">
@@ -179,34 +174,7 @@ export const DevolucionesPage: React.FC = () => {
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
-        <DatosGeneralesForm tipo="devoluciones">
-          {/* Campos específicos para Devoluciones */}
-          <FormGroup>
-            <Label htmlFor="motivo">Motivo de Devolución</Label>
-            <StyledSelect
-              id="motivo"
-              name="motivo"
-              value={formState.motivo || ''}
-              onChange={(e) => setMotivoDevolucion(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales')}
-              variant="devoluciones"
-            >
-              <option value="">Seleccionar motivo...</option>
-              <option value="falla_fabrica">Falla de fábrica</option>
-              <option value="acuerdos_comerciales">Acuerdos comerciales</option>
-            </StyledSelect>
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="fecha">Fecha</Label>
-            <StyledInput
-              type="date"
-              id="fecha"
-              name="fecha"
-              value={formState.fecha || ''}
-              onChange={handleFormChange}
-              variant="devoluciones"
-            />
-          </FormGroup>
-        </DatosGeneralesForm>
+        <DatosGeneralesForm tipo="devoluciones" formState={formState} fieldConfig={fieldConfig} />
       </section>
 
 

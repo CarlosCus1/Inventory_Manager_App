@@ -1,16 +1,16 @@
 import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material';
+// import type { SelectChangeEvent } from '@mui/material'; // Commented out
 import { styled, type PaletteColor } from '@mui/material/styles';
 
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
-interface ModuleSelectProps extends Omit<React.ComponentProps<typeof Select>, 'color' | 'onChange' | 'variant'> {
+interface ModuleSelectProps extends Omit<React.ComponentProps<typeof Select>, 'color' | 'variant'> {
   module: ModuleVariant;
   label?: string;
   options?: Array<{ value: string | number; label: string; disabled?: boolean }>;
-  onChange?: (event: SelectChangeEvent<string | number>, child: React.ReactNode) => void;
+  onChange?: React.ComponentProps<typeof Select>['onChange'];
 }
 
 const StyledFormControl = styled(FormControl)<{ module: ModuleVariant }>(({ theme, module }) => {
@@ -90,21 +90,6 @@ export const ModuleSelect: React.FC<ModuleSelectProps> = ({
 }) => {
   const labelId = `${module}-select-label-${Math.random().toString(36).substr(2, 9)}`;
 
-  const handleSelectChange = (event: SelectChangeEvent<string | number>, child: React.ReactNode) => {
-    if (onChange) {
-      // Create a simplified ChangeEvent that matches React.ChangeEvent<HTMLInputElement>
-      // This assumes the consumer only cares about event.target.name and event.target.value
-      const syntheticEvent: React.ChangeEvent<HTMLInputElement> = {
-        target: {
-          name: event.target.name,
-          value: event.target.value as string,
-        },
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      onChange(syntheticEvent as SelectChangeEvent<string | number>, child); // Pass the simplified event
-    }
-  };
-
   return (
     <StyledFormControl fullWidth size="small" module={module}>
       {label && (
@@ -114,7 +99,7 @@ export const ModuleSelect: React.FC<ModuleSelectProps> = ({
         labelId={label ? labelId : undefined}
         label={label}
         variant="outlined"
-        onChange={handleSelectChange} // Use the wrapper function
+        onChange={onChange} // Directly pass the onChange prop
         {...props}
       >
         {options.length > 0 && options.map((option) => (

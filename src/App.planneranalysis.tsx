@@ -1,70 +1,17 @@
 import React from 'react';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline, Container, Typography, Box, Stack } from '@mui/material';
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
-import theme from './theme/muiTheme';
-import { DatosGeneralesPlanner } from './components/planner/DatosGeneralesPlanner';
+import { useAppStore } from './store/useAppStore';
+import { DatosGeneralesForm } from './components/DatosGeneralesForm';
 import { SeleccionFechas } from './components/planner/SeleccionFechas';
-import { ModuleButton } from './components/ui/ModuleButton';
-import { ModuleTextField } from './components/ui/ModuleTextField';
-import { ModuleSelect } from './components/ui/ModuleSelect';
-import { ModuleCalendar } from './components/ui/ModuleCalendar';
-import type { IForm } from './interfaces';
+import type { FieldConfig } from './interfaces';
 import type { DateClickArg } from '@fullcalendar/interaction';
 import type { DayCellMountArg } from '@fullcalendar/core';
 
-const createEmotionCache = () => {
-  return createCache({
-    key: "mui",
-    prepend: true,
-  });
-};
-
-const emotionCache = createEmotionCache();
-
-// Mock data for demonstration
-const mockFormState: IForm = {
-  documentType: 'ruc',
-  cliente: 'Empresa Demo S.A.C.',
-  documento_cliente: '20123456789',
-  codigo_cliente: 'CLI001',
-  sucursal: 'Lima Centro',
-  montoOriginal: 15000.50,
-  pedido_planificador: 'Pedido de campaña navideña',
-  linea_planificador_color: 'rojo'
-};
-
-const mockSelectedDates = new Set(['2024-01-15', '2024-01-22', '2024-01-29']);
-
 function App() {
-  const [formState, setFormState] = React.useState<IForm>(mockFormState);
-  const [selectedDates, setSelectedDates] = React.useState(mockSelectedDates);
+  // --- 1. Conexión con el Store de Zustand ---
+  const formState = useAppStore((state) => state.formState.planificador);
+  const [selectedDates, setSelectedDates] = React.useState(new Set(['2024-01-15', '2024-01-22', '2024-01-29']));
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({
-      ...prev,
-      [name]: name === 'montoOriginal' ? parseFloat(value) || 0 : value
-    }));
-  };
-
-  const handleRucDniChange = (type: 'ruc' | 'dni', number: string, social: string) => {
-    setFormState(prev => ({
-      ...prev,
-      documentType: type,
-      documento_cliente: number,
-      cliente: social
-    }));
-  };
-
-  const handleRazonSocialManualChange = (social: string) => {
-    setFormState(prev => ({
-      ...prev,
-      cliente: social
-    }));
-  };
-
+  // --- 2. Lógica del Calendario y Acciones ---
   const handleDateClick = (arg: DateClickArg) => {
     const dateStr = arg.dateStr;
     const newSelectedDates = new Set(selectedDates);
@@ -85,7 +32,6 @@ function App() {
   };
 
   const fetchCalendarEvents = (info: { start: Date; end: Date; }, successCallback: (events: []) => void, failureCallback: (error: Error) => void) => {
-    // Mock calendar events
     console.log('Fetching events from', info.start, 'to', info.end, failureCallback);
     successCallback([]);
   };
@@ -104,44 +50,41 @@ function App() {
 
   const isCalcularDisabled = !formState.montoOriginal || selectedDates.size === 0;
 
+  // --- 3. Configuración de Campos para el Formulario ---
+  const fieldConfig: FieldConfig = {
+    showRucDni: true,
+    showCodigoCliente: true,
+    showSucursal: true,
+    showMontoOriginal: true,
+    showPedidoPlanificador: true,
+    showLineaPlanificadorColor: true,
+    showCargarRespaldo: true,
+  };
+
+  // --- 4. Renderizado del Componente ---
   return (
-    <CacheProvider value={emotionCache}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            gutterBottom 
-            align="center"
-            sx={{ 
-              mb: 4,
-              color: 'info.main',
-              fontWeight: 'bold'
-            }}
-          >
-            Análisis de Componentes del Planificador
-          </Typography>
+    <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
+      <h1 className="text-4xl font-bold mb-4 text-center text-sky-600 dark:text-sky-400">
+        Análisis de Componentes del Planificador
+      </h1>
 
-          <Typography variant="h6" gutterBottom sx={{ mb: 3, color: 'text.secondary' }}>
-            Componentes Corregidos y Mejorados:
-          </Typography>
+      <h2 className="text-xl mb-3 text-gray-600 dark:text-gray-400">
+        Componentes Corregidos y Mejorados:
+      </h2>
 
-          {/* Datos Generales Section */}
-          <DatosGeneralesPlanner
-            formState={formState}
-            onFormChange={handleFormChange}
-            onRucDniChange={handleRucDniChange}
-            onRazonSocialManualChange={handleRazonSocialManualChange}
-            rucEstado="ACTIVO"
-            rucCondicion="HABIDO"
-            isLoadingRuc={false}
-            rucError={null}
-            onOpenBackupModal={handleOpenBackupModal}
-          />
+      {/* --- Sección de Datos Generales --- */}
+      <section className="section-card">
+        <DatosGeneralesForm 
+          tipo="planificador" 
+          formState={formState} // Added formState prop
+          fieldConfig={fieldConfig} 
+          onOpenBackupModal={handleOpenBackupModal} 
+        />
+      </section>
 
-          {/* Selección de Fechas Section */}
-          <SeleccionFechas
+      {/* --- Sección de Selección de Fechas --- */}
+      <section className="section-card mt-6">
+         <SeleccionFechas
             selectedDates={selectedDates}
             onCalcular={handleCalcular}
             isCalcularDisabled={isCalcularDisabled}
@@ -150,110 +93,11 @@ function App() {
             handleDayCellMount={handleDayCellMount}
             onClearSelectedDates={handleClearSelectedDates}
           />
+      </section>
 
-          {/* Component Showcase */}
-          <Box sx={{ mt: 4, p: 3, backgroundColor: 'background.paper', borderRadius: 2, boxShadow: 2 }}>
-            <Typography variant="h5" gutterBottom sx={{ color: 'info.main', fontWeight: 'bold' }}>
-              Showcase de Componentes Individuales
-            </Typography>
+      {/* Aquí iría el showcase de componentes si aún es necesario */}
 
-            <Stack spacing={4}>
-              {/* Buttons */}
-              <Box>
-                <Typography variant="h6" gutterBottom>Botones por Módulo:</Typography>
-                <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                  <ModuleButton module="devoluciones" variant="contained">Devoluciones</ModuleButton>
-                  <ModuleButton module="pedido" variant="contained">Pedido</ModuleButton>
-                  <ModuleButton module="inventario" variant="contained">Inventario</ModuleButton>
-                  <ModuleButton module="comparador" variant="contained">Comparador</ModuleButton>
-                  <ModuleButton module="planificador" variant="contained">Planificador</ModuleButton>
-                </Stack>
-                <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>
-                  <ModuleButton module="devoluciones" variant="outlined">Devoluciones</ModuleButton>
-                  <ModuleButton module="pedido" variant="outlined">Pedido</ModuleButton>
-                  <ModuleButton module="inventario" variant="outlined">Inventario</ModuleButton>
-                  <ModuleButton module="comparador" variant="outlined">Comparador</ModuleButton>
-                  <ModuleButton module="planificador" variant="outlined">Planificador</ModuleButton>
-                </Stack>
-              </Box>
-
-              {/* Text Fields */}
-              <Box>
-                <Typography variant="h6" gutterBottom>Campos de Texto por Módulo:</Typography>
-                <Stack spacing={2}>
-                  <Stack direction="row" spacing={2}>
-                    <ModuleTextField module="devoluciones" label="Devoluciones" placeholder="Campo de devoluciones" />
-                    <ModuleTextField module="pedido" label="Pedido" placeholder="Campo de pedido" />
-                    <ModuleTextField module="inventario" label="Inventario" placeholder="Campo de inventario" />
-                  </Stack>
-                  <Stack direction="row" spacing={2}>
-                    <ModuleTextField module="comparador" label="Comparador" placeholder="Campo de comparador" />
-                    <ModuleTextField module="planificador" label="Planificador" placeholder="Campo de planificador" />
-                  </Stack>
-                </Stack>
-              </Box>
-
-              {/* Selects */}
-              <Box>
-                <Typography variant="h6" gutterBottom>Selectores por Módulo:</Typography>
-                <Stack spacing={2}>
-                  <Stack direction="row" spacing={2}>
-                    <ModuleSelect 
-                      module="devoluciones" 
-                      label="Devoluciones"
-                      value=""
-                      options={[
-                        { value: '', label: 'Seleccionar...', disabled: true },
-                        { value: 'option1', label: 'Opción 1' },
-                        { value: 'option2', label: 'Opción 2' }
-                      ]}
-                    />
-                    <ModuleSelect 
-                      module="pedido" 
-                      label="Pedido"
-                      value=""
-                      options={[
-                        { value: '', label: 'Seleccionar...', disabled: true },
-                        { value: 'option1', label: 'Opción 1' },
-                        { value: 'option2', label: 'Opción 2' }
-                      ]}
-                    />
-                  </Stack>
-                </Stack>
-              </Box>
-
-              {/* Calendar */}
-              <Box>
-                <Typography variant="h6" gutterBottom>Calendario del Planificador:</Typography>
-                <ModuleCalendar
-                  module="planificador"
-                  selectedDates={selectedDates}
-                  onDateClick={handleDateClick}
-                  onDayCellMount={handleDayCellMount}
-                  fetchCalendarEvents={fetchCalendarEvents}
-                />
-              </Box>
-            </Stack>
-          </Box>
-
-          {/* Analysis Summary */}
-          <Box sx={{ mt: 4, p: 3, backgroundColor: 'success.light', borderRadius: 2, color: 'success.contrastText' }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              ✅ Correcciones Implementadas:
-            </Typography>
-            <Box component="ul" sx={{ pl: 2 }}>
-              <Typography component="li">Migración completa a componentes MUI con tema centralizado</Typography>
-              <Typography component="li">Botones consistentes con colores por módulo y estados hover/focus</Typography>
-              <Typography component="li">Campos de texto unificados con validación visual mejorada</Typography>
-              <Typography component="li">Calendario con estilos coherentes y mejor UX</Typography>
-              <Typography component="li">Sistema de colores centralizado y reutilizable</Typography>
-              <Typography component="li">Componentes responsivos y accesibles</Typography>
-              <Typography component="li">Eliminación de estilos hardcodeados y clases CSS dispersas</Typography>
-            </Box>
-          </Box>
-        </Container>
-      </ThemeProvider>
-    </CacheProvider>
+    </div>
   );
 }
 

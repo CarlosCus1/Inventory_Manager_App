@@ -45,7 +45,13 @@ export const useSearch = (items: IProducto[], searchTerm: string): IProducto[] =
         return true;
       }
 
-      // Prioridad 3: El `nombre` del producto incluye el término de búsqueda.
+      // Prioridad 3: El `keywords` del producto incluye el término de búsqueda.
+      // Esto permite búsquedas más flexibles y parciales.
+      if (item.keywords && item.keywords.some(keyword => keyword.toLowerCase().startsWith(lowercasedSearchTerm))) {
+        return true;
+      }
+
+      // Prioridad 4: El `nombre` del producto incluye el término de búsqueda.
       // Esto permite búsquedas más flexibles y parciales.
       if (item.nombre.toLowerCase().includes(lowercasedSearchTerm)) {
         return true;

@@ -1,4 +1,3 @@
-
 // --------------------------------------------------------------------------- #
 //                                                                             #
 //                       src/pages/PedidoPage.tsx                              #
@@ -11,19 +10,15 @@ import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import { useFormChangeHandler } from '../hooks/useFormChangeHandler';
-import type { IProducto, IProductoEditado } from '../interfaces';
+import type { IProducto, IProductoEditado, FieldConfig } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
-import { FormGroup, Label } from '../components/ui/FormControls';
-import { StyledInput } from '../components/ui/StyledInput';
 import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
 
 // --- 2. Definición del Componente de Página ---
 export const PedidoPage: React.FC = () => {
   // --- A. Conexión con el Store de Zustand ---
-  // Reutilizamos la misma lógica que en Devoluciones, pero apuntando al estado de 'pedido'.
   const catalogo = useAppStore((state) => state.catalogo);
   const cargarCatalogo = useAppStore((state) => state.cargarCatalogo);
   const formState = useAppStore((state) => state.formState.pedido);
@@ -57,9 +52,6 @@ export const PedidoPage: React.FC = () => {
     const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
     actualizarProductoEnLista('pedido', codigo, campo, valorFinal);
   }, [actualizarProductoEnLista]);
-
-  // Handler para los campos del formulario de datos generales
-  const handleFormChange = useFormChangeHandler('pedido');
 
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
@@ -123,7 +115,6 @@ export const PedidoPage: React.FC = () => {
       const response = await fetch('http://localhost:5000/export-xlsx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // La única diferencia clave para el backend es el `tipo`.
         body: JSON.stringify({
           tipo: 'pedido',
           form: formState,
@@ -152,6 +143,13 @@ export const PedidoPage: React.FC = () => {
     }
   };
 
+  const fieldConfig: FieldConfig = {
+    showRucDni: true,
+    showCodigoCliente: true,
+    showSucursal: true,
+    showFecha: true,
+  };
+
   // --- H. Renderizado del Componente ---
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface">
@@ -163,20 +161,7 @@ export const PedidoPage: React.FC = () => {
 
       {/* Sección 1: Datos Generales */}
       <section className="section-card">
-        <DatosGeneralesForm tipo="pedido">
-          {/* Campos específicos para Pedido */}
-          <FormGroup>
-            <Label htmlFor="fecha">Fecha</Label>
-            <StyledInput
-              type="date"
-              id="fecha"
-              name="fecha"
-              value={formState.fecha || ''}
-              onChange={handleFormChange}
-              variant="pedido"
-            />
-          </FormGroup>
-        </DatosGeneralesForm>
+        <DatosGeneralesForm tipo="pedido" fieldConfig={fieldConfig} formState={formState} />
       </section>
 
       {/* Sección 2: Búsqueda y Selección de Productos */}
@@ -225,7 +210,7 @@ export const PedidoPage: React.FC = () => {
           <ul className="surface surface-border rounded-md max-h-60 overflow-y-auto">
             {searchResults.map((producto: IProducto) => (
               <li 
-                key={producto.codigo} 
+                key={producto.codigo}
                 onClick={() => { 
                   agregarProductoToLista('pedido', producto); 
                   setSearchTerm('');

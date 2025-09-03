@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import type { IForm } from '../interfaces';
+import type { IForm, ValidationRule } from '../interfaces';
 import { useFormValidation } from './useFormValidation';
 import { useToast } from '../contexts/ToastContext';
 
@@ -17,7 +17,7 @@ export function useRucDni(moduloKey: ModuloKey) {
   const [rucCondicion, setRucCondicion] = useState<string | null>(null);
   const [isLoadingRuc, setIsLoadingRuc] = useState(false);
   const [rucError, setRucError] = useState<string | null>(null);
-  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState.documento_cliente || '');
+  const [debouncedDocumentNumber, setDebouncedDocumentNumber] = useState(formState?.documento_cliente || '');
 
   const handleRucDniChange = useCallback((type: 'ruc' | 'dni', number: string, social: string) => {
     actualizarFormulario(moduloKey, 'documentType' as keyof IForm, type);
@@ -31,7 +31,7 @@ export function useRucDni(moduloKey: ModuloKey) {
   }, [actualizarFormulario, moduloKey]);
 
   useEffect(() => {
-    const documentType = formState.documentType;
+    const documentType = formState?.documentType; // Safely access documentType
     const documentNumber = debouncedDocumentNumber;
 
     const rules = (documentType === 'ruc' 

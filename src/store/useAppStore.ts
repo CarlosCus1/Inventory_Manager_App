@@ -6,10 +6,8 @@
 
 // --- 1. Importaciones necesarias ---
 import { create } from 'zustand';
-// Middleware de Zustand para persistir parte del estado en un almacenamiento.
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDb';
-// Interfaces de datos que hemos definido.
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
 import { consultarRuc, fetchHolidays } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
@@ -17,7 +15,6 @@ type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 // --- Tipos Adicionales ---
 type Theme = 'light' | 'dark';
 
-// Module usage statistics interface
 interface ModuleStats {
   devoluciones: number;
   pedido: number;
@@ -27,21 +24,13 @@ interface ModuleStats {
 }
 
 // --- 2. Definición de la forma del Estado (State) ---
-// Esta interfaz define todos los datos que nuestro store va a manejar.
 export interface State {
-  // Tema actual de la aplicación (claro u oscuro).
   theme: Theme;
-  // Catálogo completo de productos, cargado desde el JSON.
   catalogo: IProducto[];
-  // Module usage statistics
   moduleUsage: ModuleStats;
-  // Incomplete tasks counter
   incompleteTasks: number;
-  // Last activity tracking
   lastActivity: { [key: string]: Date };
-  // Estado de los formularios. Será la parte que persistiremos en localStorage.
   formState: {
-    // Un objeto para cada tipo de formulario, para mantenerlos separados.
     devoluciones: IForm & { motivo?: MotivoDevolucion };
     pedido: IForm;
     inventario: IForm;
@@ -49,7 +38,6 @@ export interface State {
     planificador: IForm;
     comparador: IForm;
   };
-  // Listas de productos para cada módulo.
   listas: {
     devoluciones: IProductoEditado[];
     pedido: IProductoEditado[];
@@ -58,54 +46,36 @@ export interface State {
     planificador: IProductoEditado[];
     comparador: IProductoEditado[];
   };
-  // Indica si el catálogo de productos se está cargando.
   loading: boolean;
-  // Para almacenar cualquier error que pueda ocurrir.
   error: string | null;
-  // Cache para RUC y Feriados
   rucCache: Record<string, unknown>;
   holidays: Array<{ date: string; name: string }>;
 }
 
 // --- 3. Definición de las Acciones (Actions) ---
-// Interfaz que define todas las funciones que pueden modificar el estado.
 interface Actions {
-  // Cambia el tema entre 'light' y 'dark'.
   toggleTheme: () => void;
-  // Update module usage statistics
   updateModuleUsage: (module: keyof ModuleStats) => void;
-  // Task management
   addIncompleteTask: () => void;
   completeTask: () => void;
-  // Activity tracking
   recordActivity: (module: keyof ModuleStats) => void;
-  // Carga el catálogo de productos desde un archivo JSON.
   cargarCatalogo: () => Promise<void>;
-  // Actualiza un campo específico en el estado de un formulario.
   actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string | number) => void;
-  // Setter específico para motivo de devoluciones
   setMotivoDevolucion: (motivo: MotivoDevolucion) => void;
-  // Añade un producto a una lista específica.
   agregarProductoToLista: (tipo: keyof State['listas'], producto: IProducto) => void;
-  // Actualiza un producto que ya está en una lista.
   actualizarProductoEnLista: (
     tipo: keyof State['listas'],
     codigo: string,
     campo: keyof IProductoEditado,
     valor: string | number | Record<string, number>
   ) => void;
-  // Elimina un producto de una lista.
   eliminarProductoDeLista: (tipo: keyof State['listas'], codigo: string) => void;
-  // Limpia una lista y el formulario asociado.
   resetearModulo: (tipo: keyof State['listas']) => void;
-  // Nuevas acciones para cache
   fetchRuc: (ruc: string) => Promise<RucData>;
   fetchHolidays: (year: number) => Promise<Array<{ date: string; name: string }>>;
 }
 
 // --- 4. Estado Inicial ---
-// Definimos el estado inicial como una constante para poder reutilizarlo,
-// especialmente en la acción `resetearModulo`.
 const initialState: Omit<State, keyof Actions> = {
   theme: 'light',
   catalogo: [],
@@ -140,14 +110,26 @@ const initialState: Omit<State, keyof Actions> = {
   holidays: [],
 };
 
-// --- 5. Creación del Store con Zustand ---
-// Se combina `State` y `Actions` para crear el tipo completo del store.
-// `create` es la función principal de Zustand para crear el hook del store.
-// `persist` es el middleware que envolverá nuestro store para guardar datos.
+// --- 5. Adaptador de Datos para el nuevo JSON de productos ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapRawProductToIProducto = (rawProduct: any): IProducto => {
+  return {
+    codigo: rawProduct.codigo || '',
+    nombre: rawProduct.nombre || '',
+    cod_ean: rawProduct.ean || '',
+    linea: rawProduct.linea || '',
+    peso: rawProduct.can_kg_um || 0,
+    stock_referencial: rawProduct.stock_referencial || 0,
+    precio_referencial: rawProduct.precio || 0,
+    cantidad_por_caja: rawProduct.u_por_caja || 0,
+    keywords: (rawProduct.keywords || '').trim().split(/\s+/).filter(Boolean),
+  };
+};
+
+
+// --- 6. Creación del Store con Zustand ---
 export const useAppStore = create<State & Actions>()(
   persist(
-    // La función `set` es la única forma de modificar el estado.
-    // La función `get` permite acceder al estado actual dentro de una acción.
     (set, get) => ({
       ...initialState,
 
@@ -163,15 +145,13 @@ export const useAppStore = create<State & Actions>()(
 
         set({ loading: true, error: null });
         try {
-          // 1. Try to load from IndexedDB first
           const indexedDBCatalog = await getCatalogFromIndexedDB();
           if (indexedDBCatalog && indexedDBCatalog.length > 0) {
             console.log('Catálogo cargado desde IndexedDB.');
             set({ catalogo: indexedDBCatalog, loading: false });
-            return; // Catalog loaded from IndexedDB, no need to fetch from network
+            return;
           }
 
-          // 2. If not in IndexedDB, fetch from network
           const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
           console.log(`Intentando cargar catálogo desde la red: ${url}`);
           const response = await fetch(url);
@@ -179,14 +159,18 @@ export const useAppStore = create<State & Actions>()(
             const errorText = await response.text();
             throw new Error(`No se pudo cargar el catálogo de productos. Estado: ${response.status}, Mensaje: ${errorText}`);
           }
-          const data: IProducto[] = await response.json();
-          console.log('Datos cargados desde la red:', data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const rawData: any[] = await response.json();
+          console.log('Datos crudos cargados desde la red:', rawData);
 
-          // 3. Save to IndexedDB for future use
-          await saveCatalogToIndexedDB(data);
-          console.log('Catálogo guardado en IndexedDB.');
+          // Adaptar los datos crudos al formato IProducto
+          const mappedData = rawData.map(mapRawProductToIProducto);
+          console.log('Datos adaptados:', mappedData);
 
-          set({ catalogo: data, loading: false });
+          await saveCatalogToIndexedDB(mappedData);
+          console.log('Catálogo adaptado y guardado en IndexedDB.');
+
+          set({ catalogo: mappedData, loading: false });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Un error desconocido ocurrió.';
           console.error('Error al cargar el catálogo:', error);
@@ -220,14 +204,11 @@ export const useAppStore = create<State & Actions>()(
 
       agregarProductoToLista: (tipo, producto) => {
         const listaActual = get().listas[tipo];
-        // Se comprueba si el producto ya existe en la lista.
         const productoExistente = listaActual.find(p => p.codigo === producto.codigo);
 
         if (productoExistente) {
-          // Si existe, simplemente incrementamos la cantidad.
           get().actualizarProductoEnLista(tipo, producto.codigo, 'cantidad', productoExistente.cantidad + 1);
         } else {
-          // Si no existe, lo añadimos a la lista con cantidad 1.
           const nuevoProducto: IProductoEditado = {
             ...producto,
             cantidad: 1,
@@ -248,11 +229,9 @@ export const useAppStore = create<State & Actions>()(
             ...state.listas,
             [tipo]: state.listas[tipo].map((p) => {
               if (p.codigo !== codigo) return p;
-              // Permitir actualizar campos complejos como 'precios' (Record<string, number>)
               if (campo === 'precios' && typeof valor === 'object' && valor !== null) {
                 return { ...p, precios: valor as Record<string, number> };
               }
-              // Para el resto de campos (string | number)
               return { ...p, [campo]: valor as string | number };
             }),
           },
@@ -270,13 +249,10 @@ export const useAppStore = create<State & Actions>()(
 
       resetearModulo: (tipo) => {
         set((state) => ({
-          // Restablecemos la lista correspondiente a su estado inicial (vacío).
           listas: {
             ...state.listas,
             [tipo]: initialState.listas[tipo],
           },
-          // Restablecemos el formulario al estado inicial definido en `initialState`.
-          // Esto asegura que los valores por defecto (como el motivo en devoluciones) se restauren correctamente.
           formState: {
             ...state.formState,
             [tipo]: initialState.formState[tipo],
@@ -301,7 +277,6 @@ export const useAppStore = create<State & Actions>()(
 
       fetchHolidays: async (year) => {
         const data = await fetchHolidays(year);
-        // Do not set state here to prevent infinite loops
         return data;
       },
 
@@ -328,11 +303,7 @@ export const useAppStore = create<State & Actions>()(
       }))
     }),
     {
-      // --- Configuración de la Persistencia ---
-      // Nombre de la clave bajo la cual se guardará el estado en localStorage.
       name: 'app-storage',
-      // Se especifica qué parte del estado queremos persistir.
-      // En este caso, `formState` y `theme`. El catálogo y las listas no se guardan.
       partialize: (state) => ({ 
         formState: state.formState, 
         theme: state.theme, 
@@ -341,7 +312,6 @@ export const useAppStore = create<State & Actions>()(
         incompleteTasks: state.incompleteTasks,
         lastActivity: state.lastActivity
       }),
-      // Se especifica que el almacenamiento a usar es `localStorage`.
       storage: createJSONStorage(() => localStorage),
     }
   )

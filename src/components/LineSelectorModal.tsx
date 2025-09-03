@@ -8,7 +8,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-import type { ModuleVariant } from "../types";
+
 import type { State } from "../store/useAppStore";
 
 type LineSelectorModalTriggerProps = {
