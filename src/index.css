@@ -263,7 +263,7 @@
     @apply text-lg font-bold mb-2 pb-2;
     border-bottom-width: 2px;
     border-bottom-style: solid;
-    border-color: transparent; /* Color por defecto, se sobreescribe por módulo */
+    border-color: var(--form-section-border-color, transparent); /* Use a CSS variable with a fallback */
     color: var(--heading);
   }
   /* Subtítulos H2 por sección también claros por defecto */
@@ -397,7 +397,7 @@
   /* Paleta de página y títulos por módulo (fondos suaves y títulos con alto contraste) */
   /* Modo oscuro por defecto en todas las páginas con contraste adecuado.
      Fondo oscuro estable y acentos de cada módulo en títulos/botones/inputs. */
-  .page-devoluciones { @apply min-h-screen bg-gray-900 py-3;   /* Reel (carrusel) en Home, orden rombo responsive */
+  .page-devoluciones { @apply min-h-screen py-3;   /* Reel (carrusel) en Home, orden rombo responsive */
   .reel {
     @apply relative overflow-hidden;
   }

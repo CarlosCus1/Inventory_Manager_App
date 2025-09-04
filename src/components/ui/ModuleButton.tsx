@@ -1,7 +1,15 @@
 import React from 'react';
 import { Button } from '@mui/material';
-import { styled, type PaletteColor } from '@mui/material/styles';
+import { styled, type PaletteColor, type Palette } from '@mui/material/styles';
 
+// Augment the theme's palette type locally for correct access
+interface CustomPalette extends Palette {
+  devoluciones: PaletteColor;
+  pedido: PaletteColor;
+  inventario: PaletteColor;
+  comparador: PaletteColor;
+  planificador: PaletteColor;
+}
 
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
 
@@ -12,8 +20,9 @@ interface ModuleButtonProps extends Omit<React.ComponentProps<typeof Button>, 'c
 }
 
 const StyledModuleButton = styled(Button)<{ module: ModuleVariant }>(({ theme, module }) => {
-  const colors = (module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette]) as PaletteColor;
-  
+  const customPalette = theme.palette as CustomPalette;
+  const colors = (module === 'default' ? customPalette.primary : customPalette[module]) as PaletteColor;
+
   return {
     borderRadius: theme.shape.borderRadius,
     textTransform: 'none',
@@ -21,68 +30,68 @@ const StyledModuleButton = styled(Button)<{ module: ModuleVariant }>(({ theme, m
     transition: theme.transitions.create(['background-color', 'box-shadow', 'border-color', 'transform'], {
       duration: theme.transitions.duration.short,
     }),
-    
+
     '&.MuiButton-contained': {
-      backgroundColor: colors?.main || theme.palette.primary.main,
-      color: colors?.contrastText || theme.palette.primary.contrastText,
+      backgroundColor: colors?.main || customPalette.primary.main,
+      color: colors?.contrastText || customPalette.primary.contrastText,
       boxShadow: theme.shadows[2],
-      
+
       '&:hover': {
-        backgroundColor: colors?.dark || theme.palette.primary.dark,
+        backgroundColor: colors?.dark || customPalette.primary.dark,
         boxShadow: theme.shadows[4],
         transform: 'translateY(-1px)',
       },
-      
+
       '&:active': {
         transform: 'translateY(0)',
         boxShadow: theme.shadows[2],
       },
-      
+
       '&:disabled': {
-        backgroundColor: theme.palette.grey[300],
-        color: theme.palette.grey[500],
+        backgroundColor: customPalette.grey[300],
+        color: customPalette.grey[500],
         boxShadow: 'none',
         transform: 'none',
       }
     },
-    
+
     '&.MuiButton-outlined': {
-      borderColor: colors?.main || theme.palette.primary.main,
-      color: colors?.main || theme.palette.primary.main,
+      borderColor: colors?.main || customPalette.primary.main,
+      color: colors?.main || customPalette.primary.main,
       backgroundColor: 'transparent',
-      
+
       '&:hover': {
-        borderColor: colors?.dark || theme.palette.primary.dark,
-        backgroundColor: `${colors?.main || theme.palette.primary.main}08`,
+        borderColor: colors?.dark || customPalette.primary.dark,
+        backgroundColor: `${colors?.main || customPalette.primary.main}08`,
         transform: 'translateY(-1px)',
       },
-      
+
       '&:active': {
         transform: 'translateY(0)',
       },
-      
+
       '&:disabled': {
-        borderColor: theme.palette.grey[300],
-        color: theme.palette.grey[400],
+        borderColor: customPalette.grey[300],
+        color: customPalette.grey[400],
         transform: 'none',
       }
     },
-    
+
     '&.MuiButton-text': {
-      color: colors?.main || theme.palette.primary.main,
+      color: colors?.main || customPalette.primary.main,
       backgroundColor: 'transparent',
-      
+
       '&:hover': {
-        backgroundColor: `${colors?.main || theme.palette.primary.main}08`,
+        backgroundColor: `${colors?.main || customPalette.primary.main}08`,
         transform: 'translateY(-1px)',
       },
-      
+
       '&:active': {
         transform: 'translateY(0)',
       },
-      
+
       '&:disabled': {
-        color: theme.palette.grey[400],
+        color: customPalette.grey[400],
         transform: 'none',
       }
     }

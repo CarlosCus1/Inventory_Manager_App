@@ -22,8 +22,6 @@
 .form-section-title {
   @apply text-xl font-bold mb-4;
   color: var(--heading);
-  border-bottom: 2px solid theme('colors.planificador.light-primary');
-  padding-bottom: 0.5rem; /* Adjust padding to match the original */
 }
 
 .data-table {
