@@ -19,11 +19,11 @@ import type { IForm, ValidationRule, FieldConfig } from '../interfaces';
 
 // --- 2. Definición de las Props del Componente ---
 interface Props {
-  tipo: 'devoluciones' | 'pedido' | 'inventario' | 'precios' | 'planificador';
+  tipo: 'devoluciones' | 'pedido' | 'inventario' | 'precios';
   formState: IForm; // Added formState to Props
   fieldConfig: FieldConfig;
   onFormChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; // Added onFormChange
-  onOpenBackupModal?: () => void; // Prop opcional para el botón del planificador
+  onOpenBackupModal?: () => void;
 }
 
 // --- 3. Definición del Componente Universal ---
@@ -83,12 +83,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
     { value: 'acuerdos_comerciales', label: 'Acuerdos comerciales' },
   ];
 
-  const lineaPlannerOptions = [
-    { value: '', label: 'Seleccionar color...' },
-    { value: 'rojo', label: 'Viniball (Rojo)' },
-    { value: 'azul', label: 'Vinifan (Azul)' },
-    { value: 'verde', label: 'Otros (Verde)' },
-  ];
+
 
   // --- F. Renderizado del Componente ---
   return (
@@ -164,21 +159,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
             </FormGroup>
         )}
 
-        {fieldConfig.showPedidoPlanificador && (
-            <FormGroup>
-                <Label htmlFor="pedido_planificador">Pedido</Label>
-                <StyledInput id="pedido_planificador" name="pedido_planificador" value={formState.pedido_planificador || ''} onChange={handleChange} placeholder="Ej: Pedido de campaña" variant={variant} />
-            </FormGroup>
-        )}
 
-        {fieldConfig.showLineaPlanificadorColor && (
-            <FormGroup>
-                <Label htmlFor="linea_planificador_color">Línea para Reporte</Label>
-                <StyledSelect id="linea_planificador_color" name="linea_planificador_color" value={formState.linea_planificador_color || ''} onChange={handleChange} variant={variant}>
-                    {lineaPlannerOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </StyledSelect>
-            </FormGroup>
-        )}
 
         {fieldConfig.showCargarRespaldo && (
             <div className="lg:col-span-3 flex justify-end items-center mt-2">

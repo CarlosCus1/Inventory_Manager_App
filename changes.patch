@@ -1,0 +1,1321 @@
+diff --git a/src/components/planner/ResultadosPlanner.tsx b/src/components/planner/ResultadosPlanner.tsx
+index c7c2706..cf46fd5 100644
+--- a/src/components/planner/ResultadosPlanner.tsx
++++ b/src/components/planner/ResultadosPlanner.tsx
+@@ -1,17 +1,14 @@
+ import React from 'react';
+ import { SummaryTable } from './SummaryTable';
+-import { DetailTable } from './DetailTable';
+-import { ComparisonTotals } from './ComparisonTotals';
+-import { SummaryChart } from './SummaryChart';
+ 
+-interface Props {
++export export interface Props {
+   resumenMensual: Record<string, number>;
+   montoOriginal: number;
+   montosAsignados: Record<string, number>;
+   montosAsignadosStr: Record<string, string>;
+   linea: string;
+   onMontoAjustadoChange: (fecha: string, nuevoMonto: string) => void;
+-  onExportAjustado: () => void;
++  onExportAjustado: () => Promise<void>;
+ }
+ 
+ export const ResultadosPlanner: React.FC<Props> = ({
+diff --git a/src/interfaces.ts b/src/interfaces.ts
+index 17b854e..c852d30 100644
+--- a/src/interfaces.ts
++++ b/src/interfaces.ts
+@@ -162,3 +162,19 @@ export interface ValidationRule {
+   value?: number;
+   message: string;
+ }
++
++export interface ICalcularApiParams {
++  montoTotal: number;
++  fechasValidas: string[];
++  razonSocial: string;
++}
++
++export interface ICalcularApiResponse {
++  montosAsignados: Record<string, number>;
++  resumenMensual: Record<string, number>;
++  fechasValidas: string[];
++}
++
++export interface BlobWithName extends Blob {
++  name: string;
++}
+diff --git a/src/pages/DevolucionesPage.tsx b/src/pages/DevolucionesPage.tsx
+index 7346b28..5c923fe 100644
+--- a/src/pages/DevolucionesPage.tsx
++++ b/src/pages/DevolucionesPage.tsx
+@@ -111,7 +111,7 @@ export const DevolucionesPage: React.FC = () => {
+ 
+     setIsSubmitting(true);
+     try {
+-      const response = await fetch('http://localhost:5000/export-xlsx', {
++      const response = await fetch('http://localhost:5001/export-xlsx', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+diff --git a/src/pages/PedidoPage.tsx b/src/pages/PedidoPage.tsx
+index 33fb2bf..eae2f43 100644
+--- a/src/pages/PedidoPage.tsx
++++ b/src/pages/PedidoPage.tsx
+@@ -112,7 +112,7 @@ export const PedidoPage: React.FC = () => {
+ 
+     setIsSubmitting(true);
+     try {
+-      const response = await fetch('http://localhost:5000/export-xlsx', {
++      const response = await fetch('http://localhost:5001/export-xlsx', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+diff --git a/src/pages/PlanificadorPage.tsx b/src/pages/PlanificadorPage.tsx
+index 68c7712..56b1ae0 100644
+--- a/src/pages/PlanificadorPage.tsx
++++ b/src/pages/PlanificadorPage.tsx
+@@ -1,50 +1,61 @@
++import type { DateClickArg } from '@fullcalendar/interaction';
++import type { DayCellContentArg } from '@fullcalendar/core';
+ import React, { useState, useEffect, useRef, useCallback } from 'react';
+ import { CollapsiblePanel } from '../components/ui/CollapsiblePanel';
+ 
+ import { useAppStore } from '../store/useAppStore';
+-import type { IForm } from '../interfaces';
++import type { IForm, BlobWithName } from '../interfaces';
++import type { FieldError } from '../utils/formValidator';
+ import { useRucDni } from '../hooks/useRucDni';
+ import { DatosGeneralesForm } from "../components/DatosGeneralesForm";
+ import './PlanificadorPage.css';
+ import PageHeader from '../components/PageHeader';
+ import { BackupOptionsModal } from '../components/planner/BackupOptionsModal';
++import { SeleccionFechas } from '../components/planner/SeleccionFechas';
++import { ResultadosPlanner } from '../components/planner/ResultadosPlanner';
++import type { Props as ResultadosPlannerProps } from '../components/planner/ResultadosPlanner';
++// This could be a helper function inside PlanificadorPage or in a utility file
++import { useToasts } from '../hooks/useToasts';
++import * as DateUtils from '../utils/dateUtils';
++import { messages } from '../utils/messages';
++import { FormValidator } from '../utils/formValidator';
++import { calcularApi, exportXlsxApi } from '../utils/api';
++// import { generarReporte, generarReporteJson } from '../utils/reportGenerators'; // Removed due to file not found and previous conflicts
+ 
+ 
+ // This could be a helper function inside PlanificadorPage or in a utility file
+-// const readFileContent = async (file: File) => { // Commented out
+-//   return new Promise<Record<string, unknown>>((resolve, reject) => {
+-//     const reader = new FileReader();
+-//     reader.onload = (event) => {
+-//       try {
+-//         const data = JSON.parse(event.target?.result as string);
+-//         resolve(data);
+-//       } catch {
+-//         reject(new Error("Error parsing JSON file."));
+-//       }
+-//     };
+-//     reader.onerror = (error) => reject(error);
+-//     reader.readAsText(file);
+-//   });
+-// };
++const readFileContent = async (file: File) => {
++  return new Promise<Record<string, unknown>>((resolve, reject) => {
++    const reader = new FileReader();
++    reader.onload = (event) => {
++      try {
++        const data = JSON.parse(event.target?.result as string);
++        resolve(data);
++      } catch {
++        reject(new Error("Error parsing JSON file."));
++      }
++    };
++    reader.onerror = (error) => reject(error);
++    reader.readAsText(file);
++  });
++};
+ 
+ // Define initial state interface (for better type safety)
+ // This local state only holds data not related to the form itself.
+-interface PlannerState {
+-  isDataDirty: boolean;
+-}
+-
+ export const PlanificadorPage: React.FC = () => {
+-  const [plannerState, setPlannerState] = useState<PlannerState>({
+-    isDataDirty: false,
+-  });
+   const [errors, setErrors] = useState<Record<string, string>>({});
+-  // const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({}); // Commented out
+-  // const [montosAjustadosStr, setMontosAjustadosStr] = useState<Record<string, string>>({}); // Commented out
+-  // const [holidays, setHolidays] = useState<Map<string, string>>(new Map()); // Commented out
+-  // const [isCalcularDisabled, setCalcularDisabled] = useState(true); // Commented out
++  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
++  const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
++  const [isCalcularDisabled, setCalcularDisabled] = useState(true);
++  const [montosAjustados, setMontosAjustados] = useState<Record<string, number>>({});
++  const [montosAjustadosStr, setMontosAjustadosStr] = useState<Record<string, string>>({});
++  const [resumenMensual, setResumenMensual] = useState<Record<string, number>>({});
++  const MAX_FECHAS = 10;
+   
+   
+   
++  const { addToast } = useToasts();
++  
+   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+   const formState = useAppStore(state => state.formState.planificador);
+   const actualizarFormulario = useAppStore(state => state.actualizarFormulario);
+@@ -56,98 +67,96 @@ export const PlanificadorPage: React.FC = () => {
+   const fileInputRef = useRef<HTMLInputElement>(null); // btnCalcularRef commented out
+   const [fileSelectionMode, setFileSelectionMode] = useState<'loadAndEdit' | 'createCopy' | null>(null);
+ 
+-  // const fetchHolidaysAction = useAppStore(state => state.fetchHolidays); // Commented out
+-  // const fetchHolidaysRef = useRef(fetchHolidaysAction); // Commented out
++  const fetchHolidaysAction = useAppStore(state => state.fetchHolidays);
++  const fetchHolidaysRef = useRef(fetchHolidaysAction);
+ 
+-  // useEffect(() => { // Commented out
+-  //   fetchHolidaysRef.current = fetchHolidaysAction;
+-  // }, [fetchHolidaysAction]);
++  useEffect(() => {
++    fetchHolidaysRef.current = fetchHolidaysAction;
++  }, [fetchHolidaysAction]);
+ 
+-  // Function to fetch calendar events (holidays) // Commented out
+-  // const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string }>) => void, failureCallback: (error: Error) => void) => {
+-  //   try {
+-  //       const year = fetchInfo.start.getFullYear();        
+-  //       const feriadosArray = await fetchHolidaysRef.current(year) as Array<{ date: string; name: string }>;
+-  //       const newHolidays = new Map<string, string>();
++  const fetchCalendarEvents = useCallback(async (fetchInfo: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string }>) => void, failureCallback: (error: Error) => void) => {
++    try {
++        const year = fetchInfo.start.getFullYear();        
++        const feriadosArray = await fetchHolidaysRef.current(year) as Array<{ date: string; name: string }>;
++        const newHolidays = new Map<string, string>();
+         
+         
+-  //       // The API returns dates in "DD/MM/YYYY" format, which is what we need.
+-  //       feriadosArray.forEach((feriado) => {
+-  //           newHolidays.set(feriado.date, feriado.name);
+-  //       });
+-  //       // Compare newHolidays with current holidays to prevent unnecessary state updates
+-  //       let holidaysChanged = false;
+-  //       if (newHolidays.size !== holidays.size) {
+-  //           holidaysChanged = true;
+-  //       } else {
+-  //           for (const [key, value] of newHolidays) {
+-  //               if (holidays.get(key) !== value) {
+-  //                   holidaysChanged = true;
+-  //                   break;
+-  //               }
+-  //           }
+-  //       }
+-
+-  //       if (holidaysChanged) {
+-  //           setHolidays(newHolidays);
+-  //       }
+-
+-  //       successCallback(feriadosArray); // Pass the actual feriadosArray to successCallback
+-  //   } catch (error) {
+-  //       console.error('Error al cargar eventos del calendario:', error);
+-  //       failureCallback(error as Error);
+-  //   }
+-  // }, [holidays]);
+-
+-  // const handleDateClick = useCallback((arg: DateClickArg) => { // Commented out
+-  //   const dateStr = DateUtils.formatearFecha(arg.date);
+-  //   const isHoliday = holidays.has(dateStr);
+-  //   const isSunday = arg.date.getDay() === 0;
+-
+-  //   if (DateUtils.esPasado(arg.date)) {
+-  //     addToast(messages.pastDateError, 'error');
+-  //     return;
+-  //   }
+-  //   if (isSunday) {
+-  //     addToast(messages.sundayError, 'error');
+-  //     return;
+-  //   }
+-  //   if (isHoliday) {
+-  //     addToast(messages.holidayError(holidays.get(dateStr)!), 'error');
+-  //     return;
+-  //   }
+-
+-  //   setPlannerState(prevState => {
+-  //     const dateStr = DateUtils.formatearFecha(arg.date);
+-  //     const newSelectedDates = new Set(prevState.selectedDates);
+-  //     if (newSelectedDates.has(dateStr)) {
+-  //       newSelectedDates.delete(dateStr);
+-  //     } else {
+-  //       if (newSelectedDates.size >= MAX_FECHAS) {
+-  //         return prevState;
+-  //       }
+-  //       newSelectedDates.add(dateStr);
+-  //     }
+-  //     return { ...prevState, selectedDates: newSelectedDates, isDataDirty: true };
+-  //   });
+-  // }, [holidays, addToast]);
+-
+-  // const handleDayCellMount = useCallback((arg: DayCellContentArg) => { // Commented out
+-  //   const dateStr = DateUtils.formatearFecha(arg.date);
+-
+-  //   if (holidays.has(dateStr)) {
+-  //     arg.el.classList.add('fc-holiday');
+-  //     arg.el.setAttribute('title', holidays.get(dateStr) || '');
+-  //   }
+-
+-  //   if (arg.date.getDay() === 0) {
+-  //     arg.el.classList.add('fc-day-sun');
+-  //   }
+-
+-  //   if (arg.date.getDay() === 6) {
+-  //     arg.el.classList.add('fc-day-sat');
+-  //   }
+-  // }, [holidays]);
++        // The API returns dates in "DD/MM/YYYY" format, which is what we need.
++        feriadosArray.forEach((feriado) => {
++            newHolidays.set(feriado.date, feriado.name);
++        });
++        // Compare newHolidays with current holidays to prevent unnecessary state updates
++        let holidaysChanged = false;
++        if (newHolidays.size !== holidays.size) {
++            holidaysChanged = true;
++        } else {
++            for (const [key, value] of newHolidays) {
++                if (holidays.get(key) !== value) {
++                    holidaysChanged = true;
++                    break;
++                }
++            }
++        }
++
++        if (holidaysChanged) {
++            setHolidays(newHolidays);
++        }
++
++        successCallback(feriadosArray); // Pass the actual feriadosArray to successCallback
++    } catch (error) {
++        console.error('Error al cargar eventos del calendario:', error);
++        failureCallback(error as Error);
++    }
++  }, [holidays]);
++
++  const handleDateClick = useCallback((arg: DateClickArg) => {
++    const dateStr = DateUtils.formatearFecha(arg.date);
++    const isHoliday = holidays.has(dateStr);
++    const isSunday = arg.date.getDay() === 0;
++
++    if (DateUtils.esPasado(arg.date)) {
++      addToast(messages.pastDateError, 'error');
++      return;
++    }
++    if (isSunday) {
++      addToast(messages.sundayError, 'error');
++      return;
++    }
++    if (isHoliday) {
++      addToast(messages.holidayError(holidays.get(dateStr)!), 'error');
++      return;
++    }
++
++    setSelectedDates(prevSelectedDates => {
++      const newSelectedDates = new Set(prevSelectedDates);
++      if (newSelectedDates.has(dateStr)) {
++        newSelectedDates.delete(dateStr);
++      } else {
++        if (newSelectedDates.size >= MAX_FECHAS) {
++          return prevSelectedDates;
++        }
++        newSelectedDates.add(dateStr);
++      }
++      return newSelectedDates;
++    });
++  }, [holidays, addToast, MAX_FECHAS]);
++
++  const handleDayCellMount = useCallback((arg: DayCellContentArg) => {
++    const dateStr = DateUtils.formatearFecha(arg.date);
++
++    if (holidays.has(dateStr)) {
++      arg.el.classList.add('fc-holiday');
++      arg.el.setAttribute('title', holidays.get(dateStr) || '');
++    }
++
++    if (arg.date.getDay() === 0) {
++      arg.el.classList.add('fc-day-sun');
++    }
++
++    if (arg.date.getDay() === 6) {
++      arg.el.classList.add('fc-day-sat');
++    }
++  }, [holidays]);
+ 
+   const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+     const { name, value } = e.target;
+@@ -155,25 +164,25 @@ export const PlanificadorPage: React.FC = () => {
+     if (errors[name]) {
+       setErrors(prev => ({ ...prev, [name]: '' }));
+     }
+-    setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
++    
+   }, [actualizarFormulario, errors]); // Added errors to dependencies
+ 
+-  // const handleMontoAjustadoChange = useCallback((fecha: string, nuevoMonto: string) => { // Commented out
+-  //   // Update the string representation directly
+-  //   setMontosAjustadosStr(prev => ({
+-  //     ...prev,
+-  //     [fecha]: nuevoMonto,
+-  //   }));
+-
+-  //   // Update the numeric value for calculations, handling empty strings or partial numbers
+-  //   const montoNumerico = parseFloat(nuevoMonto);
+-  //   setMontosAjustados(prev => ({
+-  //     ...prev,
+-  //     [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
+-  //   }));
+-
+-  //   setPlannerState(prevState => ({ ...prevState, isDataDirty: true }));
+-  // }, []);
++  const handleMontoAjustadoChange = useCallback((fecha: string, nuevoMonto: string) => {
++    // Update the string representation directly
++    setMontosAjustadosStr(prev => ({
++      ...prev,
++      [fecha]: nuevoMonto,
++    }));
++
++    // Update the numeric value for calculations, handling empty strings or partial numbers
++    const montoNumerico = parseFloat(nuevoMonto);
++    setMontosAjustados(prev => ({
++      ...prev,
++      [fecha]: isNaN(montoNumerico) ? 0 : montoNumerico,
++    }));
++
++    // setPlannerState(prevState => ({ ...prevState, isDataDirty: true })); // This line needs plannerState, which is not defined. I will comment it out for now.
++  }, []);
+ 
+   const handleOpenBackupModal = useCallback(() => {
+     setIsBackupModalOpen(true);
+@@ -183,236 +192,231 @@ export const PlanificadorPage: React.FC = () => {
+     setIsBackupModalOpen(false);
+   }, []);
+ 
+-  // Function to update the state of action buttons (like 'Calcular') // Commented out
+-  // const _updateActionButtonsState = useCallback(() => {
+-  //   const monto = Number(formState.montoOriginal) || 0;
+-  //   const fechas = Array.from(plannerState.selectedDates);
+-  //   const pedido = formState.pedido_planificador?.trim() || '';
+-  //   const cliente = formState.cliente?.trim() || '';
+-
+-  //   const isMontoValid = monto > 0;
+-  //   const areFechasValid = fechas.length > 0;
+-  //   const isClienteValid = cliente.length > 0;
+-  //   const isPedidoValid = pedido.length > 0;
+-
+-  //   const canCalculate = isMontoValid && areFechasValid && isClienteValid && isPedidoValid;
+-
+-  //   setCalcularDisabled(!canCalculate);
+-
+-  //   if (btnCalcularRef.current) {
+-  //     if (!canCalculate) {
+-  //       const tooltips = [];
+-  //       if (!isMontoValid) tooltips.push('Ingrese un monto válido.');
+-  //       if (!areFechasValid) tooltips.push('Seleccione al menos una fecha.');
+-  //       if (!isClienteValid) tooltips.push('Ingrese la razón social del cliente.');
+-  //       if (!isPedidoValid) tooltips.push('Ingrese el código del pedido.');
+-  //       btnCalcularRef.current.title = tooltips.join(' ');
+-  //     } else {
+-  //       btnCalcularRef.current.title = 'Realizar el cálculo de distribución';
+-  //     }
+-  //   }
+-  // }, [formState, plannerState.selectedDates, setCalcularDisabled, btnCalcularRef]); // Added dependencies
+-
+-  // Effect to update button state when form or selections change // Commented out
+-  // useEffect(() => {
+-  //   _updateActionButtonsState();
+-  // }, [formState, plannerState.selectedDates, _updateActionButtonsState]); // Dependencies for useEffect
+-
+-  // const _getAndValidateFormData = useCallback(() => { // Commented out
+-  //   const monto = Number(formState.montoOriginal) || 0;
+-  //   const ruc = formState.documento_cliente || '';
+-  //   const razonSocial = formState.cliente || '';
+-  //   const pedido = formState.pedido_planificador || '';
+-  //   const fechas = Array.from(plannerState.selectedDates);
+-
+-  //   const validationResult = FormValidator.validate({
+-  //     monto,
+-  //     fechas,
+-  //     ruc: ruc.trim(),
+-  //     razonSocial: razonSocial.trim(),
+-  //     pedido: pedido.trim()
+-  //   });
+-  //   const fieldErrors = validationResult?.fieldErrors || [];
+-  //   const generalErrors = validationResult?.generalErrors || [];
+-  //   const isValid = validationResult?.isValid || false;
+-
+-  //   return {
+-  //     fieldErrors,
+-  //     generalErrors,
+-  //     isValid,
+-  //     uiData: { ...formState }, // Pass all form state to uiData
+-  //     montoTotal: monto,
+-  //     fechasValidas: fechas,
+-  //     razonSocial: razonSocial.trim()
+-  //   };
+-  // }, [formState, plannerState.selectedDates]);
+-
+-  // const calcular = useCallback(async () => { // Commented out
+-  //     const { fieldErrors, generalErrors, isValid, montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
+-
+-  //   if (!isValid) {
+-  //     const newErrors = fieldErrors.reduce((acc, error) => {
+-  //       // Map validator field names to component IDs
+-  //       const fieldMap: Record<string, string> = {
+-  //         monto: 'montoOriginal',
+-  //         razonSocial: 'cliente',
+-  //         ruc: 'documento_cliente',
+-  //         pedido: 'pedido_planificador'
+-  //       };
+-  //       const componentId = fieldMap[error.field] || error.field;
+-  //       acc[componentId] = error.message;
+-  //       return acc;
+-  //     }, {} as Record<string, string>);
+-  //     setErrors(newErrors);
+-
+-  //     if (generalErrors.length > 0) {
+-  //       addToast(generalErrors.join('\n'), 'error');
+-  //     }
+-  //     return;
+-  //   }
++  const _updateActionButtonsState = useCallback(() => {
++    const monto = Number(formState.montoOriginal) || 0;
++    const fechas = Array.from(selectedDates);
++    const pedido = formState.pedido_planificador?.trim() || '';
++    const cliente = formState.cliente?.trim() || '';
++
++    const isMontoValid = monto > 0;
++    const areFechasValid = fechas.length > 0;
++    const isClienteValid = cliente.length > 0;
++    const isPedidoValid = pedido.length > 0;
++
++    const canCalculate = isMontoValid && areFechasValid && isClienteValid && isPedidoValid;
++
++    setCalcularDisabled(!canCalculate);
++
++    // btnCalcularRef is commented out in the original code, so I'll keep this part commented.
++    // if (btnCalcularRef.current) {
++    //   if (!canCalculate) {
++    //     const tooltips = [];
++    //     if (!isMontoValid) tooltips.push('Ingrese un monto válido.');
++    //     if (!areFechasValid) tooltips.push('Seleccione al menos una fecha.');
++    //     if (!isClienteValid) tooltips.push('Ingrese la razón social del cliente.');
++    //     if (!isPedidoValid) tooltips.push('Ingrese el código del pedido.');
++    //     btnCalcularRef.current.title = tooltips.join(' ');
++    //   } else {
++    //     btnCalcularRef.current.title = 'Realizar el cálculo de distribución';
++    //   }
++    // }
++  }, [formState, selectedDates, setCalcularDisabled]);
++
++  useEffect(() => {
++    _updateActionButtonsState();
++  }, [formState, selectedDates, _updateActionButtonsState]);
++
++  const _getAndValidateFormData = useCallback(() => {
++    const monto = Number(formState.montoOriginal) || 0;
++    const ruc = formState.documento_cliente || '';
++    const razonSocial = formState.cliente || '';
++    const pedido = formState.pedido_planificador || '';
++    const fechas = Array.from(selectedDates);
++
++    const validationResult = FormValidator.validate({
++      monto,
++      fechas,
++      ruc: ruc.trim(),
++      razonSocial: razonSocial.trim(),
++      pedido: pedido.trim()
++    });
++    const fieldErrors = validationResult?.fieldErrors || [];
++    const generalErrors = validationResult?.generalErrors || [];
++    const isValid = validationResult?.isValid || false;
++
++    return {
++      fieldErrors,
++      generalErrors,
++      isValid,
++      uiData: { ...formState }, // Pass all form state to uiData
++      montoTotal: monto,
++      fechasValidas: fechas,
++      razonSocial: razonSocial.trim()
++    };
++  }, [formState, selectedDates]);
++
++  const calcular = useCallback(async () => {
++      const { fieldErrors, generalErrors, isValid, montoTotal, fechasValidas, razonSocial } = _getAndValidateFormData();
++
++    if (!isValid) {
++      const newErrors = fieldErrors.reduce((acc: Record<string, string>, error: FieldError) => {
++        // Map validator field names to component IDs
++        const fieldMap: Record<string, string> = {
++          monto: 'montoOriginal',
++          razonSocial: 'cliente',
++          ruc: 'documento_cliente',
++          pedido: 'pedido_planificador'
++        };
++        const componentId = fieldMap[error.field] || error.field;
++        acc[componentId] = error.message;
++        return acc;
++      }, {} as Record<string, string>);
++      setErrors(newErrors);
++
++      if (generalErrors.length > 0) {
++        addToast(generalErrors.join('\n'), 'error');
++      }
++      return;
++    }
+     
+-  //   setErrors({}); // Clear errors on successful validation
+-
+-  //   try {
+-  //     // mostrarLoading(true, 'Calculando distribución...');
+-  //     const resultado = await calcularApi({ montoTotal, fechasValidas, razonSocial });
+-
+-  //     // Update local state with calculation results
+-  //     setPlannerState(prevState => ({
+-  //       ...prevState,
+-  //       fechasOrdenadas: fechasValidas,
+-  //       montosAsignados: resultado.montosAsignados,
+-  //       resumenMensual: resultado.resumenMensual,
+-  //       isDataDirty: false
+-  //     }));
+-  //     // Initialize adjusted amounts with the calculated ones
+-  //     const montosStr = Object.entries(resultado.montosAsignados).reduce((acc, [key, value]) => {
+-  //       acc[key] = value.toFixed(2);
+-  //       return acc;
+-  //     }, {} as Record<string, string>);
+-  //     setMontosAjustados(resultado.montosAsignados);
+-  //     setMontosAjustadosStr(montosStr);
+-  //   } catch (error) {
+-  //     console.error('Error en cálculo:', error);
+-  //     // mostrarToast((error as Error).message || 'Error al realizar el cálculo', 'error');
+-  //   } finally {
+-  //     // mostrarLoading(false);
+-  //   }
+-  // }, [_getAndValidateFormData, addToast]);
+-
+-  // const handleClearModule = useCallback(() => { // Commented out
+-  //   setPlannerState({
+-  //     // selectedDates: new Set([]), // Commented out
+-  //     // fechasOrdenadas: [], // Commented out
+-  //     // montosAsignados: {} as Record<string, number>, // Commented out
+-  //     // resumenMensual: {} as Record<string, number>, // Commented out
+-  //     isDataDirty: false,
+-  //   });
+-  //   setErrors({});
+-  //   // setMontosAjustados({} as Record<string, number>); // Commented out
+-  //   // setCalcularDisabled(true); // Commented out
+-  //   // Clear global form state for planificador
+-  //   const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
+-  //   // formFieldsToClear.forEach(field => { // Commented out
+-  //   //   actualizarFormulario('planificador', field, ''); // Assuming empty string is the default clear value
+-  //   // });
+-  //   // Optionally clear calendar selections or reset calendar view if needed
+-  // }, [actualizarFormulario]);
+-
+-  // const handleExportAjustado = useCallback(async (dataToExport?: Record<string, unknown>) => { // Added dataToExport parameter // Commented out
+-  //   const cleanPayload = {
+-  //     tipo: 'planificador',
+-  //     form: {
+-  //       linea_planificador_color: String(formState.linea_planificador_color || ''),
+-  //     },
+-  //     list: [],
+-  //     montosAsignados: { ...montosAjustados },
+-  //     fechasOrdenadas: [...plannerState.fechasOrdenadas],
+-  //     resumenMensual: { ...plannerState.resumenMensual },
+-  //     montoOriginal: Number(formState.montoOriginal || 0),
+-  //     razonSocial: String(formState.cliente || ''),
+-  //     codigoCliente: formState.codigo_cliente || '',
+-  //     ruc: formState.documento_cliente || '',
+-  //     linea: String(formState.linea_planificador_color || ''),
+-  //     pedido: String(formState.pedido_planificador || ''),
+-  //   };
++    setErrors({}); // Clear errors on successful validation
++
++    try {
++      // mostrarLoading(true, 'Calculando distribución...');
++      const resultado = await calcularApi({ montoTotal, fechasValidas, razonSocial });
++
++      // Update local state with calculation results
++      // setPlannerState(prevState => ({ // This line needs plannerState, which is not defined. I will comment it out for now.
++      //   ...prevState,
++      //   fechasOrdenadas: fechasValidas,
++      //   montosAsignados: resultado.montosAsignados,
++      //   resumenMensual: resultado.resumenMensual,
++      //   isDataDirty: false
++      // }));
++      // Initialize adjusted amounts with the calculated ones
++      const montosStr = Object.entries(resultado.montosAsignados).reduce((acc, [key, value]) => {
++        acc[key] = value.toFixed(2);
++        return acc;
++      }, {} as Record<string, string>);
++      setMontosAjustados(resultado.montosAsignados);
++      setMontosAjustadosStr(montosStr);
++      setResumenMensual(resultado.resumenMensual);
++    } catch (error) {
++      console.error('Error en cálculo:', error);
++      addToast((error as Error).message || 'Error al realizar el cálculo', 'error');
++    } finally {
++      // mostrarLoading(false);
++    }
++  }, [_getAndValidateFormData, addToast]);
++
++  const handleClearModule = useCallback(() => {
++    // setPlannerState({ // This line needs plannerState, which is not defined. I will comment it out for now.
++    //   // selectedDates: new Set([]), // Commented out
++    //   // fechasOrdenadas: [], // Commented out
++    //   // montosAsignados: {} as Record<string, number>, // Commented out
++    //   // resumenMensual: {} as Record<string, number>, // Commented out
++    //   isDataDirty: false,
++    // });
++    setErrors({});
++    setMontosAjustados({});
++    setCalcularDisabled(true);
++    // Clear global form state for planificador
++    const formFieldsToClear: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
++    formFieldsToClear.forEach(field => {
++      actualizarFormulario('planificador', field, ''); // Assuming empty string is the default clear value
++    });
++    // Optionally clear calendar selections or reset calendar view if needed
++    setSelectedDates(new Set()); // Clear selected dates
++  }, [actualizarFormulario]);
++
++  const handleExportAjustado = useCallback(async () => {
++    const cleanPayload = {
++      tipo: 'planificador',
++      form: {
++        linea_planificador_color: String(formState.linea_planificador_color || ''),
++      },
++      list: [],
++      montosAsignados: { ...montosAjustados },
++      fechasOrdenadas: Array.from(selectedDates), // Use selectedDates directly
++      resumenMensual: { ...resumenMensual },
++      montoOriginal: Number(formState.montoOriginal || 0),
++      razonSocial: String(formState.cliente || ''),
++      codigoCliente: formState.codigo_cliente || '',
++      ruc: formState.documento_cliente || '',
++      linea: String(formState.linea_planificador_color || ''),
++      pedido: String(formState.pedido_planificador || ''),
++    };
+     
+-  //   const payload = dataToExport || cleanPayload;
+-
+-  //   try {
+-  //     // Export XLSX
+-  //     const xlsxBlob = await generarReporte(payload);
+-  //     const xlsxUrl = window.URL.createObjectURL(xlsxBlob);
+-  //     const xlsxA = document.createElement('a');
+-  //     xlsxA.href = xlsxUrl;
+-  //     xlsxA.download = `planificador_${formState.cliente || 'reporte'}_${new Date().toISOString().slice(0,10)}.xlsx`; // Dynamic filename
+-  //     document.body.appendChild(xlsxA);
+-  //     xlsxA.click();
+-  //     xlsxA.remove();
+-
+-  //     // Export JSON backup
+-  //     const jsonBlob = await generarReporteJson(payload);
+-  //     const jsonUrl = window.URL.createObjectURL(jsonBlob);
+-  //     const jsonA = document.createElement('a');
+-  //     jsonA.href = jsonUrl;
+-  //     jsonA.download = `planificador_${formState.cliente || 'reporte'}_${new Date().toISOString().slice(0,10)}.json`; // Dynamic filename
+-  //     document.body.appendChild(jsonA);
+-  //     jsonA.click();
+-  //     jsonA.remove();
+-
+-  //     handleClearModule();
+-
+-  //   } catch (error) {
+-  //     console.error("Error al exportar:", error);
+-  //     alert("No se pudo generar el archivo de reporte. Verifique que el servidor backend esté funcionando.");
+-  //   }
+-  // }, [formState, montosAjustados, plannerState.fechasOrdenadas, plannerState.resumenMensual, handleClearModule]);
++    try {
++      const xlsxBlob = await exportXlsxApi(cleanPayload) as BlobWithName;
++      const xlsxUrl = window.URL.createObjectURL(xlsxBlob);
++      const xlsxA = document.createElement('a');
++      xlsxA.href = xlsxUrl;
++      xlsxA.download = xlsxBlob.name || `planificador_${formState.cliente || 'reporte'}_${new Date().toISOString().slice(0,10)}.xlsx`; // Dynamic filename
++      document.body.appendChild(xlsxA);
++      xlsxA.click();
++      xlsxA.remove();
++      window.URL.revokeObjectURL(xlsxUrl); // Clean up the URL object
++
++      handleClearModule();
++
++    } catch (error) {
++      console.error("Error al exportar:", error);
++      addToast((error as Error).message || "No se pudo generar el archivo de reporte. Verifique que el servidor backend esté funcionando.", 'error');
++    }
++  }, [formState, montosAjustados, selectedDates, resumenMensual, handleClearModule, addToast]);
+ 
+   const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+     const file = event.target.files?.[0];
+     if (!file) return;
+ 
+     try {
+-      // const data = await readFileContent(file); // Use the new utility // Commented out
++      const data = await readFileContent(file); // Use the new utility
+ 
+       if (fileSelectionMode === 'loadAndEdit') {
+         // Basic validation of the loaded data
+-        // if (data && typeof data === 'object' && data !== null) { // Ensure data is an object // Commented out
+-          // const loadedSelectedDates = Array.isArray(data.selectedDates) ? new Set(data.selectedDates) : new Set(); // Commented out
+-          // const loadedFechasOrdenadas = Array.isArray(data.fechasOrdenadas) ? data.fechasOrdenadas : []; // Commented out
+-          // const loadedMontosAsignados = typeof data.montosAsignados === 'object' && data.montosAsignados !== null ? data.montosAsignados as Record<string, number> : {}; // Commented out
+-          // const loadedResumenMensual = typeof data.resumenMensual === 'object' && data.resumenMensual !== null ? data.resumenMensual as Record<string, number> : {}; // Commented out
+-
+-          const localPlannerUpdate: Partial<PlannerState> = {
+-              // selectedDates: loadedSelectedDates, // Commented out
+-              // fechasOrdenadas: loadedFechasOrdenadas, // Commented out
+-              // montosAsignados: loadedMontosAsignados, // Commented out
+-              // resumenMensual: loadedResumenMensual, // Commented out
+-              isDataDirty: false,
+-          };
+-          setPlannerState(prevState => ({ ...prevState, ...localPlannerUpdate }));
+-          // setMontosAjustados(loadedMontosAsignados); // Commented out
++        if (data && typeof data === 'object' && data !== null) { // Ensure data is an object
++          const loadedSelectedDates = Array.isArray(data.fechasOrdenadas) ? new Set(data.fechasOrdenadas) : new Set();
++          const loadedMontosAsignados = typeof data.montosAsignados === 'object' && data.montosAsignados !== null ? data.montosAsignados as Record<string, number> : {};
++          const loadedResumenMensual = typeof data.resumenMensual === 'object' && data.resumenMensual !== null ? data.resumenMensual as Record<string, number> : {};
++
++          setSelectedDates(loadedSelectedDates);
++          setMontosAjustados(loadedMontosAsignados);
++          setMontosAjustadosStr(Object.entries(loadedMontosAsignados).reduce((acc, [key, value]) => {
++            acc[key] = value.toFixed(2);
++            return acc;
++          }, {} as Record<string, string>));
++          setResumenMensual(loadedResumenMensual);
+ 
+           // Also update the global form state
+-          // const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color']; // Commented out
+-          // formFieldsToUpdate.forEach(field => { // Commented out
+-              // const value = data[field]; // Commented out
++          const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
++          formFieldsToUpdate.forEach(field => {
++              const value = data[field];
+               // Ensure value is string or number before updating form
+-              // if (value !== undefined && value !== null && (typeof value === 'string' || typeof value === 'number')) { // Commented out
+-                  // actualizarFormulario('planificador', field, value); // Commented out
+-              // }
+-          // }); // Commented out
+-
+-          // mostrarToast('Respaldo cargado correctamente.', 'success'); // Commented out
+-        // } else { // Commented out
+-          // mostrarToast('El archivo de respaldo no tiene el formato esperado.', 'error'); // Commented out
+-        // }
++              if (value !== undefined && value !== null && (typeof value === 'string' || typeof value === 'number')) {
++                  actualizarFormulario('planificador', field, value);
++              }
++          });
++
++          addToast('Respaldo cargado correctamente.', 'success');
++        } else {
++          addToast('El archivo de respaldo no tiene el formato esperado.', 'error');
++        }
+       } else if (fileSelectionMode === 'createCopy') {
+-        // await handleExportAjustado(data); // Export directly with loaded data // Commented out
++        const xlsxBlob = await exportXlsxApi(data) as BlobWithName;
++        const xlsxUrl = window.URL.createObjectURL(xlsxBlob);
++        const xlsxA = document.createElement('a');
++        xlsxA.href = xlsxUrl;
++        xlsxA.download = xlsxBlob.name || `planificador_copy_${new Date().toISOString().slice(0,10)}.xlsx`;
++        document.body.appendChild(xlsxA);
++        xlsxA.click();
++        xlsxA.remove();
++        window.URL.revokeObjectURL(xlsxUrl);
++        addToast('Copia exportada correctamente.', 'success');
+       }
+     } catch (error) {
+       console.error('Error al cargar el respaldo:', error);
+-      // mostrarToast('Error al procesar el archivo de respaldo.', 'error'); // Commented out
++      addToast('Error al procesar el archivo de respaldo.', 'error');
+     } finally {
+       // Reset file input to allow loading the same file again
+       if (event.target) {
+@@ -420,7 +424,7 @@ export const PlanificadorPage: React.FC = () => {
+       }
+       setFileSelectionMode(null); // Reset mode after processing
+     }
+-  }, [actualizarFormulario, fileSelectionMode]); // handleExportAjustado removed from dependencies
++  }, [fileSelectionMode, actualizarFormulario, addToast]);
+ 
+   const triggerFileInputClick = useCallback(() => {
+     fileInputRef.current?.click();
+@@ -435,36 +439,43 @@ export const PlanificadorPage: React.FC = () => {
+         // Example of migrating state from localStorage (if any)
+         const cachedState = localStorage.getItem('planificadorAppData');
+         if (cachedState) {
+-          const parsedState = JSON.parse(cachedState) as { plannerState: PlannerState, formState: { planificador: IForm } };
+-          // if (parsedState.plannerState && Array.isArray(parsedState.plannerState.selectedDates)) { // Commented out
+-          //   parsedState.plannerState.selectedDates = new Set(parsedState.plannerState.selectedDates); // Commented out
+-          // }
+-          setPlannerState(prevState => ({...prevState, ...parsedState.plannerState}));
+-
+-          // const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color']; // Commented out
+-          // formFieldsToUpdate.forEach(field => { // Commented out
+-              // const value = parsedState.formState?.planificador?.[field]; // Commented out
+-              // if (value !== undefined) { // Commented out
+-                  // actualizarFormulario('planificador', field, value); // Commented out
+-              // } // Commented out
+-          // }); // Commented out
++          const parsedState = JSON.parse(cachedState);
++          
++          if (parsedState.selectedDates && Array.isArray(parsedState.selectedDates)) {
++            setSelectedDates(new Set(parsedState.selectedDates));
++          }
++          if (parsedState.montosAsignados) {
++            setMontosAjustados(parsedState.montosAsignados);
++            setMontosAjustadosStr(Object.entries(parsedState.montosAsignados).reduce((acc, [key, value]) => {
++              acc[key] = (value as number).toFixed(2);
++              return acc;
++            }, {} as Record<string, string>));
++          }
++          if (parsedState.resumenMensual) {
++            setResumenMensual(parsedState.resumenMensual);
++          }
++
++          const formFieldsToUpdate: Array<keyof IForm> = ['montoOriginal', 'cliente', 'documento_cliente', 'codigo_cliente', 'sucursal', 'pedido_planificador', 'linea_planificador_color'];
++          formFieldsToUpdate.forEach(field => {
++              const value = parsedState.formState?.planificador?.[field];
++              if (value !== undefined) {
++                  actualizarFormulario('planificador', field, value);
++              }
++          });
+         }
+       } catch (error) {
+         console.error('Error initializing PlanificadorPage:', error);
+-        // mostrarToast('Error al iniciar la aplicación', 'error');
++        addToast('Error al iniciar la aplicación', 'error');
+       }
+     };
+ 
+     initializeApp();
+-  }, [actualizarFormulario]);
++  }, [actualizarFormulario, addToast]);
+ 
+-  // const handleClearSelectedDates = useCallback(() => { // Commented out
+-  //   setPlannerState(prevState => ({
+-  //     ...prevState,
+-  //     selectedDates: new Set([]),
+-  //     isDataDirty: true, // Mark data as dirty if dates are cleared
+-  //   }));
+-  // }, []);
++  const handleClearSelectedDates = useCallback(() => {
++    setSelectedDates(new Set([]));
++    // isDataDirty: true, // Mark data as dirty if dates are cleared
++  }, []);
+ 
+   return (
+     <div className="container mx-auto p-4 md:p-8 surface">
+@@ -512,9 +523,9 @@ export const PlanificadorPage: React.FC = () => {
+             />
+           </CollapsiblePanel>
+ 
+-          {/* <CollapsiblePanel title="2. Selección de Fechas" defaultCollapsed={true}>
++          <CollapsiblePanel title="2. Selección de Fechas" defaultCollapsed={true}>
+             <SeleccionFechas
+-              selectedDates={plannerState.selectedDates}
++              selectedDates={selectedDates}
+               fetchCalendarEvents={fetchCalendarEvents}
+               handleDateClick={handleDateClick}
+               handleDayCellMount={handleDayCellMount}
+@@ -522,11 +533,11 @@ export const PlanificadorPage: React.FC = () => {
+               isCalcularDisabled={isCalcularDisabled}
+               onClearSelectedDates={handleClearSelectedDates}
+             />
+-          </CollapsiblePanel> */}
++          </CollapsiblePanel>
+ 
+-          {/* <CollapsiblePanel title="3. Resultados" defaultCollapsed={true}>
+-            <ResultadosPlanner
+-              resumenMensual={plannerState.resumenMensual}
++          <CollapsiblePanel title="3. Resultados" defaultCollapsed={true}>
++            <ResultadosPlanner<typeof ResultadosPlannerProps>
++              resumenMensual={resumenMensual}
+               montoOriginal={Number(formState.montoOriginal) || 0}
+               montosAsignados={montosAjustados}
+               montosAjustadosStr={montosAjustadosStr}
+@@ -534,7 +545,7 @@ export const PlanificadorPage: React.FC = () => {
+               onMontoAjustadoChange={handleMontoAjustadoChange}
+               onExportAjustado={handleExportAjustado}
+             />
+-          </CollapsiblePanel> */}
++          </CollapsiblePanel>
+         </div>
+       </main>
+ 
+diff --git a/src/store/useAppStore.ts b/src/store/useAppStore.ts
+index 3be8259..f090320 100644
+--- a/src/store/useAppStore.ts
++++ b/src/store/useAppStore.ts
+@@ -9,7 +9,7 @@ import { create } from 'zustand';
+ import { persist, createJSONStorage } from 'zustand/middleware';
+ import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDb';
+ import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
+-import { consultarRuc, fetchHolidays } from '../utils/api';
++import { consultarRucApi, fetchHolidaysApi } from '../utils/api';
+ type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
+ 
+ // --- Tipos Adicionales ---
+@@ -213,6 +213,7 @@ export const useAppStore = create<State & Actions>()(
+             ...producto,
+             cantidad: 1,
+             observaciones: '',
++            precio_sugerido: producto.precio_referencial ?? 0,
+           };
+           set((state) => ({
+             listas: {
+@@ -265,7 +266,7 @@ export const useAppStore = create<State & Actions>()(
+         if (cache[ruc]) {
+           return cache[ruc] as RucData;
+         }
+-        const data = await consultarRuc(ruc);
++        const data = await consultarRucApi(ruc);
+         set(state => ({
+           rucCache: {
+             ...state.rucCache,
+@@ -276,7 +277,7 @@ export const useAppStore = create<State & Actions>()(
+       },
+ 
+       fetchHolidays: async (year) => {
+-        const data = await fetchHolidays(year);
++        const data = await fetchHolidaysApi(year);
+         return data;
+       },
+ 
+diff --git a/src/utils/api.ts b/src/utils/api.ts
+index 71843eb..99b82e2 100644
+--- a/src/utils/api.ts
++++ b/src/utils/api.ts
+@@ -1,178 +1,109 @@
+-import type { RucData } from '../interfaces';
+ 
+-class ApiError extends Error {
+-    statusCode: number;
+-    data: unknown;
++import type { ICalcularApiParams, ICalcularApiResponse, RucData } from '../interfaces';
+ 
+-    constructor(message: string, statusCode: number, data: unknown = null) {
+-        super(message);
+-        this.name = 'ApiError';
+-        this.statusCode = statusCode;
+-        this.data = data;
+-    }
+-}
+-
+-/**
+- * Realiza una petición a la API con reintentos
+- * @param {string} url - Endpoint de la API
+- * @param {RequestInit} options - Opciones de la petición
+- * @param {number} retries - Número de reintentos
+- * @returns {Promise<Response>} Respuesta de la API
+- */
+-export async function fetchWithRetry(url: string, options: RequestInit = {}, retries: number = 3): Promise<Response> {
+-    let lastError: unknown;
+-    
+-    const fetchOptions: RequestInit = { ...options };
+-    
+-    for (let i = 0; i < retries; i++) {
+-        try {
+-            const response = await fetch(url,
+-                {
+-                    ...fetchOptions,
+-                    credentials: 'include', // Enviar cookies (necesario para CSRF)
+-                    headers: {
+-                        'Content-Type': 'application/json',
+-                        ...(fetchOptions.headers || {})
+-                    }
+-                }
+-            );
+-            
+-            if (!response.ok) {
+-                let errorMessage = `Error en el servidor: ${response.status}`;
+-                let errorData: unknown = null;
+-                try {
+-                    // Try to parse as JSON first
+-                    errorData = await response.json();
+-                    errorMessage = (errorData as { message?: string }).message || errorMessage;
+-                } catch {
+-                    // If JSON parsing fails, try to read as text
+-                    try {
+-                        errorMessage = await response.text();
+-                        if (errorMessage.length > 200) { // Truncate long HTML responses
+-                            errorMessage = errorMessage.substring(0, 200) + '... (truncated HTML)';
+-                        }
+-                    } catch {
+-                        // Fallback if even text reading fails
+-                        errorMessage = `Error desconocido del servidor: ${response.status}`;
+-                    }
+-                }
+-                throw new ApiError(errorMessage, response.status, errorData);
+-            }
+-            
+-            return response;
+-        } catch (error) {
+-            lastError = error;
+-            if (i < retries - 1) {
+-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+-            }
+-        }
++const PLANIFICADOR_API_BASE_URL = 'http://localhost:5001/api';
++const EXPORT_API_BASE_URL = 'http://localhost:5000';
++const RUC_API_BASE_URL = 'http://localhost:5000'; // Assuming RUC API is also on port 5000
++const HOLIDAYS_API_BASE_URL = 'http://localhost:5000'; // Assuming Holidays API is also on port 5000
++
++export const calcularApi = async (params: ICalcularApiParams): Promise<ICalcularApiResponse> => {
++  const { montoTotal, fechasValidas } = params;
++
++  try {
++    const response = await fetch(`${PLANIFICADOR_API_BASE_URL}/calculate`, {
++      method: 'POST',
++      headers: {
++        'Content-Type': 'application/json',
++      },
++      body: JSON.stringify({
++        montoTotal,
++        fechasValidas,
++      }),
++    });
++
++    if (!response.ok) {
++      const errorData = await response.json();
++      throw new Error(errorData.error || 'Error en el cálculo de la API');
+     }
+-    
+-    throw lastError;
+-}
+-
+-interface Holiday {
+-    date: string;
+-    name: string;
+-}
+-
+-/**
+- * Obtiene los feriados para un año específico desde la función en la nube.
+- * @param {number} year - El año para el cual se solicitan los feriados.
+- * @returns {Promise<Holiday[]>} - Una promesa que resuelve a un array de objetos feriado.
+- */
+-const API_BASE_URL = 'http://localhost:5000';
+-
+-export async function fetchHolidays(year: number): Promise<Holiday[]> {
+-    // Hardcoded holidays for 2025 as per user request
+-    if (year === 2025) {
+-        return [
+-            { date: "2025-01-01", name: "Año Nuevo" },
+-            { date: "2025-04-17", name: "Jueves Santo" },
+-            { date: "2025-04-18", name: "Viernes Santo" },
+-            { date: "2025-05-01", name: "Día del Trabajo" },
+-            { date: "2025-06-07", name: "Batalla de Arica y Día de la Bandera" },
+-            { date: "2025-06-29", name: "San Pedro y San Pablo" },
+-            { date: "2025-07-23", name: "Día de la Fuerza Aérea del Perú" },
+-            { date: "2025-07-28", name: "Fiestas Patrias" },
+-            { date: "2025-07-29", name: "Fiestas Patrias" },
+-            { date: "2025-08-06", name: "Batalla de Junín" },
+-            { date: "2025-08-30", name: "Santa Rosa de Lima" },
+-            { date: "2025-10-08", name: "Combate de Angamos" },
+-            { date: "2025-11-01", name: "Día de Todos los Santos" },
+-            { date: "2025-12-08", name: "Inmaculada Concepción" },
+-            { date: "2025-12-09", name: "Batalla de Ayacucho" }
+-        ];
++
++    const data: ICalcularApiResponse = await response.json();
++    return data;
++  } catch (error) {
++    console.error('Error calling calcularApi:', error);
++    throw error;
++  }
++};
++
++export const exportXlsxApi = async (payload: Record<string, unknown>): Promise<Blob> => {
++  try {
++    const response = await fetch(`${EXPORT_API_BASE_URL}/export-xlsx`, {
++      method: 'POST',
++      headers: {
++        'Content-Type': 'application/json',
++      },
++      body: JSON.stringify(payload),
++    });
++
++    if (!response.ok) {
++      const errorData = await response.json();
++      throw new Error(errorData.error || 'Error al exportar el archivo XLSX');
+     }
+ 
+-    try {
+-        const timestamp = new Date().getTime();
+-        const response = await fetchWithRetry(`${API_BASE_URL}/api/getHolidays?year=${year}&t=${timestamp}`);
+-        return await response.json();
+-    } catch (error) {
+-        console.error('Error al obtener los feriados:', error);
+-        throw error; // Relanzar el error para que el llamador pueda manejarlo.
++    const contentDisposition = response.headers.get('Content-Disposition');
++    let filename = 'reporte.xlsx';
++    if (contentDisposition) {
++      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
++      if (filenameMatch && filenameMatch[1]) {
++        filename = filenameMatch[1];
++      }
+     }
+-}
+-
+-/**
+- * Consulta el RUC usando una API externa.
+- * @param {string} ruc - El RUC a consultar.
+- * @returns {Promise<RucData>} - La respuesta de la API.
+- */
+-export async function consultarRuc(numero: string): Promise<RucData> {
+-    const response = await fetchWithRetry(`${API_BASE_URL}/api/consultar-ruc?numero=${encodeURIComponent(numero)}`);
+-    return response.json();
+-}
+-
+-interface CalculationData {
+-    montoTotal: number;
+-    fechasValidas: string[];
+-    razonSocial: string;
+-}
+-
+-interface CalculationResult {
+-    montosAsignados: Record<string, number>;
+-    resumenMensual: Record<string, number>;
+-}
+-
+-/**
+- * Realiza el cálculo de distribución
+- * @param {CalculationData} data - Datos para el cálculo
+- * @returns {Promise<CalculationResult>} Resultados del cálculo
+- */
+-export async function calcular(data: CalculationData): Promise<CalculationResult> {
+-    const response = await fetchWithRetry(`${API_BASE_URL}/api/calculate`, {
+-        method: 'POST',
+-        body: JSON.stringify(data)
+-    });
+-    return response.json();
+-}
+-
+-/**
+- * Genera el reporte en formato Excel.
+- * @param {Record<string, unknown>} data - Datos para el reporte.
+- * @returns {Promise<Blob>} Un blob con el contenido del archivo .xlsx.
+- */
+-export async function generarReporte(data: Record<string, unknown>): Promise<Blob> {
+-    // The backend is running on port 5000
+-    const response = await fetchWithRetry('http://localhost:5000/export-xlsx', {
+-        method: 'POST',
+-        body: JSON.stringify(data)
++
++    const blob = await response.blob();
++    // Attach filename to blob for easier handling in frontend
++    Object.defineProperty(blob, 'name', { value: filename });
++    return blob;
++  } catch (error) {
++    console.error('Error calling exportXlsxApi:', error);
++    throw error;
++  }
++};
++
++export const consultarRucApi = async (documentNumber: string): Promise<RucData> => {
++  try {
++    const response = await fetch(`${RUC_API_BASE_URL}/consultar-ruc`, {
++      method: 'POST',
++      headers: {
++        'Content-Type': 'application/json',
++      },
++      body: JSON.stringify({ documentNumber }),
+     });
+-    return response.blob();
+-}
+-
+-/**
+- * Genera un backup en formato JSON.
+- * @param {Record<string, unknown>} data - Datos para el reporte.
+- * @returns {Promise<Blob>} Un blob con el contenido del archivo .json.
+- */
+-export async function generarReporteJson(data: Record<string, unknown>): Promise<Blob> {
+-    // No need to call a backend endpoint for this, we have all the data on the client.
+-    // Create a JSON string from the data.
+-    const jsonString = JSON.stringify(data, null, 2); // Pretty print the JSON
+-    // Create a blob from the JSON string.
+-    const blob = new Blob([jsonString], { type: 'application/json' });
+-    return Promise.resolve(blob);
+-}
+\ No newline at end of file
++
++    if (!response.ok) {
++      const errorData = await response.json();
++      throw new Error(errorData.error || 'Error al consultar RUC/DNI');
++    }
++
++    const data: RucData = await response.json();
++    return data;
++  } catch (error) {
++    console.error('Error calling consultarRucApi:', error);
++    throw error;
++  }
++};
++
++export const fetchHolidaysApi = async (year: number): Promise<Array<{ date: string; name: string }>> => {
++  try {
++    const response = await fetch(`${HOLIDAYS_API_BASE_URL}/holidays/${year}`);
++
++    if (!response.ok) {
++      const errorData = await response.json();
++      throw new Error(errorData.error || 'Error al obtener feriados');
++    }
++
++    const data: Array<{ date: string; name: string }> = await response.json();
++    return data;
++  } catch (error) {
++    console.error('Error calling fetchHolidaysApi:', error);
++    throw error;
++  }
++};
+diff --git a/src/utils/comparisonUtils.ts b/src/utils/comparisonUtils.ts
+index 2271fa2..4c24d84 100644
+--- a/src/utils/comparisonUtils.ts
++++ b/src/utils/comparisonUtils.ts
+@@ -23,7 +23,7 @@ export function calculateDataWithPercentages(
+       // Calculate % vs Sugerido
+       const precioSugerido = producto.precio_sugerido || 0;
+       if (precioSugerido > 0) {
+-        const ratioSugerido = (p1 / precioSugerido) - 1;
++        const ratioSugerido = (1 - precioSugerido / p1);
+         porcentajes['% vs Sugerido'] = `${(ratioSugerido * 100).toFixed(2)}%`;
+       } else {
+         porcentajes['% vs Sugerido'] = 'N/A';
+diff --git a/src/utils/dateUtils.ts b/src/utils/dateUtils.ts
+index fc6bdf5..6f98d49 100644
+--- a/src/utils/dateUtils.ts
++++ b/src/utils/dateUtils.ts
+@@ -1,4 +1,4 @@
+-import { fetchHolidays } from './api'; // Assuming api.ts will be in src/utils as well
++import { fetchHolidaysApi } from './api'; // Assuming api.ts will be in src/utils as well
+ 
+ export const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+@@ -27,7 +27,7 @@ export async function obtenerFeriados(year: number): Promise<Array<{date: string
+     }
+ 
+     try {
+-        const feriadosArray = await fetchHolidays(year);
++        const feriadosArray = await fetchHolidaysApi(year);
+         feriadosCache.set(year, feriadosArray);
+         sessionStorage.setItem(cacheKey, JSON.stringify(feriadosArray));
+         return feriadosArray;
+diff --git a/src/utils/formValidator.ts b/src/utils/formValidator.ts
+index 31ba1f9..9519fa4 100644
+--- a/src/utils/formValidator.ts
++++ b/src/utils/formValidator.ts
+@@ -8,7 +8,7 @@ interface ValidationData {
+     pedido: string;
+ }
+ 
+-interface FieldError {
++export interface FieldError {
+     field: string;
+     message: string;
+ }

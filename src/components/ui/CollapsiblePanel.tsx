@@ -5,7 +5,7 @@ interface CollapsiblePanelProps {
   children: React.ReactNode;
   defaultCollapsed?: boolean;
   // Optional: Add a prop for the module's theme color if needed for the header
-  // themeColor?: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador';
+  // themeColor?: 'devoluciones' | 'pedido' | 'inventario' | 'comparador';
 }
 
 export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({

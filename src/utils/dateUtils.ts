@@ -1,4 +1,4 @@
-import { fetchHolidays } from './api'; // Assuming api.ts will be in src/utils as well
+import { fetchHolidaysApi } from './api'; // Assuming api.ts will be in src/utils as well
 
 export const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -27,7 +27,7 @@ export async function obtenerFeriados(year: number): Promise<Array<{date: string
     }
 
     try {
-        const feriadosArray = await fetchHolidays(year);
+        const feriadosArray = await fetchHolidaysApi(year);
         feriadosCache.set(year, feriadosArray);
         sessionStorage.setItem(cacheKey, JSON.stringify(feriadosArray));
         return feriadosArray;

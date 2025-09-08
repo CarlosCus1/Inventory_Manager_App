@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Box, Typography, Stack } from '@mui/material';
 import { ModuleTextField } from './ui/ModuleTextField';
 import { ModuleButton } from './ui/ModuleButton';
@@ -6,7 +6,7 @@ import { type InputProps } from './ui/StyledInput'; // Keep for compatibility
 
 // Extending InputProps to get variant type
 type VariantProp = InputProps['variant'];
-type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface RucDniInputProps {
   documentType: 'ruc' | 'dni';
@@ -33,14 +33,46 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
   variant = 'default'
 }) => {
 
+
+
+  // Estado local para el error de documento, estable y persistente
+  const [showDocError, setShowDocError] = useState(false);
+  const errorTimeout = useRef<number | null>(null);
+
+  // Limpia el timeout al desmontar
+  React.useEffect(() => {
+    return () => {
+      if (errorTimeout.current) clearTimeout(errorTimeout.current);
+    };
+  }, []);
+
   const handleTypeChange = (type: 'ruc' | 'dni') => {
     onDocumentChange(type, '', '');
+    setShowDocError(false);
+    if (errorTimeout.current) clearTimeout(errorTimeout.current);
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const sanitizedValue = value.replace(/\D/g, '');
     onDocumentChange(documentType, sanitizedValue, razonSocial);
+    setShowDocError(false);
+    if (errorTimeout.current) clearTimeout(errorTimeout.current);
+  };
+
+  const handleNumberBlur = () => {
+    let isInvalid = false;
+    if (documentType === 'dni' && documentNumber.length > 0 && documentNumber.length !== 8) {
+      isInvalid = true;
+    }
+    if (documentType === 'ruc' && documentNumber.length > 0 && documentNumber.length !== 11) {
+      isInvalid = true;
+    }
+    if (isInvalid) {
+      setShowDocError(true);
+      if (errorTimeout.current) clearTimeout(errorTimeout.current);
+      errorTimeout.current = window.setTimeout(() => setShowDocError(false), 5000);
+    }
   };
 
   const handleRazonSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,16 +105,29 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
         </ModuleButton>
       </Stack>
 
+
       <ModuleTextField
         module={moduleVariant}
         label="Número de Documento"
         placeholder={inputPlaceholder}
         value={documentNumber}
         onChange={handleNumberChange}
+        onBlur={handleNumberBlur}
         inputProps={{ maxLength: inputMaxLength }}
         disabled={isLoading}
         fullWidth
       />
+
+      {showDocError && documentType === 'dni' && (
+        <Typography variant="body2" color="error" className="text-sm font-medium">
+          El DNI debe tener 8 dígitos.
+        </Typography>
+      )}
+      {showDocError && documentType === 'ruc' && (
+        <Typography variant="body2" color="error" className="text-sm font-medium">
+          El RUC debe tener 11 dígitos.
+        </Typography>
+      )}
       
       {isLoading && (
         <Typography variant="body2" color="info.main">

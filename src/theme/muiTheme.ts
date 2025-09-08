@@ -29,12 +29,7 @@ const theme = createTheme({
       dark: '#c2410c',
       contrastText: '#ffffff'
     },
-    planificador: {
-      main: '#0EA5E9',
-      light: '#0ea5e9',
-      dark: '#0284c7',
-      contrastText: '#ffffff'
-    },
+
     // Standard MUI palette colors, aligned with module colors where applicable
     primary: {
       main: '#2563EB', // Aligned with pedido
@@ -54,14 +49,8 @@ const theme = createTheme({
       dark: '#b91c1c',
       contrastText: '#ffffff'
     },
-    warning: {
-      main: '#EA580C', // Aligned with comparador
-      light: '#ff9800',
-      dark: '#c2410c',
-      contrastText: '#ffffff'
-    },
     info: {
-      main: '#0EA5E9', // Aligned with planificador
+  main: '#0EA5E9',
       light: '#29b6f6',
       dark: '#0284c7',
       contrastText: '#ffffff'

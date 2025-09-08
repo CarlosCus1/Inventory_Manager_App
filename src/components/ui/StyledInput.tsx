@@ -10,7 +10,6 @@ const inputVariants = cva(
         pedido: 'border-pedido-light-secondary focus:ring-pedido-light-primary focus:border-pedido-light-primary',
         inventario: 'border-inventario-light-secondary focus:ring-inventario-light-primary focus:border-inventario-light-primary',
         comparador: 'border-comparador-light-secondary focus:ring-comparador-light-primary focus:border-comparador-light-primary',
-        planificador: 'border-planificador-light-secondary focus:ring-planificador-light-primary focus:border-planificador-light-primary',
         default: 'border-gray-300 focus:ring-blue-500 focus:border-blue-500',
       },
     },
@@ -23,7 +22,7 @@ const inputVariants = cva(
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement>,
     VariantProps<typeof inputVariants> {
-      variant: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+  variant: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
     }
 
 const StyledInput = React.forwardRef<HTMLInputElement, InputProps>(

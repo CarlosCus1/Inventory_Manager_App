@@ -26,7 +26,7 @@ export const formatModuleName = (module: ModuleType): string => {
     [ModuleType.PEDIDO]: 'Pedidos',
     [ModuleType.INVENTARIO]: 'Inventario',
     [ModuleType.COMPARADOR]: 'Comparador',
-    [ModuleType.PLANIFICADOR]: 'Planificador',
+
   };
   return moduleNames[module];
 };

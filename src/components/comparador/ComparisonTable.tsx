@@ -27,14 +27,24 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Código</th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. EAN</th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre</th>
-            {competidores.map((comp) => (
-              <th key={comp} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">{comp}</th>
+            {competidores.map((comp, idx) => (
+              idx === 0 ? (
+                <th
+                  key={comp}
+                  className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider relative"
+                  title="Esta es la marca base para todos los cálculos de comparación y descuento. Ejemplo: Coloca tu marca principal aquí."
+                >
+                  {comp} <span className="ml-1 cursor-help text-[var(--color-info)]" title="Marca base para cálculos">&#9432;</span>
+                </th>
+              ) : (
+                <th key={comp} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">{comp}</th>
+              )
             ))}
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Precio Sugerido</th>
             {competidores.slice(1).map((comp) => (
               <th key={`pct-${comp}`} className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% vs {competidores[0]}</th>
             ))}
-            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% vs Sugerido</th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">% Descuento a Sugerido</th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Acción</th>
           </tr>
         </thead>
@@ -71,8 +81,8 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   </td>
                 );
               })}
-              <td key={`pct-${item.codigo}-sugerido`} className={`px-6 py-4 whitespace-nowrap ${getPercentageCellClass((item as unknown as Record<string, string | undefined>)['% vs Sugerido'] || 'N/A')}`}>
-                {(item as unknown as Record<string, string | undefined>)['% vs Sugerido'] || 'N/A'}
+              <td key={`pct-${item.codigo}-sugerido`} className={`px-6 py-4 whitespace-nowrap ${getPercentageCellClass((item as unknown as Record<string, string | undefined>)['% Descuento a Sugerido'] || 'N/A')}`}>
+                {(item as unknown as Record<string, string | undefined>)['% Descuento a Sugerido'] || 'N/A'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <button

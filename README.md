@@ -1,4 +1,5 @@
-# Stock Manager App — Inventario, Pedido, Devoluciones y Comparador
+
+# Inventory Manager App — Inventario, Pedido, Devoluciones y Comparador
 
 Aplicación SPA en React + Vite + TypeScript con Tailwind CSS v4. Incluye módulos para la gestión de inventario, pedidos, devoluciones y comparación de precios, cada uno con su propia identidad visual y funcionalidad específica.
 
@@ -24,9 +25,10 @@ To get a local copy up and running, follow these simple steps.
     ```
 3.  Follow the instructions in the [Execution](#ejecución) section to set up and run the Frontend and Backend.
 
+
 ## Módulos y Funcionalidades
 
-Esta aplicación se compone de los siguientes módulos principales, cada uno diseñado para optimizar un aspecto específico de la gestión de stock:
+Esta aplicación se compone de los siguientes módulos principales, cada uno diseñado para optimizar un aspecto específico de la gestión de stock. **El módulo Planificador ha sido eliminado completamente para mayor simplicidad y mantenimiento.**
 
 *   **Devoluciones (Paleta Rojo):**
     *   **Propósito:** Permite registrar y gestionar productos devueltos.
@@ -61,14 +63,16 @@ La aplicación sigue una arquitectura cliente-servidor donde el frontend (React)
     *   Para el módulo **Comparador**, se asegura que la fila 10 esté vacía, los encabezados se coloquen en la fila 11 y los datos comiencen en la fila 12, permitiendo una mejor organización visual.
 4.  **Descarga del Archivo:** El archivo Excel generado se envía de vuelta al frontend como una descarga, con un nombre de archivo descriptivo basado en el tipo de reporte, cliente/colaborador y fecha.
 
-## Estado Actual
+
+## Estado Actual y Limpieza
+
 
 *   **Diseño y Estilo:**
-    *   Tema global (sun/moon) removido. Se usan paletas de colores específicas por página/módulo, definidas mediante clases de Tailwind CSS.
-    *   Todos los inputs y selects tienen una altura uniforme de 20px en toda la aplicación para consistencia visual.
-    *   Los inputs de precios en la tabla del módulo "Comparador" tienen un tamaño fijo de 45x20px con una clase específica (`price-cell-45`).
+    *   Tema global removido. Paletas de colores específicas por módulo (devoluciones, pedido, inventario, comparador).
+    *   Inputs y selects con altura uniforme (20px). Inputs de precios en comparador con `.price-cell-45` (45x20px).
+    *   Todas las clases, variables, componentes y estilos del módulo "planificador" han sido eliminados para evitar advertencias, redundancias y errores.
 *   **Tecnología:**
-    *   Build estable en Tailwind CSS v4, sin utilities personalizadas en `@apply` para mantener la compatibilidad y el rendimiento.
+    *   Build estable en Tailwind CSS v4, sin utilities personalizadas en `@apply` para mantener compatibilidad y rendimiento.
 
 ## Tecnologías
 
@@ -116,14 +120,18 @@ La aplicación sigue una arquitectura cliente-servidor donde el frontend (React)
     ```
     El endpoint principal de exportación es: `POST http://localhost:5000/export-xlsx`
 
+
 ## Arquitectura de Carpetas (Resumen)
 
-*   `src/pages/`: Contiene los componentes de página principales para cada módulo (ej., `DevolucionesPage.tsx`, `PedidoPage.tsx`).
-*   `src/components/`: Componentes reutilizables como `Layout.tsx`, `PageHeader.tsx`, `DatosGeneralesForm.tsx`.
-    *   `form-fields/`: Componentes específicos para los campos de formulario de cada módulo.
-    *   `ui/`: Componentes básicos de UI como `FormControls.tsx` (Input/Label/FormGroup).
-*   `src/store/useAppStore.ts`: Gestión de estado global con Zustand.
-*   `backend/app.py`: Contiene la lógica del servidor Flask y los endpoints para la exportación de archivos XLSX.
+El proyecto ha sido limpiado de todo rastro del módulo planificador. La estructura principal es:
+
+
+*   `src/pages/`: Páginas principales de cada módulo (Devoluciones, Pedido, Inventario, Comparador).
+*   `src/components/`: Componentes reutilizables (`Layout`, `PageHeader`, `DatosGeneralesForm`, etc.).
+*   `src/store/useAppStore.ts`: Estado global con Zustand (sin planificador).
+*   `src/theme/`: Temas y paletas de color por módulo (sin planificador).
+*   `src/styles/`, `src/index.css`: Estilos globales y por módulo (sin clases planificador).
+*   `backend/app.py`: Lógica Flask para exportación de reportes XLSX.
 
 ## Guía de Estilos y Clases
 
@@ -197,13 +205,16 @@ La aplicación sigue una arquitectura cliente-servidor donde el frontend (React)
 *   Las clases personalizadas no deben usarse dentro de `@apply`; en su lugar, definir propiedades CSS puras cuando se necesite (ej. `.price-cell-45`).
 *   Ya se eliminaron clases que causaban “unknown utility class”, como `input`, `btn` (como utilities Tailwind), `container-compact`, `w-col-xs` en `@apply`.
 
-## Limpieza Aplicada
 
-*   Dependencias removidas: `@types/react-router-dom` (v5), `idb-keyval`, `zustand-persist`.
-*   `useTheme` (tema global) deshabilitado (`App.tsx` sin `useTheme`).
-*   `ThemeToggle` removido del header (`PageHeader.tsx` sin toggle).
-*   `hooks/useTheme.ts` vaciado (obsoleto).
-*   Clases de comparador reorganizadas para tener cabecera responsive y celdas de precio fijas con `.price-cell-45`.
+## Limpieza Profunda Aplicada
+
+*   **Eliminado completamente el módulo Planificador:**
+    *   Archivos, componentes, páginas, estilos, variables, tipos y colores relacionados con planificador han sido removidos.
+    *   Limpieza de referencias en Zustand store, interfaces, temas, CSS y utilidades.
+    *   Carpetas de backup y archivos huérfanos eliminados (`__removed__`, `__trash__`).
+*   Dependencias y código obsoleto removidos: `@types/react-router-dom` (v5), `idb-keyval`, `zustand-persist`, `useTheme`, `ThemeToggle`.
+*   Clases de comparador reorganizadas para cabecera responsive y celdas de precio fijas con `.price-cell-45`.
+*   Build Tailwind v4 estabilizado, sin advertencias ni clases desconocidas.
 
 ## Próximas Mejoras Sugeridas
 
@@ -218,7 +229,10 @@ La aplicación sigue una arquitectura cliente-servidor donde el frontend (React)
 *   **Accesibilidad:**
     *   Asegurar `labels` con `htmlFor` y `aria-label` en inputs de precio; roles en botones y enlaces.
 
+
 ## Changelog Reciente (Resumen)
+
+*   Eliminado módulo planificador y toda su lógica, estilos y dependencias.
 
 *   Paletas por módulo implementadas (rojo/azul/verde/naranja).
 *   Altura uniforme en todos los inputs/selects (20px).

@@ -62,14 +62,17 @@ export const ComparadorPage: React.FC = () => {
     const productoActual = lista.find(p => p.codigo === codigo);
     if (!productoActual) return;
 
-    const nuevosPrecios = { ...(productoActual.precios || {}) };
-    if (valor === null) {
-      delete nuevosPrecios[competidor];
+    if (competidor === 'precio_sugerido') {
+      actualizarProductoEnLista('precios', codigo, 'precio_sugerido', valor ?? 0);
     } else {
-      nuevosPrecios[competidor] = valor;
+      const nuevosPrecios = { ...(productoActual.precios || {}) };
+      if (valor === null) {
+        delete nuevosPrecios[competidor];
+      } else {
+        nuevosPrecios[competidor] = valor;
+      }
+      actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
     }
-
-    actualizarProductoEnLista('precios', codigo, 'precios', nuevosPrecios);
   };
 
   const dataConPorcentajes = useMemo(() => {

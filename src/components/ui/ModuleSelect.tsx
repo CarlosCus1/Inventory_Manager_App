@@ -4,7 +4,7 @@ import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { styled, type PaletteColor } from '@mui/material/styles';
 
 
-type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface ModuleSelectProps extends Omit<React.ComponentProps<typeof Select>, 'color' | 'variant'> {
   module: ModuleVariant;

@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDb';
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
-import { consultarRuc, fetchHolidays } from '../utils/api';
+import { consultarRucApi, fetchHolidaysApi } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 
 // --- Tipos Adicionales ---
@@ -20,7 +20,7 @@ interface ModuleStats {
   pedido: number;
   inventario: number;
   comparador: number;
-  planificador: number;
+
 }
 
 // --- 2. Definición de la forma del Estado (State) ---
@@ -35,7 +35,7 @@ export interface State {
     pedido: IForm;
     inventario: IForm;
     precios: IForm;
-    planificador: IForm;
+
     comparador: IForm;
   };
   listas: {
@@ -43,7 +43,7 @@ export interface State {
     pedido: IProductoEditado[];
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
-    planificador: IProductoEditado[];
+
     comparador: IProductoEditado[];
   };
   loading: boolean;
@@ -84,7 +84,7 @@ const initialState: Omit<State, keyof Actions> = {
     pedido: 90,
     inventario: 60,
     comparador: 45,
-    planificador: 30,
+
   },
   incompleteTasks: 5,
   lastActivity: {},
@@ -93,7 +93,7 @@ const initialState: Omit<State, keyof Actions> = {
     pedido: {},
     inventario: {},
     precios: {},
-    planificador: {},
+
     comparador: {},
   },
   listas: {
@@ -101,7 +101,7 @@ const initialState: Omit<State, keyof Actions> = {
     pedido: [],
     inventario: [],
     precios: [],
-    planificador: [],
+
     comparador: [],
   },
   loading: false,
@@ -147,13 +147,13 @@ export const useAppStore = create<State & Actions>()(
         try {
           const indexedDBCatalog = await getCatalogFromIndexedDB();
           if (indexedDBCatalog && indexedDBCatalog.length > 0) {
-            console.log('Catálogo cargado desde IndexedDB.');
+            // console.log('Catálogo cargado desde IndexedDB.');
             set({ catalogo: indexedDBCatalog, loading: false });
             return;
           }
 
           const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
-          console.log(`Intentando cargar catálogo desde la red: ${url}`);
+          // console.log(`Intentando cargar catálogo desde la red: ${url}`);
           const response = await fetch(url);
           if (!response.ok) {
             const errorText = await response.text();
@@ -161,19 +161,19 @@ export const useAppStore = create<State & Actions>()(
           }
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const rawData: any[] = await response.json();
-          console.log('Datos crudos cargados desde la red:', rawData);
+          // console.log('Datos crudos cargados desde la red:', rawData);
 
           // Adaptar los datos crudos al formato IProducto
           const mappedData = rawData.map(mapRawProductToIProducto);
-          console.log('Datos adaptados:', mappedData);
+          // console.log('Datos adaptados:', mappedData);
 
           await saveCatalogToIndexedDB(mappedData);
-          console.log('Catálogo adaptado y guardado en IndexedDB.');
+          // console.log('Catálogo adaptado y guardado en IndexedDB.');
 
           set({ catalogo: mappedData, loading: false });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Un error desconocido ocurrió.';
-          console.error('Error al cargar el catálogo:', error);
+          // console.error('Error al cargar el catálogo:', error);
           set({ error: errorMessage, loading: false });
         }
       },
@@ -209,11 +209,27 @@ export const useAppStore = create<State & Actions>()(
         if (productoExistente) {
           get().actualizarProductoEnLista(tipo, producto.codigo, 'cantidad', productoExistente.cantidad + 1);
         } else {
-          const nuevoProducto: IProductoEditado = {
+          // Aseguramos que el campo peso siempre sea un número válido
+          const peso = producto.peso !== undefined ? Number(producto.peso) : 0;
+          let nuevoProducto: IProductoEditado = {
             ...producto,
+            peso,
             cantidad: 1,
             observaciones: '',
           };
+          // En el comparador, los precios y el precio sugerido deben ser manuales
+          if (tipo === 'precios') {
+            nuevoProducto = {
+              ...nuevoProducto,
+              precios: {},
+              precio_sugerido: undefined,
+            };
+          } else {
+            nuevoProducto = {
+              ...nuevoProducto,
+              precio_sugerido: producto.precio_referencial ?? 0,
+            };
+          }
           set((state) => ({
             listas: {
               ...state.listas,
@@ -231,6 +247,12 @@ export const useAppStore = create<State & Actions>()(
               if (p.codigo !== codigo) return p;
               if (campo === 'precios' && typeof valor === 'object' && valor !== null) {
                 return { ...p, precios: valor as Record<string, number> };
+              }
+              // Forzar precio_sugerido a número en el comparador y loguear
+              if (campo === 'precio_sugerido' && tipo === 'precios') {
+                const nuevoValor = typeof valor === 'number' ? valor : Number(valor);
+                // console.log(`[Comparador] Guardando precio_sugerido para ${codigo}:`, nuevoValor);
+                return { ...p, precio_sugerido: nuevoValor };
               }
               return { ...p, [campo]: valor as string | number };
             }),
@@ -265,7 +287,7 @@ export const useAppStore = create<State & Actions>()(
         if (cache[ruc]) {
           return cache[ruc] as RucData;
         }
-        const data = await consultarRuc(ruc);
+        const data = await consultarRucApi(ruc);
         set(state => ({
           rucCache: {
             ...state.rucCache,
@@ -276,7 +298,7 @@ export const useAppStore = create<State & Actions>()(
       },
 
       fetchHolidays: async (year) => {
-        const data = await fetchHolidays(year);
+        const data = await fetchHolidaysApi(year);
         return data;
       },
 

@@ -8,7 +8,7 @@ import { type DateClickArg } from '@fullcalendar/interaction';
 import { type DayCellMountArg } from '@fullcalendar/core';
 
 
-type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface ModuleCalendarProps {
   module: ModuleVariant;

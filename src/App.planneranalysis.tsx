@@ -5,12 +5,10 @@ import { SeleccionFechas } from './components/planner/SeleccionFechas';
 import type { FieldConfig } from './interfaces';
 import type { DateClickArg } from '@fullcalendar/interaction';
 import type { DayCellMountArg } from '@fullcalendar/core';
-
 function App() {
   // --- 1. Conexión con el Store de Zustand ---
   const formState = useAppStore((state) => state.formState.planificador);
   const [selectedDates, setSelectedDates] = React.useState(new Set(['2024-01-15', '2024-01-22', '2024-01-29']));
-
   // --- 2. Lógica del Calendario y Acciones ---
   const handleDateClick = (arg: DateClickArg) => {
     const dateStr = arg.dateStr;
@@ -102,3 +100,4 @@ function App() {
 }
 
 export default App;
+// Archivo eliminado como parte de la eliminación del módulo planificador.

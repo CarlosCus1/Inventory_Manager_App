@@ -1,13 +1,12 @@
+// This file has been removed as part of the planner module deletion.
 import React from 'react';
 import { ModuleButton } from '../ui/ModuleButton';
-
 interface BackupOptionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadAndEdit: () => void;
   onCreateIdenticalCopy: () => void;
 }
-
 export const BackupOptionsModal: React.FC<BackupOptionsModalProps> = ({
   isOpen,
   onClose,
@@ -15,7 +14,6 @@ export const BackupOptionsModal: React.FC<BackupOptionsModalProps> = ({
   onCreateIdenticalCopy,
 }) => {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm mx-auto dark:bg-gray-800">

@@ -3,7 +3,7 @@ import { TextField } from '@mui/material';
 import { styled, type PaletteColor } from '@mui/material/styles';
 
 
-type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface ModuleTextFieldProps extends Omit<React.ComponentProps<typeof TextField>, 'color'> {
   module: ModuleVariant;

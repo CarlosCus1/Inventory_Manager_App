@@ -8,7 +8,7 @@ interface ValidationData {
     pedido: string;
 }
 
-interface FieldError {
+export interface FieldError {
     field: string;
     message: string;
 }

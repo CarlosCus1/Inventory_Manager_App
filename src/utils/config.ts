@@ -16,10 +16,6 @@ export const COLOR_PALETTES = {
         background: 'rgba(75, 192, 192, 0.2)',
         border: 'rgba(75, 192, 192, 1)'
     },
-    planificador: { // Paleta de Celestes
-        background: 'rgba(14, 165, 233, 0.2)', // sky-500 with 0.2 opacity
-        border: 'rgba(14, 165, 233, 1)' // sky-500
-    }
 };
 
 export const LABELS = {

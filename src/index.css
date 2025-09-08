@@ -1,671 +1,486 @@
 /*
  * src/index.css
- *
- * Este es el archivo de estilos principal para Tailwind CSS v3.
- * Necesitamos importar las capas base, componentes y utilidades.
+ * Archivo principal de estilos - Optimizado y limpio
  */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+/* Importar sistema de diseño unificado */
+@import './styles/design-system.css';
+
+/* Importar Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Capa base: asegurar que el tema por clase en <html> gane prioridad frente a media queries externas
-   y estilos inyectados por extensiones. Solo se fija fondo/texto base; el resto lo manejan las clases Tailwind. */
-@layer base {
-  /* Variables de tema con mayor jerarquía (prioridad por clase en :root) */
-  :root {
-    --bg: #ffffff;       /* fondo base light */
-    --fg: #111827;       /* texto base light (gray-900) */
-    --panel: #f8f8f8;    /* superficies claras (light gray for modals/cards) */
-    --panel-dark: #1f2937; /* gray-800 aprox */
-    --border: #e5e7eb;   /* gray-200 */
-
-    /* Inputs - Light */
-    --input-bg: #F3F4F6;     /* gray-100 */
-    --input-fg: #111827;     /* gray-900 */
-    --input-ph: #6B7280;     /* gray-500 */
-    --input-border: #D1D5DB; /* gray-300 */
-
-    /* Tipografía - Light */
-    --text-primary: #111827;   /* gray-900 */
-    --text-secondary: #374151; /* gray-700 */
-    --text-muted: #6B7280;     /* gray-500 */
-    --heading: #0F172A;        /* slate-900 para títulos */
-    --link: #1D4ED8;           /* blue-700 */
-    --text-success: #065F46;    /* Darker green for success */
-    --text-error: #991B1B;      /* Darker red for error */
-    --lt-color-gray-100: #f8f9fc;
-    --lt-color-contrast: #000000; /* Assuming --lt-co is --lt-color-contrast. Please confirm. */
-  }
-  :root.dark {
-    --bg: #111827;       /* fondo base dark (gray-900) */
-    --fg: #e5e7eb;       /* texto base dark (gray-200) */
-    --panel: #1f2937;    /* superficies oscuras (gray-800) */
-    --panel-dark: #111827;
-    --border: #374151;   /* gray-700 */
-
-    /* Inputs - Dark */
-    --input-bg: #1F2937;     /* gray-800 */
-    --input-fg: #E5E7EB;     /* gray-200 */
-    --input-ph: #9CA3AF;     /* gray-400 */
-    --input-border: #374151; /* gray-700 */
-
-    /* Tipografía - Dark */
-    --text-primary: #E5E7EB;   /* gray-200 */
-    --text-secondary: #D1D5DB; /* gray-300 */
-    --text-muted: #9CA3AF;     /* gray-400 */
-    --heading: #F8FAFC;        /* slate-50 */
-    --link: #93C5FD;           /* blue-300 */
-    --text-success: #6EE7B7;    /* Even lighter green for success */
-    --text-error: #FCA5A5;      /* Even lighter red for error */
-  }
-
-  /* Asegurar que el tema por clase gobierna el canvas */
-  html {
-    background-color: var(--bg);
-    color: var(--fg); /* Texto global: SIEMPRE usa var(--fg) */
-    -webkit-text-size-adjust: 100%;
-    tab-size: 4;
-    -webkit-tap-highlight-color: transparent;
-  }
-  html.dark {
-    background-color: var(--bg);
-    color: var(--fg); /* Texto global: SIEMPRE usa var(--fg) */
-  }
-
-  /* En caso de que alguna hoja externa aplique colores por media query,
-     reforzamos el body para heredar del html y evitar parpadeos. */
-  body {
-    background-color: inherit;
-    color: var(--fg); /* Fijar texto global en todo el app */
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
-    font-weight: 400;
-  }
-
-  /* Tipografía global con variables: títulos, secundarios y muted */
-  h1, h2, h3 {
-    color: var(--heading);
-    font-weight: 800;
-    letter-spacing: -0.015em; /* tracking-tight */
-  }
-  h4, h5, h6 {
-    color: var(--heading);
-    font-weight: 700;
-  }
-  .text-secondary {
-    color: var(--text-secondary);
-  }
-  .text-muted, .muted {
-    color: var(--text-muted);
-  }
-  a {
-    color: var(--link);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  a:hover {
-    text-decoration-thickness: 2px;
-  }
-}
-@layer utilities {
-  /* Utilidades de texto (alias) removidas para evitar error de Tailwind v4 con utilities personalizadas */
-
-  /* Anchuras fijas convencionales para columnas compactas (precios, cantidades, etc.) */
-  .w-col-xxs { width: 36px; }
-  .w-col-xs  { width: 45px; }  /* recomendada para precio 0.00 */
-  .w-col-sm  { width: 60px; }
-  .w-col-md  { width: 80px; }
-  .w-col-lg  { width: 120px; }
-
-  /* Contenedores optimizados (densidad convencional) */
-  .container-compact { max-width: 1100px; margin-left: auto; margin-right: auto; padding-left: 0.75rem; padding-right: 0.75rem; }
-  .section-compact   { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-}
+/* ========================================
+   🎨 COMPONENTES ESPECÍFICOS
+   ======================================== */
 
 @layer components {
-  /* Enhanced glassmorphism and animations */
-  .navbar-glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  }
-
-  .dark .navbar-glass {
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Floating animation keyframes */
-  @keyframes float {
-    0%, 100% { 
-      transform: translateY(0px) translateX(0px) rotate(0deg); 
-      opacity: 0.3; 
-    }
-    25% { 
-      transform: translateY(-20px) translateX(10px) rotate(90deg); 
-      opacity: 0.6; 
-    }
-    50% { 
-      transform: translateY(-10px) translateX(-15px) rotate(180deg); 
-      opacity: 0.4; 
-    }
-    75% { 
-      transform: translateY(-30px) translateX(5px) rotate(270deg); 
-      opacity: 0.7; 
-    }
-  }
-
-  .animate-float {
-    animation: float linear infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin 30s linear infinite;
-  }
-
-  /* Enhanced hover effects */
-  .group:hover .group-hover\:scale-110 {
-    transform: scale(1.1);
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--panel);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--fg);
-  }
-
-  /* Botón base y primario. El padding más generoso se define en .btn-primary */
-  /* Reemplazar alias 'btn' por utilidades explícitas para Tailwind v4 (evita unknown utility `btn`) */
-  .btn {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2;
-  }
-  .btn-primary {
-    @apply text-white;
-  }
-
-  /* Cards / Panels reutilizables */
-  .card {
-    /* Usar variables para respetar el tema global */
-    /* Padding objetivo cercano a 25px: 6 (px-1.5) + 16 (p-4) + 4 (ajuste) ~= 26px visual. 
-       En Tailwind, el paso más cercano estable es p-6 (24px). Optamos por p-6 equivalente en densidad media,
-       pero para compactar lo hacemos con p-5 (~20px) + pb-6 (~24px). */
-    @apply shadow-md rounded-lg px-5 py-6 border;
-    background-color: var(--panel);
-    border-color: var(--border);
-    color: var(--fg); /* Texto global unificado */
-  }
-
-  /* Sección reutilizable con estilo de card para contenedores principales */
-  .section-card {
-    /* Meta ~25px: usamos px-5 (20px horizontales) y py-6 (~24px vertical) para sensación ~25px, 
-       y gap inferior 20-24px según viewport */
-    @apply shadow-md rounded-lg px-5 py-6 border mb-5 md:mb-4;
-    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
-    border-color: var(--border);
-    color: var(--fg);
-  }
-
-  /* Inputs base con buen contraste y estados */
-  /* Nota: En Tailwind v4 no existen utilidades personalizadas fuera del build; evitamos clases no registradas.
-     Reemplazamos la alias '.input' por utilidades explícitas para no provocar 'unknown utility class `input`'. */
-  /* Inputs base: alto contraste (fondo claro, texto oscuro) */
-  /* Inputs FIJOS en todo el app (según indicación):
-     - Fondo: gris medio claro (#F3F4F6)
-     - Texto: gris oscuro (#111827)
-     - Placeholder: gris medio (#6B7280)
-     - Borde: gris suave (#D1D5DB)
-     - Ring por módulo (clases input-module-*) permanece igual */
-  .input {
-    @apply block w-full rounded-md ring-1 ring-inset shadow-sm
-           focus:outline-none focus:ring-2 focus:ring-inset
-           sm:text-xs px-2; /* densidad uniforme */;
-    height: 32px;          /* altura uniforme */
-    line-height: 1;        /* alinear verticalmente */
-
-    background-color: var(--input-bg); /* Use theme variable */
-    color: var(--input-fg);            /* Use theme variable */
-    border: 1px solid var(--input-border); /* Use theme variable */
-    ring-color: var(--input-border);       /* Use theme variable */
-  }
-  .input::placeholder {
-    color: var(--input-ph); /* Use theme variable */
-    opacity: 1;
-  }
-
-  /* Etiquetas/labels y textos auxiliares en formularios (dark por defecto) */
-  .form-label {
-    /* Texto global unificado */
-    @apply block text-sm font-medium;
-    color: var(--fg);
-  }
-  .form-help {
-    @apply text-xs;
-    color: var(--text-muted);
-  }
-  .form-section-title {
-    /* Compactar ligeramente el espacio de títulos dentro de cards/secciones */
-    @apply text-lg font-bold mb-2 pb-2;
-    border-bottom-width: 2px;
-    border-bottom-style: solid;
-    border-color: var(--form-section-border-color, transparent); /* Use a CSS variable with a fallback */
-    color: var(--heading);
-  }
-  /* Subtítulos H2 por sección también claros por defecto */
-  /* Removed h2 { color: inherit; } to ensure consistent heading color */
-  /* Variante de error para inputs */
-  .input-error {
-    @apply border-red-500 ring-2 ring-red-500;
-  }
-  
-  /* Estilo para menús desplegables, consistente con los inputs */
-  /* Select alineado al input base para legibilidad */
-  .select {
-    @apply block w-full rounded-md ring-1 ring-inset shadow-sm appearance-none
-           focus:outline-none focus:ring-2 focus:ring-inset sm:text-xs;
-    height: 32px;          /* altura uniforme */
-    line-height: 1;        /* alinear verticalmente */
-    padding-right: 2rem;   /* Espacio para la flecha */
-    /* FIJO como input */
-    background-color: #F3F4F6;
-    color: var(--fg); /* Use global foreground color */
-    border: 1px solid #D1D5DB;
-
-    /* Flecha por defecto (light) */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.25em 1.25em;
-  }
-  .dark .select {
-    /* Flecha diferente para el modo oscuro para mantener el contraste */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  }
-
-  /* Accesos directos neutrales para superficies y texto si se desean en contenedores generales */
-  .surface {
-    color: var(--fg); /* Texto global unificado */
-  }
-  .surface-contrast {
-    background-color: color-mix(in oklab, var(--panel) 90%, #000 10%);
-  }
-  .surface-border {
-    @apply border;
-    border-color: var(--border);
-  }
-
-  /* Navbar oscuro para cohesión con fondo */
+  /* Navbar con glassmorphism mejorado */
   .navbar {
-    /* Fondo según tema + suficiente contraste con el texto */
-    @apply sticky top-0 z-40 w-full backdrop-blur border-b;
-    /* En light usamos un panel claro con leve transparencia para distinguir del contenido */
-    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
-    border-color: var(--border);
-    color: var(--fg); /* Texto global unificado */
+    @apply fixed top-0 left-0 right-0 z-50;
+    background: var(--surface-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-primary) 30%, transparent);
+    transition: all var(--transition-normal);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   }
-  /* Asegurar contraste de enlaces/acciones dentro de navbar */
-  .navbar a,
-  .navbar button {
-    color: var(--fg); /* Enlaces/acciones con texto global */
-  }
-  /* En dark elevamos ligeramente el contraste del texto y los íconos */
+
   .dark .navbar {
-    background-color: color-mix(in oklab, var(--panel-dark) 92%, transparent);
-    color: var(--fg);
+    background: var(--surface-glass);
+    border-bottom-color: color-mix(in srgb, var(--border-primary) 30%, transparent);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
-  .dark .navbar a,
-  .dark .navbar button {
-    color: var(--fg);
-  }
+
   .navbar-inner {
-    /* Reemplazo de utility personalizada por utilidades Tailwind válidas */
-    @apply max-w-[1100px] mx-auto px-3 h-14 flex items-center justify-between;
+    @apply max-w-7xl mx-auto px-4 h-16 flex items-center justify-between;
   }
+
   .navbar-title {
-    @apply font-extrabold text-lg;
-    color: var(--fg); /* Unificar a texto global */
+    @apply flex items-center gap-3 font-bold text-lg;
+    color: var(--text-primary);
   }
+
   .navbar-actions {
-    @apply flex items-center gap-2;
-    color: var(--fg);
+    @apply flex items-center gap-3;
   }
 
-  /* Botones primarios por módulo con paleta requerida:
-     - Devoluciones: rojo
-     - Pedido: azul
-     - Inventario: verde
-     - Comparación: naranja */
-  .btn-module-devoluciones {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-devoluciones-light-primary hover:bg-devoluciones-dark-primary focus:ring-devoluciones-light-primary;
-  }
-  .btn-outline-devoluciones {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-devoluciones-light-primary border border-devoluciones-light-primary/40 hover:border-devoluciones-dark-primary focus:outline-none focus:ring-2 focus:ring-devoluciones-light-primary;
-  }
-  .btn-module-pedido {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-pedido-light-primary hover:bg-pedido-dark-primary focus:ring-pedido-light-primary;
-  }
-  .btn-outline-pedido {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-pedido-light-primary border border-pedido-light-primary/40 hover:border-pedido-dark-primary focus:outline-none focus:ring-2 focus:ring-pedido-light-primary;
-  }
-  .btn-module-inventario {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-inventario-light-primary hover:bg-inventario-dark-primary focus:ring-inventario-light-primary;
-  }
-  .btn-outline-inventario {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-inventario-light-primary border border-inventario-light-primary/40 hover:border-inventario-dark-primary focus:outline-none focus:ring-2 focus:ring-inventario-light-primary;
-  }
-  .btn-module-comparador {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-comparador-light-primary hover:bg-comparador-dark-primary focus:ring-comparador-light-primary;
-  }
-  .btn-outline-comparador {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-comparador-light-primary border border-comparador-light-primary/40 hover:border-comparador-dark-primary focus:outline-none focus:ring-2 focus:ring-comparador-light-primary;
+  /* Page Headers */
+  .page-header {
+    @apply mb-8 text-center;
   }
 
-
-  /* Utilizar esta clase adicional SOLO en celdas de precios de la tabla del comparador para 45x20 exactos */
-  .price-cell-45 {
-    width: 45px;
-    min-width: 45px;
-    max-width: 45px;
-  }
-  /* Paleta de página y títulos por módulo (fondos suaves y títulos con alto contraste) */
-  /* Modo oscuro por defecto en todas las páginas con contraste adecuado.
-     Fondo oscuro estable y acentos de cada módulo en títulos/botones/inputs. */
-  .page-devoluciones { @apply min-h-screen py-3;   /* Reel (carrusel) en Home, orden rombo responsive */
-  .reel {
-    @apply relative overflow-hidden;
-  }
-  .reel-track {
-    @apply flex gap-4 snap-x snap-mandatory overflow-x-auto px-4 py-6;
-    scroll-behavior: smooth;
-  }
-  /* Ocultar barra de scroll en móviles (carrusel) sin romper accesibilidad teclado */
-  .no-scrollbar {
-    -ms-overflow-style: none; /* IE y Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-  .no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
-  }
-  .reel-card {
-    @apply min-w-[280px] snap-center rounded-2xl px-6 py-6 shadow-md border border-gray-700 text-gray-100 transition-all hover:scale-[1.02] hover:shadow-lg;
-    background-color: color-mix(in oklab, var(--panel) 90%, transparent);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+  .page-title {
+    @apply text-4xl font-extrabold mb-4;
+    background: linear-gradient(135deg, var(--module-primary), var(--module-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  /* Orden rombo (grid) para pantallas grandes */
-  .diamond-grid {
-    @apply grid gap-4 md:gap-6 px-3 md:px-4 py-6 md:py-8;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-  .diamond-a { grid-column: 4 / span 6; }
-  .diamond-b { grid-column: 2 / span 6; }
-  .diamond-c { grid-column: 7 / span 6; }
-  .diamond-d { grid-column: 4 / span 6; }
-  @media (min-width: 1024px) {
-    .diamond-grid { grid-template-rows: repeat(3, minmax(0, 1fr)); }
-    .diamond-a { grid-row: 1; }
-    .diamond-b { grid-row: 2; }
-    .diamond-c { grid-row: 2; }
-    .diamond-d { grid-row: 3; }
-  }
-}
-  .reel-card--devoluciones { @apply outline-none ring-0; }
-  .reel-card--pedido       { @apply outline-none ring-0; }
-  .reel-card--inventario   { @apply outline-none ring-0; }
-  .reel-card--comparador   { @apply outline-none ring-0; }
-  .reel-card__title {
-    @apply text-lg md:text-xl font-extrabold mb-1.5 md:mb-2 pb-2;
-    border-bottom-width: 4px;
-    border-bottom-style: solid;
-    border-color: transparent;
-  }
-  .reel-card__desc  { @apply text-sm; color: var(--fg); opacity: 0.8; } /* Descripción con leve atenuación pero texto global */
-  .page-pedido      { @apply min-h-screen py-3; }
-  .page-inventario  { @apply min-h-screen py-3; }
-  .page-comparador  { @apply min-h-screen py-3; }
-
-  /* Títulos con color de borde por módulo */
-  .title-devoluciones { border-color: theme('colors.devoluciones.light-primary'); }
-  .title-pedido       { border-color: theme('colors.pedido.light-primary'); }
-  .title-inventario   { border-color: theme('colors.inventario.light-primary'); }
-  .title-comparador   { border-color: theme('colors.comparador.light-primary'); }
-  .title-planificador { border-color: theme('colors.planificador.light-primary'); }
-
-  .btn-module-planificador {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200
-           focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2
-           text-white bg-planificador-light-primary hover:bg-planificador-dark-primary focus:ring-planificador-light-primary;
+  .page-description {
+    @apply text-lg max-w-3xl mx-auto;
+    color: var(--text-secondary);
   }
 
-  .btn-outline-planificador {
-    @apply inline-flex items-center justify-center font-semibold rounded-lg px-4 py-2
-           text-planificador-light-primary border border-planificador-light-primary/40 hover:border-planificador-dark-primary focus:outline-none focus:ring-2 focus:ring-planificador-light-primary;
+  /* Cards mejoradas */
+  .card {
+    @apply surface-card;
   }
 
-  .page-planificador {
-    @apply min-h-screen py-3;
+  .card-hover {
+    @apply card interactive;
   }
 
-  .reel-card--planificador {
-    @apply outline-none ring-0;
+  /* Module Cards en Home */
+  .module-card {
+    @apply relative overflow-hidden rounded-2xl p-6 transition-all duration-300;
+    background: var(--surface-primary);
+    border: 1px solid var(--border-primary);
+    box-shadow: var(--shadow-sm);
   }
 
-  /* FullCalendar Theming */
-  .fc {
-    /* Calendar container - keep neutral, but ensure good contrast */
-    background-color: var(--panel);
-    color: var(--fg);
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  .module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
   }
 
-  .fc .fc-toolbar-title {
-    /* Calendar title - align with module heading */
-    color: var(--heading);
-  }
-
-  .fc .fc-button {
-    /* Calendar buttons - use module primary color for primary actions, neutral for others */
-    @apply inline-flex items-center justify-center font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2;
-    background-color: var(--input-bg); /* Neutral background for most buttons */
-    color: var(--input-fg); /* Neutral text color */
-    border-color: var(--input-border);
-  }
-
-  .fc .fc-button:hover {
-    background-color: color-mix(in oklab, var(--input-bg) 90%, var(--fg) 10%);
-  }
-
-  .fc .fc-button-primary {
-    /* Primary buttons like 'today' - use planificador primary color */
-    background-color: theme('colors.planificador.light-primary');
-    color: #ffffff; /* White text for contrast */
-  }
-
-  .fc .fc-button-primary:hover {
-    background-color: theme('colors.planificador.dark-primary');
-  }
-
-  .fc-daygrid-day {
-    /* Default day cell */
-    background-color: var(--panel);
-    color: var(--fg);
-  }
-
-  .fc-day-today {
-    /* Today's date - use a lighter shade of planificador primary */
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.planificador.light-primary') 10%); /* Mix panel with sky-600 */
-    border: 1px solid theme('colors.planificador.light-primary'); /* Add a subtle border */
-  }
-
-  .fc-day-selected {
-    /* Selected date - use planificador primary for the circle, white text */
-    /* Change background to a lighter sky blue, remove !important */
-    background-color: color-mix(in oklab, var(--panel) 80%, theme('colors.planificador.light-primary') 20%); /* Lighter sky blue */
-    border: 2px solid theme('colors.planificador.light-primary'); /* Keep the border */
-    color: #ffffff !important; /* White text for selected date */
-  }
-
-  .fc-day-selected .fc-daygrid-day-number::before {
+  .module-card::before {
     content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 36px;
-    height: 36px;
-    background-color: theme('colors.planificador.light-primary');
-    border-radius: 50%;
-    z-index: -1;
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, var(--module-primary), var(--module-light));
+    opacity: 0.05;
   }
 
-  .fc-holiday {
-    /* Holiday date - use a subtle background, keep red text for recognition */
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 5%); /* Very light red mix */
-    color: theme('colors.devoluciones.light-primary') !important; /* Keep red text */
-    font-weight: bold;
+  .module-card:hover::before {
+    opacity: 0.1;
   }
 
-  .fc-day-past {
-    /* Past dates */
-    opacity: 0.6;
+  .module-card-title {
+    @apply text-xl font-bold mb-3;
+    color: var(--module-primary);
   }
 
-  .fc-day-future {
-    /* Future dates */
-    opacity: 1;
+  .module-card-description {
+    @apply text-sm mb-6 leading-relaxed;
+    color: var(--text-secondary);
   }
 
-  .fc-day-sun {
-    /* Sundays - use a subtle red for weekend, or a neutral color */
-    color: theme('colors.devoluciones.light-primary'); /* Keep red for Sundays for now, or change to neutral */
-  }
-
-  .fc-col-header-cell {
-    /* Day names (Mon, Tue, etc.) - use a darker panel color for contrast */
-    background-color: var(--panel-dark);
-    color: var(--fg);
-  }
-
-  .fc-col-header-cell-cushion {
-    /* Padding for day names */
-    padding: 0.5rem;
-  }
-
-  .fc-daygrid-day-number {
-    /* Day numbers */
-    color: var(--fg);
-  }
-
-  .fc-event {
-    /* Events - use planificador primary color */
-    background-color: theme('colors.planificador.light-primary');
-    color: #ffffff; /* White text for contrast */
-    border-radius: 0.25rem;
-    padding: 0.25rem;
-    font-size: 0.75rem;
-  }
-
-  .fc-event-title {
-    /* Event title */
-    color: #ffffff; /* White text for contrast */
-  }
-
-  /* Data Table Styling */
+  /* Data Tables */
   .data-table {
-    @apply w-full text-sm text-left rtl:text-right;
-    color: var(--fg);
-    border-collapse: collapse;
-  }
-
-  .data-table thead {
-    @apply text-xs uppercase;
-    background-color: var(--panel-dark);
-    color: var(--fg);
+    @apply w-full border-collapse;
+    background-color: var(--surface-primary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
   }
 
   .data-table th {
-    @apply px-6 py-3;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .data-table tbody tr {
-    background-color: var(--panel);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .data-table tbody tr:last-child {
-    border-bottom: none;
+    @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
   }
 
   .data-table td {
-    @apply px-6 py-4;
+    @apply px-6 py-4 text-sm;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-primary);
   }
 
   .data-table tbody tr:hover {
-    background-color: color-mix(in oklab, var(--panel) 90%, var(--link) 5%);
+    background-color: var(--bg-secondary);
   }
 
-  /* Comparison Totals Styling */
-  .comparison-item {
-    @apply flex justify-between items-center py-2 border-b;
-    border-color: var(--border);
-    color: var(--fg);
-  }
-
-  .comparison-item:last-child {
+  .data-table tbody tr:last-child td {
     border-bottom: none;
   }
 
-  .comparison-status {
-    @apply mt-4 p-3 rounded-md text-center font-bold;
+  /* Forms mejorados */
+  .form-section {
+    @apply space-y-8;
   }
 
-  .status-ok {
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.inventario.light-primary') 10%); /* Green-ish */
-    color: var(--text-success);
+  .form-group {
+    @apply space-y-3;
   }
 
-  .dark .status-ok {
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.inventario.light-primary') 10%); /* Lighter green */
-    color: var(--text-success);
+  .form-label {
+    @apply block text-sm font-semibold;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-help {
+    @apply text-sm flex items-center gap-2;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+  }
+
+  .form-error {
+    @apply text-sm flex items-center gap-2 font-medium;
+    color: var(--color-devoluciones-primary);
+  }
+
+  /* Input variants */
+  .input-glass {
+    background-color: var(--surface-glass);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .input-filled {
+    background-color: var(--bg-secondary);
+    border: 1px solid transparent;
+  }
+
+  .input-filled:focus {
+    background-color: var(--surface-primary);
+    border-color: var(--module-primary, var(--color-gray-400));
+  }
+
+  /* Input por módulo con transparencias - Aplicado a todos los módulos */
+  .input-module,
+  .module-devoluciones .input,
+  .module-pedido .input,
+  .module-inventario .input,
+  .module-comparador .input,
+  [data-module="devoluciones"] .input,
+  [data-module="pedido"] .input,
+  [data-module="inventario"] .input,
+  [data-module="comparador"] .input {
+    border-color: color-mix(in srgb, var(--module-primary) 30%, var(--border-primary)) !important;
+    background-color: color-mix(in srgb, var(--module-surface) 20%, var(--surface-glass)) !important;
+  }
+
+  .input-module:focus,
+  .module-devoluciones .input:focus,
+  .module-pedido .input:focus,
+  .module-inventario .input:focus,
+  .module-comparador .input:focus,
+  [data-module="devoluciones"] .input:focus,
+  [data-module="pedido"] .input:focus,
+  [data-module="inventario"] .input:focus,
+  [data-module="comparador"] .input:focus {
+    border-color: var(--module-primary) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary) 30%, transparent),
+                inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    background-color: color-mix(in srgb, var(--module-surface) 30%, var(--surface-elevated)) !important;
+  }
+
+  .input-module:hover,
+  .module-devoluciones .input:hover,
+  .module-pedido .input:hover,
+  .module-inventario .input:hover,
+  .module-comparador .input:hover,
+  [data-module="devoluciones"] .input:hover,
+  [data-module="pedido"] .input:hover,
+  [data-module="inventario"] .input:hover,
+  [data-module="comparador"] .input:hover {
+    border-color: color-mix(in srgb, var(--module-primary) 50%, var(--border-secondary)) !important;
+    background-color: color-mix(in srgb, var(--module-surface) 25%, var(--surface-primary)) !important;
+  }
+
+  /* Search Results */
+  .search-results {
+    @apply surface rounded-lg max-h-60 overflow-y-auto;
+    border: 1px solid var(--border-primary);
+  }
+
+  .search-item {
+    @apply p-4 cursor-pointer transition-colors duration-200;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .search-item:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  .search-item:last-child {
+    border-bottom: none;
+  }
+
+  /* Status indicators */
+  .status-success {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    background-color: var(--color-inventario-surface);
+    color: var(--color-inventario-dark);
   }
 
   .status-error {
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 10%); /* Red-ish */
-    color: var(--text-error);
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    background-color: var(--color-devoluciones-surface);
+    color: var(--color-devoluciones-dark);
   }
 
-  .dark .status-error {
-    background-color: color-mix(in oklab, var(--panel) 90%, theme('colors.devoluciones.light-primary') 10%); /* Lighter red */
-    color: var(--text-error);
+  .status-warning {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    background-color: var(--color-comparador-surface);
+    color: var(--color-comparador-dark);
   }
+
+  .status-info {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    background-color: var(--color-pedido-surface);
+    color: var(--color-pedido-dark);
+  }
+
+  /* Loading states */
+  .loading-spinner {
+    @apply inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
+
+  /* Floating action buttons */
+  .fab {
+    @apply fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg transition-all duration-300;
+    background: linear-gradient(135deg, var(--module-primary), var(--module-light));
+    color: var(--color-white);
+  }
+
+  .fab:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* Responsive grid */
+  .grid-responsive {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  /* Animation utilities */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+/* ========================================
+   🎭 ANIMACIONES
+   ======================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* ========================================
+   📱 RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+  .navbar-inner {
+    @apply px-4 h-14;
+  }
+
+  .navbar-title {
+    @apply text-base;
+  }
+
+  .page-title {
+    @apply text-3xl;
+  }
+
+  .page-description {
+    @apply text-base;
+  }
+
+  .module-card {
+    @apply p-4;
+  }
+
+  .data-table th,
+  .data-table td {
+    @apply px-3 py-2;
+  }
+
+  .fab {
+    @apply bottom-4 right-4 w-12 h-12;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    @apply text-2xl;
+  }
+
+  .module-card {
+    @apply p-3;
+  }
+
+  .data-table {
+    @apply text-xs;
+  }
+
+  .data-table th,
+  .data-table td {
+    @apply px-2 py-1;
+  }
+}
+
+/* ========================================
+   🎨 UTILIDADES ESPECÍFICAS
+   ======================================== */
+
+/* Scrollbar personalizado */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Focus visible para accesibilidad */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--module-primary, var(--color-gray-400));
+  outline-offset: 2px;
+}
+
+/* Texto seleccionable */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Truncate text */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Select styling */
+.select {
+  @apply block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-sm;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
+  appearance: none;
+  transition: all var(--transition-normal);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--module-primary, #3B82F6);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, #3B82F6) 30%, transparent);
+}
+
+.dark .select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Data table container */
+.data-table-container {
+  @apply surface-card;
+}
+
+.data-table {
+  @apply w-full border-collapse;
+}
+
+.data-table th {
+  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.data-table td {
+  @apply px-4 py-3 text-sm;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
 }

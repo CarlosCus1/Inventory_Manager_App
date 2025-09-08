@@ -10,7 +10,6 @@ const selectVariants = cva(
         pedido: 'border-pedido-light-secondary focus:ring-pedido-light-primary focus:border-pedido-light-primary',
         inventario: 'border-inventario-light-secondary focus:ring-inventario-light-primary focus:border-inventario-light-primary',
         comparador: 'border-comparador-light-secondary focus:ring-comparador-light-primary focus:border-comparador-light-primary',
-        planificador: 'border-planificador-light-secondary focus:ring-planificador-light-primary focus:focus:border-planificador-light-primary',
         // Note: 'precios' variant in StyledSelect was using 'purple-300'.
         // Since 'precios' maps to 'comparador' in DatosGeneralesForm,
         // I'll align 'precios' here with 'comparador' colors for consistency.

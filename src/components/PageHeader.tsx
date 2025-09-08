@@ -5,32 +5,41 @@
 // --------------------------------------------------------------------------- #
 
 import React from 'react';
+import { ModuleType } from '../enums';
 
 interface PageHeaderProps {
   title: string;
   description: string;
-  themeColor: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador';
+  themeColor: 'devoluciones' | 'pedido' | 'inventario' | 'comparador';
+  actions?: React.ReactNode;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ title, description, themeColor }) => {
-  // Mapear a utilidades consistentes con el sistema de tema (Tailwind v4)
-  const titleColorByTheme: Record<PageHeaderProps['themeColor'], string> = {
-    devoluciones: 'title-devoluciones',
-    pedido: 'title-pedido',
-    inventario: 'title-inventario',
-    comparador: 'title-comparador',
-    planificador: 'title-planificador',
-  };
+const PageHeader: React.FC<PageHeaderProps> = ({ 
+  title, 
+  description, 
+  themeColor, 
+  actions 
+}) => {
+  const moduleClass = `module-${themeColor}`;
 
   return (
-    <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 section-card">
-      <div className="flex-1">
-        <h1 className={`text-4xl font-extrabold ${titleColorByTheme[themeColor]}`}>
-          {title}
-        </h1>
-        <p className="mt-2">
-          {description}
-        </p>
+    <header className={`page-header ${moduleClass} slide-up`}>
+      <div className="surface-card">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div className="flex-1">
+            <h1 className="page-title">
+              {title}
+            </h1>
+            <p className="page-description">
+              {description}
+            </p>
+          </div>
+          {actions && (
+            <div className="flex items-center gap-3">
+              {actions}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

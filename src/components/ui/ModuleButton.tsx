@@ -8,10 +8,9 @@ interface CustomPalette extends Palette {
   pedido: PaletteColor;
   inventario: PaletteColor;
   comparador: PaletteColor;
-  planificador: PaletteColor;
 }
 
-type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'planificador' | 'default';
+type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface ModuleButtonProps extends Omit<React.ComponentProps<typeof Button>, 'color'> {
   variant?: 'contained' | 'outlined' | 'text';

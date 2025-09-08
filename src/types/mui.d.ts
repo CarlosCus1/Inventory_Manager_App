@@ -6,7 +6,6 @@ declare module '@mui/material/styles' {
     pedido: PaletteColor;
     inventario: PaletteColor;
     comparador: PaletteColor;
-    planificador: PaletteColor;
   }
 
   interface PaletteOptions {
@@ -14,6 +13,5 @@ declare module '@mui/material/styles' {
     pedido?: PaletteColorOptions;
     inventario?: PaletteColorOptions;
     comparador?: PaletteColorOptions;
-    planificador?: PaletteColorOptions;
   }
 }

@@ -6,7 +6,7 @@ export const mockStore = {
     pedido: 90,
     inventario: 60,
     comparador: 45,
-    planificador: 30
+
   } as const,
   incompleteTasks: 5,
   lastActivity: {
@@ -14,7 +14,7 @@ export const mockStore = {
     pedido: new Date('2024-01-15T14:20:00'),
     inventario: new Date('2024-01-15T09:15:00'),
     comparador: new Date('2024-01-14T16:45:00'),
-    planificador: new Date('2024-01-14T11:30:00')
+
   } as const
 };
 
@@ -26,6 +26,6 @@ export const mockRootProps = {
     { name: 'Pedido', usage: 90, color: '#2563EB' },
     { name: 'Inventario', usage: 60, color: '#16A34A' },
     { name: 'Comparador', usage: 45, color: '#EA580C' },
-    { name: 'Planificador', usage: 30, color: '#0EA5E9' }
+
   ]
 };

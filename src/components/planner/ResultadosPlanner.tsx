@@ -4,14 +4,14 @@ import { DetailTable } from './DetailTable';
 import { ComparisonTotals } from './ComparisonTotals';
 import { SummaryChart } from './SummaryChart';
 
-interface Props {
+export interface Props {
   resumenMensual: Record<string, number>;
   montoOriginal: number;
   montosAsignados: Record<string, number>;
   montosAsignadosStr: Record<string, string>;
   linea: string;
   onMontoAjustadoChange: (fecha: string, nuevoMonto: string) => void;
-  onExportAjustado: () => void;
+  onExportAjustado: () => Promise<void>;
 }
 
 export const ResultadosPlanner: React.FC<Props> = ({
@@ -34,7 +34,7 @@ export const ResultadosPlanner: React.FC<Props> = ({
 
   return (
     <section id="resultados" className="section-card">
-      <h2 className="form-section-title title-planificador">3. Resultados</h2>
+  <h2 className="form-section-title">3. Resultados</h2>
       {!hasResults ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
           <p>No hay resultados para mostrar. Por favor, complete los datos generales y realice un cálculo.</p>

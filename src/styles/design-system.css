@@ -1,0 +1,510 @@
+/* 
+ * Design System - Inventory Manager App
+ * Sistema de diseño unificado con tokens y variables consistentes
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ========================================
+   🎨 DESIGN TOKENS - SISTEMA BASE
+   ======================================== */
+
+:root {
+  /* 🎯 Colores por Módulo */
+  --color-devoluciones-primary: #DC2626;
+  --color-devoluciones-light: #EF4444;
+  --color-devoluciones-dark: #B91C1C;
+  --color-devoluciones-surface: #FEF2F2;
+  --color-devoluciones-border: #FECACA;
+
+  --color-pedido-primary: #2563EB;
+  --color-pedido-light: #3B82F6;
+  --color-pedido-dark: #1D4ED8;
+  --color-pedido-surface: #EFF6FF;
+  --color-pedido-border: #BFDBFE;
+
+  --color-inventario-primary: #16A34A;
+  --color-inventario-light: #22C55E;
+  --color-inventario-dark: #15803D;
+  --color-inventario-surface: #F0FDF4;
+  --color-inventario-border: #BBF7D0;
+
+  --color-comparador-primary: #EA580C;
+  --color-comparador-light: #F97316;
+  --color-comparador-dark: #C2410C;
+  --color-comparador-surface: #FFF7ED;
+  --color-comparador-border: #FED7AA;
+
+  /* 🌈 Colores Base del Sistema */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  
+  /* Grises */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+
+  /* 📏 Espaciado Mejorado */
+  --space-xs: 0.25rem;    /* 4px */
+  --space-sm: 0.5rem;     /* 8px */
+  --space-md: 0.75rem;    /* 12px */
+  --space-lg: 1rem;       /* 16px */
+  --space-xl: 1.5rem;     /* 24px */
+  --space-2xl: 2rem;      /* 32px */
+  --space-3xl: 3rem;      /* 48px */
+  --space-4xl: 4rem;      /* 64px */
+  --space-5xl: 5rem;      /* 80px */
+  --space-6xl: 6rem;      /* 96px */
+
+  /* 🎨 Transparencias */
+  --opacity-light: 0.1;
+  --opacity-medium: 0.3;
+  --opacity-heavy: 0.7;
+  --opacity-overlay: 0.9;
+
+  /* 📦 Padding Mejorado */
+  --padding-input: 1rem 1.25rem;     /* 16px 20px */
+  --padding-input-sm: 0.75rem 1rem;  /* 12px 16px */
+  --padding-input-lg: 1.25rem 1.5rem; /* 20px 24px */
+  --padding-card: 1.5rem;             /* 24px */
+  --padding-card-lg: 2rem;            /* 32px */
+  --padding-section: 2rem 1.5rem;     /* 32px 24px */
+
+  /* 📝 Tipografía */
+  --font-family-base: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
+  /* 🎭 Sombras y Elevación */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* 🔘 Border Radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;
+
+  /* ⏱️ Transiciones */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow: 300ms ease-in-out;
+
+  /* 🌅 Tema Claro con Transparencias */
+  --bg-primary: var(--color-white);
+  --bg-secondary: rgba(249, 250, 251, 0.7); /* gray-50 con 70% opacidad */
+  --bg-tertiary: rgba(243, 244, 246, 0.8);  /* gray-100 con 80% opacidad */
+  
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-700);
+  --text-tertiary: var(--color-gray-500);
+  
+  --border-primary: rgba(229, 231, 235, 0.6); /* gray-200 con 60% opacidad */
+  --border-secondary: rgba(209, 213, 219, 0.7); /* gray-300 con 70% opacidad */
+  
+  --surface-primary: rgba(255, 255, 255, 0.7); /* blanco con 70% opacidad */
+  --surface-secondary: rgba(249, 250, 251, 0.6); /* gray-50 con 60% opacidad */
+  --surface-elevated: rgba(255, 255, 255, 0.9); /* blanco con 90% opacidad */
+  --surface-glass: rgba(255, 255, 255, 0.3); /* blanco con 30% opacidad */
+}
+
+/* 🌙 Tema Oscuro con Transparencias */
+:root.dark {
+  --bg-primary: var(--color-gray-900);
+  --bg-secondary: rgba(31, 41, 55, 0.7); /* gray-800 con 70% opacidad */
+  --bg-tertiary: rgba(55, 65, 81, 0.8);  /* gray-700 con 80% opacidad */
+  
+  --text-primary: var(--color-gray-100);
+  --text-secondary: var(--color-gray-300);
+  --text-tertiary: var(--color-gray-400);
+  
+  --border-primary: rgba(55, 65, 81, 0.6); /* gray-700 con 60% opacidad */
+  --border-secondary: rgba(75, 85, 99, 0.7); /* gray-600 con 70% opacidad */
+  
+  --surface-primary: rgba(31, 41, 55, 0.7); /* gray-800 con 70% opacidad */
+  --surface-secondary: rgba(55, 65, 81, 0.6); /* gray-700 con 60% opacidad */
+  --surface-elevated: rgba(45, 55, 72, 0.9); /* gray-750 con 90% opacidad */
+  --surface-glass: rgba(0, 0, 0, 0.3); /* negro con 30% opacidad */
+
+  /* Ajustes de superficie para modo oscuro */
+  --color-gray-750: #2D3748;
+  
+  /* Sombras ajustadas para modo oscuro */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ========================================
+   🏗️ BASE STYLES
+   ======================================== */
+
+html {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-normal);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* ========================================
+   📝 TIPOGRAFÍA
+   ======================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--font-size-4xl); font-weight: var(--font-weight-extrabold); }
+h2 { font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); }
+h3 { font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); }
+h4 { font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+h5 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
+h6 { font-size: var(--font-size-base); font-weight: var(--font-weight-medium); }
+
+p {
+  margin: 0 0 var(--space-lg) 0;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   🎨 UTILIDADES DE DISEÑO
+   ======================================== */
+
+/* Contenedores */
+.container-app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+/* Superficies Mejoradas con Transparencias */
+.surface {
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition-normal);
+}
+
+.surface-elevated {
+  background-color: var(--surface-elevated);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.surface-card {
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--padding-card-lg);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all var(--transition-normal);
+}
+
+.surface-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  background-color: var(--surface-elevated);
+}
+
+.surface-glass {
+  background-color: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Estados de interacción */
+.interactive {
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   🎯 COMPONENTES POR MÓDULO
+   ======================================== */
+
+/* Devoluciones - Rojo */
+.module-devoluciones,
+[data-module="devoluciones"] {
+  --module-primary: var(--color-devoluciones-primary);
+  --module-light: var(--color-devoluciones-light);
+  --module-dark: var(--color-devoluciones-dark);
+  --module-surface: var(--color-devoluciones-surface);
+  --module-border: var(--color-devoluciones-border);
+}
+
+/* Pedido - Azul */
+.module-pedido,
+[data-module="pedido"] {
+  --module-primary: var(--color-pedido-primary);
+  --module-light: var(--color-pedido-light);
+  --module-dark: var(--color-pedido-dark);
+  --module-surface: var(--color-pedido-surface);
+  --module-border: var(--color-pedido-border);
+}
+
+/* Inventario - Verde */
+.module-inventario,
+[data-module="inventario"] {
+  --module-primary: var(--color-inventario-primary);
+  --module-light: var(--color-inventario-light);
+  --module-dark: var(--color-inventario-dark);
+  --module-surface: var(--color-inventario-surface);
+  --module-border: var(--color-inventario-border);
+}
+
+/* Comparador - Naranja */
+.module-comparador,
+[data-module="comparador"] {
+  --module-primary: var(--color-comparador-primary);
+  --module-light: var(--color-comparador-light);
+  --module-dark: var(--color-comparador-dark);
+  --module-surface: var(--color-comparador-surface);
+  --module-border: var(--color-comparador-border);
+}
+
+/* Fallback para cuando no hay módulo específico */
+:root:not(.module-devoluciones):not(.module-pedido):not(.module-inventario):not(.module-comparador) {
+  --module-primary: var(--color-gray-600);
+  --module-light: var(--color-gray-500);
+  --module-dark: var(--color-gray-700);
+  --module-surface: var(--color-gray-100);
+  --module-border: var(--color-gray-300);
+}
+
+/* ========================================
+   🔘 COMPONENTES BASE
+   ======================================== */
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-normal);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Botón primario por módulo */
+.btn-module {
+  background-color: var(--module-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-module:hover:not(:disabled) {
+  background-color: var(--module-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-module:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Botón outline por módulo */
+.btn-outline {
+  background-color: transparent;
+  color: var(--module-primary);
+  border: 1px solid var(--module-primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--module-surface);
+  border-color: var(--module-dark);
+  color: var(--module-dark);
+}
+
+/* Inputs Mejorados con Transparencias y Padding */
+.input {
+  width: 100%;
+  padding: var(--padding-input);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--surface-glass);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition-normal);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--module-primary, var(--color-gray-400));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, #9CA3AF) 30%, transparent),
+              inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--surface-elevated);
+  transform: translateY(-1px);
+}
+
+.input:hover {
+  border-color: var(--border-secondary);
+  background-color: var(--surface-primary);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+/* Input por módulo con transparencias */
+.input-module {
+  border-color: color-mix(in srgb, var(--module-primary) 30%, var(--border-primary));
+  background-color: color-mix(in srgb, var(--module-surface) 20%, var(--surface-glass));
+}
+
+.input-module:focus {
+  border-color: var(--module-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary) 30%, transparent),
+              inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: color-mix(in srgb, var(--module-surface) 30%, var(--surface-elevated));
+}
+
+.input-module:hover {
+  border-color: color-mix(in srgb, var(--module-primary) 50%, var(--border-secondary));
+  background-color: color-mix(in srgb, var(--module-surface) 25%, var(--surface-primary));
+}
+
+/* Variantes de tamaño para inputs */
+.input-sm {
+  padding: var(--padding-input-sm);
+  font-size: var(--font-size-xs);
+}
+
+.input-lg {
+  padding: var(--padding-input-lg);
+  font-size: var(--font-size-base);
+}
+
+/* ========================================
+   📱 RESPONSIVE UTILITIES
+   ======================================== */
+
+@media (max-width: 640px) {
+  .container-app {
+    padding: 0 var(--space-md);
+  }
+  
+  .surface-card {
+    padding: var(--space-xl);
+  }
+  
+  .btn {
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --font-size-4xl: 1.875rem;
+    --font-size-3xl: 1.5rem;
+    --font-size-2xl: 1.25rem;
+  }
+  
+  .surface-card {
+    padding: var(--space-lg);
+  }
+}

@@ -8,7 +8,6 @@ const DevolucionesPage = lazy(() => import('./pages/DevolucionesPage').then(modu
 const PedidoPage = lazy(() => import('./pages/PedidoPage').then(module => ({ default: module.PedidoPage })));
 const InventarioPage = lazy(() => import('./pages/InventarioPage').then(module => ({ default: module.InventarioPage })));
 const ComparadorPage = lazy(() => import('./pages/ComparadorPage').then(module => ({ default: module.ComparadorPage })));
-const PlanificadorPage = lazy(() => import('./pages/PlanificadorPage').then(module => ({ default: module.PlanificadorPage })));
 
 const App: React.FC = () => {
   const theme = useAppStore((state) => state.theme);
@@ -27,7 +26,6 @@ const App: React.FC = () => {
             <Route path="/pedido" element={<PedidoPage />} />
             <Route path="/inventario" element={<InventarioPage />} />
             <Route path="/comparador" element={<ComparadorPage />} />
-            <Route path="/planificador" element={<PlanificadorPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </Suspense>

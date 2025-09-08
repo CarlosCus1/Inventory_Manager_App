@@ -4,7 +4,7 @@ export enum ModuleType {
   PEDIDO = 'pedido', 
   INVENTARIO = 'inventario',
   COMPARADOR = 'comparador',
-  PLANIFICADOR = 'planificador'
+
 }
 
 // Module colors for UI theming
@@ -13,7 +13,7 @@ export enum ModuleColor {
   PEDIDO = '#2563EB',
   INVENTARIO = '#16A34A', 
   COMPARADOR = '#EA580C',
-  PLANIFICADOR = '#0EA5E9'
+
 }
 
 // Animation duration types

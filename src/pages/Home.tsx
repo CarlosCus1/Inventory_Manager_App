@@ -5,115 +5,150 @@
 // --------------------------------------------------------------------------- #
 
 import React from "react";
-import { Link } from "react-router-dom";
-import { ModuleColor } from '../enums';
-// Removed unused import: import InteractiveBackground from '../components/background/InteractiveBackground';
+import { useNavigate } from "react-router-dom";
+import { ModuleType } from '../enums';
+import { useAuth } from '../contexts/AuthContext';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
-const Card: React.FC<{
+const ModuleCard: React.FC<{
   to: string;
   title: string;
   desc: string;
-  variant:
-    | "devoluciones"
-    | "pedido"
-    | "inventario"
-    | "comparador"
-    | "planificador";
-}> = ({ to, title, desc, variant }) => {
-  // Simplificación de clases dinámicas usando template literals.
-  // Esto es más limpio y mantenible que las cadenas de ternarios.
-  const titleClass = `title-${variant}`;
-  const btnClass = `btn btn-module-${variant}`;
-  const cardMod = `reel-card reel-card--${variant}`;
+  variant: "devoluciones" | "pedido" | "inventario" | "comparador";
+  icon: React.ReactNode;
+}> = ({ to, title, desc, variant, icon }) => {
+  const navigate = useNavigate();
 
-  const buttonStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '600',
-    borderRadius: '0.5rem',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    transition: 'all 0.2s ease-in-out',
-    padding: '0.5rem 1rem',
-    color: '#ffffff',
-    textDecoration: 'none', // to remove the underline
+  const handleOpen = () => {
+    if (to) navigate(to);
   };
 
-  const variantColors = {
-    devoluciones: ModuleColor.DEVOLUCIONES,
-    pedido: ModuleColor.PEDIDO,
-    inventario: ModuleColor.INVENTARIO,
-    comparador: ModuleColor.COMPARADOR,
-    planificador: ModuleColor.PLANIFICADOR,
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleOpen();
+    }
   };
-
-  buttonStyle.backgroundColor = variantColors[variant];
-
 
   return (
-    <div className={`${cardMod} flex flex-col h-full`}>
-      <h3 className={`reel-card__title ${titleClass} pt-2 pl-2`}>{title}</h3>
-      <p className="reel-card__desc mb-5 flex-grow px-5 pt-2">{desc}</p>
-      <div className="flex justify-center mt-1.5">
-        <Link to={to} className={btnClass} style={buttonStyle} aria-label={`Ir a ${title}`}>
-          Ir al módulo
-        </Link>
+    <Card
+      module={variant as ModuleType}
+      hover
+      role="link"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKey}
+      className={`module-card module-${variant} h-full flex flex-col cursor-pointer`}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+             style={{ backgroundColor: `var(--module-surface)` }}>
+          <span style={{ color: `var(--module-primary)` }}>
+            {icon}
+          </span>
+        </div>
+        <h3 className="module-card-title text-xl font-bold">
+          {title}
+        </h3>
       </div>
-    </div>
+      
+      <p className="module-card-description flex-grow">
+        {desc}
+      </p>
+      
+      <div className="mt-6">
+        <Button 
+          module={variant as ModuleType}
+          variant="primary"
+          fullWidth
+          className="justify-center"
+          onClick={(e) => { e.stopPropagation(); handleOpen(); }}
+          aria-label={`Abrir ${title}`}
+        >
+          Ir al módulo
+        </Button>
+      </div>
+    </Card>
   );
 };
 
 const Home: React.FC = () => {
+  const { userName, userEmail } = useAuth();
+
   const items: {
     to: string;
     title: string;
     desc: string;
-    variant: "devoluciones" | "pedido" | "inventario" | "comparador" | "planificador";
+    variant: "devoluciones" | "pedido" | "inventario" | "comparador";
+    icon: React.ReactNode;
   }[] = [
-    { to: "/devoluciones", title: "Devoluciones", desc: "Registra devoluciones de productos de forma rápida. Ideal para logística inversa y control de calidad.", variant: "devoluciones" },
-    { to: "/pedido", title: "Pedidos", desc: "Crea y administra hojas de pedido con información de stock para optimizar requerimientos.", variant: "pedido" },
-    { to: "/inventario", title: "Inventario", desc: "Realiza el conteo y actualización de existencias para mantener un inventario preciso.", variant: "inventario" },
-    { to: "/comparador", title: "Comparador", desc: "Analiza precios de la competencia para optimizar tus decisiones de compra y venta.", variant: "comparador" },
-    { to: "/planificador", title: "Planificador", desc: "Distribuye montos en el tiempo de forma equitativa con opción de ajuste manual.", variant: "planificador" },
+    { 
+      to: "/devoluciones", 
+      title: "Devoluciones", 
+      desc: "Registra devoluciones de productos de forma rápida. Ideal para logística inversa y control de calidad.", 
+      variant: "devoluciones",
+      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+    },
+    { 
+      to: "/pedido", 
+      title: "Pedidos", 
+      desc: "Crea y administra hojas de pedido con información de stock para optimizar requerimientos.", 
+      variant: "pedido",
+      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+    },
+    { 
+      to: "/inventario", 
+      title: "Inventario", 
+      desc: "Realiza el conteo y actualización de existencias para mantener un inventario preciso.", 
+      variant: "inventario",
+      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" /></svg>
+    },
+    { 
+      to: "/comparador", 
+      title: "Comparador", 
+      desc: "Analiza precios de la competencia para optimizar tus decisiones de compra y venta.", 
+      variant: "comparador",
+      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+    },
   ];
 
   return (
-    <div className="surface min-h-screen">
-      <main>
-        <section className="relative flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6">
-          <div className="w-full max-w-6xl">
-            {/* Header */}
-            <header className="text-center mb-10 section-card">
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-3 heading">
-                Panel de Control General
-              </h1>
-              <p className="text-base md:text-lg muted">
-                Acceso rápido a todos los módulos de gestión de operaciones.
-              </p>
-            </header>
-
-            {/* Contenedor de tarjetas con un grid más simétrico */}
-            <section className="section-card relative">
-              <div className="px-[clamp(12px,4vw,40px)]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-center">
-                  {items.map((item) => (
-                    <div key={item.to} className="self-stretch">
-                      <div className="group rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_10px_20px_-10px_color-mix(in_oklab,var(--fg)_20%,transparent)] h-full">
-                        <div className="rounded-2xl overflow-hidden ring-1 ring-[color-mix(in_oklab,_var(--border)_60%,_transparent)] group-hover:ring-[color-mix(in_oklab,_var(--fg)_14%,_transparent)] transition-colors duration-300 h-full">
-                          <div className="relative h-full">
-                            <div className="card-hover-glow pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden="true" />
-                            <Card {...item} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    <div className="min-h-screen pt-20 pb-12">
+      <div className="container-app">
+        <header className="text-center mb-12 fade-in">
+          <div className="surface-card max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-black mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+              Panel de Control General
+            </h1>
+            {userName && userEmail && (
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl">
+                <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                  👋 Bienvenido, <span className="font-bold text-blue-600 dark:text-blue-400">{userName}</span>
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{userEmail}</p>
               </div>
-            </section>
+            )}
+            <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
+              Acceso rápido a todos los módulos de gestión de operaciones.
+            </p>
           </div>
+        </header>
+
+        
+
+        <section className="grid-responsive">
+          {items.map((item, index) => (
+            <div 
+              key={item.to} 
+              className="scale-in"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <ModuleCard {...item} />
+            </div>
+          ))}
         </section>
-      </main>
+      </div>
     </div>
   );
 };

@@ -10,84 +10,81 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   safelist: [
-    // Fondos por módulo (evita que se purguen las clases dinámicas)
-    'bg-devoluciones-light-secondary', 'dark:bg-devoluciones-dark-secondary',
-    'bg-pedido-light-secondary', 'dark:bg-pedido-dark-secondary',
-    'bg-inventario-light-secondary', 'dark:bg-inventario-dark-secondary',
-    'bg-comparador-light-secondary', 'dark:bg-comparador-dark-secondary',
-    'bg-planificador-light-secondary', 'dark:bg-planificador-dark-secondary',
-
-    // Anillos de foco por módulo (botones/enlaces)
-    'focus:ring-devoluciones-light-primary', 'dark:focus:ring-devoluciones-dark-primary',
-    'focus:ring-pedido-light-primary', 'dark:focus:ring-pedido-dark-primary',
-    'focus:ring-inventario-light-primary', 'dark:focus:ring-inventario-dark-primary',
-    'focus:ring-comparador-light-primary', 'dark:focus:ring-comparador-dark-primary',
-    'focus:ring-planificador-light-primary', 'dark:focus:ring-planificador-dark-primary',
-
-    // Títulos/énfasis por módulo usados en PageHeader
-    'text-devoluciones-light-primary', 'dark:text-devoluciones-dark-primary',
-    'text-pedido-light-primary', 'dark:text-pedido-dark-primary',
-    'text-inventario-light-primary', 'dark:text-inventario-dark-primary',
-    'text-comparador-light-primary', 'dark:text-comparador-dark-primary',
-    'text-planificador-light-primary', 'dark:text-planificador-dark-primary',
+    // Clases de módulos para evitar purging
+    'module-devoluciones', 'module-pedido', 'module-inventario', 'module-comparador',
+    
+    // Botones por módulo
+    'btn-module', 'btn-outline',
+    
+    // Inputs por módulo
+    'input-module',
+    
+    // Superficies y cards
+    'surface', 'surface-card', 'surface-elevated', 'glass',
+    
+    // Estados y animaciones
+    'fade-in', 'slide-up', 'scale-in', 'interactive',
+    
+    // Utilidades de focus
+    'focus-visible',
+    
+    // Grid responsive
+    'grid-responsive',
   ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
       colors: {
-        // General background and text colors for light/dark mode
-        'light-bg': muiPalette.background.default, 
-        'dark-bg': muiPalette.grey[900], 
-        'light-text': muiPalette.text.primary, 
-        'dark-text': muiPalette.grey[200],
-
-        // Paleta para Devoluciones (rojo)
+        // Colores por módulo manteniendo compatibilidad
         'devoluciones': {
           'light-primary': muiPalette.devoluciones.main,
           'light-secondary': muiPalette.devoluciones.light,
           'dark-primary': muiPalette.devoluciones.dark,
           'dark-secondary': muiPalette.devoluciones.dark,
-          'light-text': muiPalette.devoluciones.main,
-          'dark-text': muiPalette.devoluciones.light,
         },
-        // Paleta para Pedido (azul)
         'pedido': {
           'light-primary': muiPalette.pedido.main,
           'light-secondary': muiPalette.pedido.light,
           'dark-primary': muiPalette.pedido.dark,
           'dark-secondary': muiPalette.pedido.dark,
-          'light-text': muiPalette.pedido.main,
-          'dark-text': muiPalette.pedido.light,
         },
-        // Paleta para Inventario (verde)
         'inventario': {
           'light-primary': muiPalette.inventario.main,
           'light-secondary': muiPalette.inventario.light,
           'dark-primary': muiPalette.inventario.dark,
           'dark-secondary': muiPalette.inventario.dark,
-          'light-text': muiPalette.inventario.main,
-          'dark-text': muiPalette.inventario.light,
         },
-        // Paleta para Comparador (naranja)
         'comparador': {
           'light-primary': muiPalette.comparador.main,
           'light-secondary': muiPalette.comparador.light,
           'dark-primary': muiPalette.comparador.dark,
           'dark-secondary': muiPalette.comparador.dark,
-          'light-text': muiPalette.comparador.main,
-          'dark-text': muiPalette.comparador.light,
         },
-        // Paleta para Planificador (azul cielo)
-        'planificador': {
-          'light-primary': muiPalette.planificador.main,
-          'light-secondary': muiPalette.planificador.light,
-          'dark-primary': muiPalette.planificador.dark,
-          'dark-secondary': muiPalette.planificador.dark,
-          'light-text': muiPalette.planificador.main,
-          'dark-text': muiPalette.planificador.light,
-        },
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+      },
+      borderRadius: {
+        'xl': '1rem',
+        '2xl': '1.5rem',
+      },
+      boxShadow: {
+        'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'outline': '0 0 0 3px rgba(66, 153, 225, 0.5)',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-in-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+        'scale-in': 'scaleIn 0.2s ease-out',
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+      transitionDuration: {
+        '400': '400ms',
       },
     },
   },

@@ -9,6 +9,8 @@ export function calculateDataWithPercentages(
     const p1 = precios[competidores[0]] || 0;
     const porcentajes: { [key: string]: string } = {};
 
+
+
     if (p1 > 0) {
       for (let i = 1; i < competidores.length; i++) {
         const pi = precios[competidores[i]] || 0;
@@ -20,20 +22,21 @@ export function calculateDataWithPercentages(
         }
       }
 
-      // Calculate % vs Sugerido
+      // Calcular % Descuento a Sugerido
       const precioSugerido = producto.precio_sugerido || 0;
-      if (precioSugerido > 0) {
-        const ratioSugerido = (p1 / precioSugerido) - 1;
-        porcentajes['% vs Sugerido'] = `${(ratioSugerido * 100).toFixed(2)}%`;
+
+      if (precioSugerido > 0 && p1 > 0) {
+        const descuentoNecesario = ((p1 - precioSugerido) / p1) * 100;
+        porcentajes['% Descuento a Sugerido'] = `${descuentoNecesario.toFixed(2)}%`;
       } else {
-        porcentajes['% vs Sugerido'] = 'N/A';
+        porcentajes['% Descuento a Sugerido'] = 'N/A';
       }
 
     } else {
       for (let i = 1; i < competidores.length; i++) {
         porcentajes[`% vs ${competidores[i]}`] = 'N/A';
       }
-      porcentajes['% vs Sugerido'] = 'N/A';
+      porcentajes['% Descuento a Sugerido'] = 'N/A';
     }
 
     return { ...producto, ...porcentajes } as (IProductoEditado & Record<string, string | number | undefined>);
@@ -45,7 +48,7 @@ export function calculateSummary(
   competidores: string[]
 ) {
   const pctHeaders = competidores.slice(1).map((comp) => `% vs ${comp}`);
-  pctHeaders.push('% vs Sugerido'); // Add the new suggested price percentage header
+  pctHeaders.push('% Descuento a Sugerido'); // Usar el nuevo encabezado de descuento
   const valores: number[] = [];
 
   for (const row of dataWithPercentages) {

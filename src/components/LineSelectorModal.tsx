@@ -1,27 +1,21 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
-import { StyledSelect } from './ui/StyledSelect';
-
-// Utilidad simple para clase condicional
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
-
+import { ModuleType } from '../enums';
+import { Modal, Select, SearchInput, DataTable, Button } from './ui';
 
 import type { State } from "../store/useAppStore";
 
 type LineSelectorModalTriggerProps = {
   moduloKey: keyof State['listas'];
-  showStockRef?: boolean; // mostrar columna de stock en el modal (solo Pedido)
-  buttonClassName?: string; // clases del botón (paleta por módulo)
-  themeClass?: string; // clases para heredar color del módulo (título/CTA)
+  showStockRef?: boolean;
+  buttonClassName?: string;
+  themeClass?: string;
   onConfirm?: (added: IProducto[], skipped: IProducto[]) => void;
 };
 
 /**
- * Componente Trigger + Modal para selección por línea.
- * Se renderiza como un enlace "Elegir línea" y maneja internamente el modal.
+ * Componente Trigger + Modal para selección por línea mejorado.
  */
 export function LineSelectorModalTrigger({
   moduloKey,
@@ -32,42 +26,53 @@ export function LineSelectorModalTrigger({
 }: LineSelectorModalTriggerProps) {
   const [open, setOpen] = useState(false);
 
+  // Map moduloKey to ModuleType
+  const getModuleType = (key: keyof State['listas']): ModuleType => {
+    switch (key) {
+      case 'devoluciones': return ModuleType.DEVOLUCIONES;
+      case 'pedido': return ModuleType.PEDIDO;
+      case 'inventario': return ModuleType.INVENTARIO;
+      case 'comparador': return ModuleType.COMPARADOR;
+      default: return ModuleType.PEDIDO;
+    }
+  };
+
+  const module = getModuleType(moduloKey);
+
   return (
     <>
-      <button
+      <Button
+        module={module}
+        variant="outline"
         onClick={() => setOpen(true)}
-        className={cn(
-          "ml-3 px-3 py-2 text-sm rounded",
-          buttonClassName,
-          themeClass // Apply themeClass here to ensure it's passed down
-        )}
-        aria-label="Elegir línea"
-        title="Elegir línea"
-        type="button"
+        className={buttonClassName}
       >
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
         Elegir línea
-      </button>
+      </Button>
 
-      {open && (
-        <LineSelectorModal
-          moduloKey={moduloKey}
-          showStockRef={showStockRef}
-          themeClass={themeClass}
-          onClose={() => setOpen(false)}
-          onConfirm={(added, skipped) => {
-            onConfirm?.(added, skipped);
-            setOpen(false);
-          }}
-        />
-      )}
+      <LineSelectorModal
+        isOpen={open}
+        moduloKey={moduloKey}
+        module={module}
+        showStockRef={showStockRef}
+        onClose={() => setOpen(false)}
+        onConfirm={(added, skipped) => {
+          onConfirm?.(added, skipped);
+          setOpen(false);
+        }}
+      />
     </>
   );
 }
 
 type LineSelectorModalProps = {
+  isOpen: boolean;
   moduloKey: keyof State['listas'];
+  module: ModuleType;
   showStockRef: boolean;
-  themeClass?: string;
   onClose: () => void;
   onConfirm: (added: IProducto[], skipped: IProducto[]) => void;
 };
@@ -133,30 +138,25 @@ function normalize(s: string) {
 }
 
 /**
- * Modal de selección por línea:
- * Paso 1: elegir línea (única).
- * Paso 2: listar productos de esa línea (orden por código asc), buscador por nombre,
- *         selección manual con checkbox; columnas: Código, Nombre, Stock ref.
- * Confirmar: agrega a la lista del módulo (evitar duplicados por código).
+ * Modal de selección por línea mejorado con componentes modulares.
  */
-function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onConfirm }: LineSelectorModalProps) {
+function LineSelectorModal({ 
+  isOpen, 
+  moduloKey, 
+  module, 
+  showStockRef, 
+  onClose, 
+  onConfirm 
+}: LineSelectorModalProps) {
   // Store
   const lista = useAppStore((s) => {
     switch (moduloKey as keyof State['listas']) {
-      case "inventario":
-        return s.listas.inventario;
-      case "precios":
-        return s.listas.precios;
-      case "devoluciones":
-        return s.listas.devoluciones;
-      case "pedido":
-        return s.listas.pedido;
-      case "comparador":
-        return s.listas.comparador;
-      case "planificador":
-        return s.listas.planificador;
-      default:
-        return [];
+      case "inventario": return s.listas.inventario;
+      case "precios": return s.listas.precios;
+      case "devoluciones": return s.listas.devoluciones;
+      case "pedido": return s.listas.pedido;
+      case "comparador": return s.listas.comparador;
+      default: return [];
     }
   });
 
@@ -165,15 +165,21 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
   // Carga de productos
   const { data, error, loading } = useProductosLocal();
 
-  // Paso 1: Línea seleccionada
-  const [selectedLinea, setSelectedLinea] = useState<string | null>(null);
+  // Estados del modal
+  const [selectedLinea, setSelectedLinea] = useState<string>('');
+  const [searchNombre, setSearchNombre] = useState('');
+  const [selectedCodigos, setSelectedCodigos] = useState<Set<string | number>>(new Set());
 
-  // Paso 2: Filtro por nombre y selección de productos
-  const [searchNombre, setSearchNombre] = useState("");
-  const [selectedCodigos, setSelectedCodigos] = useState<Set<string>>(new Set());
+  // Reset states when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedLinea('');
+      setSearchNombre('');
+      setSelectedCodigos(new Set());
+    }
+  }, [isOpen]);
 
   const lineas = useMemo(() => (data ? getUniqueSortedLineas(data) : []), [data]);
-  const variant = moduloKey === 'precios' ? 'precios' : moduloKey;
 
   const productosDeLinea = useMemo(() => {
     if (!data || !selectedLinea) return [];
@@ -184,21 +190,52 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
     return ordenados.filter((p: ProductoLocal) => normalize(p.nombre ?? "").includes(term));
   }, [data, selectedLinea, searchNombre]);
 
-  const toggleCodigo = (codigo: string) => {
-    setSelectedCodigos((prev: Set<string>) => {
-      const next = new Set(prev);
-      if (next.has(codigo)) next.delete(codigo);
-      else next.add(codigo);
-      return next;
-    });
-  };
+  // Configuración de columnas para la tabla
+  const columns = useMemo(() => {
+    const baseColumns = [
+      {
+        key: 'codigo',
+        header: 'Código',
+        width: '120px',
+        render: (item: ProductoLocal) => (
+          <span className="font-mono text-sm">{item.codigo}</span>
+        )
+      },
+      {
+        key: 'nombre',
+        header: 'Nombre',
+        render: (item: ProductoLocal) => (
+          <span className="truncate max-w-xs" title={item.nombre}>
+            {item.nombre}
+          </span>
+        )
+      }
+    ];
 
-  const isChecked = (codigo: string) => selectedCodigos.has(codigo);
+    if (showStockRef) {
+      baseColumns.push({
+        key: 'stock_referencial',
+        header: 'Stock Ref.',
+        width: '100px',
+        align: 'right' as const,
+        render: (item: ProductoLocal) => (
+          <span className="font-mono text-sm">
+            {typeof item.stock_referencial === "number" ? item.stock_referencial.toLocaleString() : "-"}
+          </span>
+        )
+      });
+    }
+
+    return baseColumns;
+  }, [showStockRef]);
 
   const handleConfirm = () => {
     if (!data) return;
+    
     // Productos seleccionados por código
-    const seleccionados = productosDeLinea.filter((p) => selectedCodigos.has(String(p.codigo)));
+    const seleccionados = productosDeLinea.filter((p) => 
+      selectedCodigos.has(String(p.codigo))
+    );
 
     // Evitar duplicados comparando por código contra la lista actual del módulo
     const yaEnLista = new Set<string>((lista || []).map((p: IProducto): string => String(p.codigo)));
@@ -219,189 +256,93 @@ function LineSelectorModal({ moduloKey, showStockRef, themeClass, onClose, onCon
       agregarProductoToLista(moduloKey, item);
     }
 
-    // Notificar resultado hacia arriba para que se pueda generar un toast/alerta
+    // Notificar resultado
     onConfirm(nuevos, duplicados);
   };
 
-  // Accesibilidad: cerrar con ESC
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const actions = (
+    <>
+      <Button variant="outline" onClick={onClose}>
+        Cancelar
+      </Button>
+      <Button
+        module={module}
+        variant="primary"
+        onClick={handleConfirm}
+        disabled={!selectedLinea || selectedCodigos.size === 0}
+      >
+        Agregar seleccionados ({selectedCodigos.size})
+      </Button>
+    </>
+  );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Seleccionar productos por línea"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Seleccionar productos por línea"
+      size="lg"
+      module={module}
+      actions={actions}
     >
-      {/* Overlay */}
-        <div
-          className="absolute inset-0 bg-gray-800"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-
-      {/* Modal */}
-      <div className="relative surface surface-border rounded-md shadow-lg max-w-2xl w-[92%] max-h-[85vh] flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-        {/* Header */}
-        <div
-          className="p-4 border-b border-[var(--border)]"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className={cn(
-              "form-section-title text-xl !mb-0", // Use base class, adjust size, and remove margin-bottom
-              themeClass?.split(" ").find(c => c.startsWith("title-"))
-            )}>
-              Seleccionar por línea
-            </h2>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar modal"
-              className="text-[var(--fg)] hover:opacity-80"
-              title="Cerrar"
-            >
-              ✕
-            </button>
-          </div>
+      <div className="space-y-6">
+        {/* Paso 1: Selección de línea */}
+        <div>
+          <Select
+            label="Línea de productos"
+            value={selectedLinea}
+            onChange={(e) => {
+              setSelectedLinea(e.target.value);
+              setSelectedCodigos(new Set()); // Reset selección
+            }}
+            module={module}
+            required
+          >
+            <option value="">Seleccione una línea</option>
+            {lineas.map((linea) => (
+              <option key={linea} value={linea}>
+                {linea}
+              </option>
+            ))}
+          </Select>
         </div>
 
-        {/* Body con scroll interno */}
-        <div className="p-4 overflow-auto">
-          {/* Paso 1: Selección de línea */}
-          <div className="mb-4">
-            <label className="block mb-2 font-semibold" htmlFor="linea-sel">
-              Línea
-            </label>
-            <StyledSelect
-              id="linea-sel"
-              value={selectedLinea ?? ""}
-              onChange={(e) => {
-                setSelectedLinea(e.target.value || null);
-                // Reset selección de productos al cambiar línea
-                setSelectedCodigos(new Set());
-              }}
-              variant={variant}
-            >
-              <option value="">Seleccione una línea</option>
-              {lineas.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </StyledSelect>
-          </div>
-
-          {/* Paso 2: Productos de la línea */}
-          <div className="mb-3">
-            <label className="block mb-2 font-semibold" htmlFor="buscador-nombre">
-              Buscar por nombre
-            </label>
-            <input
-              id="buscador-nombre"
-              type="text"
+        {/* Paso 2: Búsqueda y selección de productos */}
+        {selectedLinea && (
+          <div className="space-y-4">
+            <SearchInput
+              placeholder="Buscar productos por nombre..."
               value={searchNombre}
               onChange={(e) => setSearchNombre(e.target.value)}
-              className="input w-full"
-              placeholder="Filtrar por nombre..."
-              aria-label="Buscar producto por nombre"
+              onClear={() => setSearchNombre('')}
+              module={module}
+            />
+
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-700 dark:text-red-300">Error: {error}</p>
+              </div>
+            )}
+
+            <DataTable
+              data={productosDeLinea}
+              columns={columns}
+              module={module}
+              selectable
+              selectedItems={selectedCodigos}
+              onSelectionChange={setSelectedCodigos}
+              getItemId={(item) => String(item.codigo)}
+              loading={loading}
+              emptyMessage={
+                selectedLinea 
+                  ? "No hay productos para la línea seleccionada con el filtro actual."
+                  : "Seleccione una línea para ver los productos disponibles."
+              }
             />
           </div>
-
-          {/* Estado de carga / error */}
-          {loading && <p className="text-sm opacity-80">Cargando productos...</p>}
-          {error && <p className="text-sm text-red-600">Error: {error}</p>}
-
-          {/* Tabla de productos */}
-          {!loading && !error && selectedLinea && (
-            <div className="overflow-auto border rounded" style={{ borderColor: "var(--border)" }}>
-              <table className="min-w-full">
-                <thead className="surface-contrast">
-                  <tr>
-                    <th className="w-10 px-2 py-2 text-center text-[11px] md:text-xs font-bold uppercase tracking-wider">
-                      Sel.
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider">
-                      Código
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider">
-                      Nombre
-                    </th>
-                    {showStockRef && (
-                      <th className="px-4 py-2 text-left text-xs font-bold uppercase tracking-wider">
-                        Stock Ref.
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {productosDeLinea.map((p: ProductoLocal) => {
-                    const codigo = String(p.codigo);
-                    return (
-                      <tr key={codigo} className="hover:opacity-95">
-                        <td className="w-10 px-2 py-2 text-center whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            aria-label={`Seleccionar ${p.nombre ?? codigo}`}
-                            checked={isChecked(codigo)}
-                            onChange={() => toggleCodigo(codigo)}
-                            className="align-middle"
-                          />
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm">{codigo}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm truncate max-w-[240px]" title={p.nombre}>
-                          {p.nombre}
-                        </td>
-                        {showStockRef && (
-                          <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
-                            {typeof p.stock_referencial === "number" ? p.stock_referencial : "-"}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                  {productosDeLinea.length === 0 && (
-                    <tr>
-                      <td className="px-4 py-6 text-sm opacity-80" colSpan={4}>
-                        No hay productos para la línea seleccionada con el filtro actual.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t flex items-center justify-end gap-2" style={{ borderColor: "var(--border)" }}>
-          <button
-            onClick={onClose}
-            className="px-3 py-2 rounded border hover:opacity-90"
-            style={{ borderColor: "var(--border)", color: 'var(--fg)' }}
-            aria-label="Cancelar selección"
-            title="Cancelar"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={!selectedLinea || selectedCodigos.size === 0}
-            className={cn(
-              themeClass?.split(" ").find(c => c.startsWith("btn-module-"))
-            )}
-            aria-label="Agregar seleccionados"
-            title="Agregar seleccionados"
-          >
-            Agregar seleccionados
-          </button>
-        </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }
 

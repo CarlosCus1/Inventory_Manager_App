@@ -114,13 +114,7 @@ export const FormSchema = z.object({
   /** Sucursal de la operación (usado en Devoluciones, Pedido, Inventario, Comparador). */
   sucursal: z.string().optional(),
 
-  /** Código del pedido asociado al planificador. */
-  pedido_planificador: z.string().optional(),
-
-  /** Color de línea seleccionado en el planificador para el reporte XLSX. */
-  linea_planificador_color: z.string().optional(),
-
-  /** Monto total del planificador. */
+  /** Monto total original. */
   montoOriginal: z.number().optional(),
 });
 
@@ -142,8 +136,7 @@ export interface FieldConfig {
   showMotivo?: boolean;
   showMarcas?: boolean;
   showMontoOriginal?: boolean;
-  showPedidoPlanificador?: boolean;
-  showLineaPlanificadorColor?: boolean;
+
   showCargarRespaldo?: boolean;
 }
 
@@ -161,4 +154,20 @@ export interface ValidationRule {
   type: 'required' | 'isNumeric' | 'isValidDate' | 'isDni' | 'isRuc' | 'maxLength' | 'minLength';
   value?: number;
   message: string;
+}
+
+export interface ICalcularApiParams {
+  montoTotal: number;
+  fechasValidas: string[];
+  razonSocial: string;
+}
+
+export interface ICalcularApiResponse {
+  montosAsignados: Record<string, number>;
+  resumenMensual: Record<string, number>;
+  fechasValidas: string[];
+}
+
+export interface BlobWithName extends Blob {
+  name: string;
 }
