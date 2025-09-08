@@ -7,7 +7,7 @@ import NotificationBell from './navbar/NotificationBell';
 import { useAuth } from '../contexts/AuthContext';
 import LiveDateTime from './navbar/LiveDateTime';
 import InteractiveBackground from './background/InteractiveBackground';
-import { mockRootProps } from '../enhancedAppMockData';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -161,8 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {currentPalette && (
           <button
             onClick={handleClear}
-            className={`p-4 rounded-full surface-glass module-${currentPalette} interactive shadow-lg backdrop-blur-md border border-white/20`}
-            style={{ backgroundColor: `color-mix(in srgb, var(--module-primary) 30%, transparent)` }}
+            className={`p-4 rounded-full btn-danger interactive shadow-lg`}
             title="Limpiar Módulo Actual"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

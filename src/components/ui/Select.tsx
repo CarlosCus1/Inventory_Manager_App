@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModuleType } from '../../enums';
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   label?: string;
   error?: string;
   helpText?: string;

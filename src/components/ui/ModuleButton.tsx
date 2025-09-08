@@ -14,7 +14,7 @@ type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | '
 
 interface ModuleButtonProps extends Omit<React.ComponentProps<typeof Button>, 'color'> {
   variant?: 'contained' | 'outlined' | 'text';
-  module: ModuleVariant;
+  module?: ModuleVariant;
   size?: 'small' | 'medium' | 'large';
 }
 
@@ -98,7 +98,7 @@ const StyledModuleButton = styled(Button)<{ module: ModuleVariant }>(({ theme, m
 });
 
 export const ModuleButton: React.FC<ModuleButtonProps> = ({
-  module,
+  module = 'default',
   variant = 'contained',
   size = 'medium',
   children,

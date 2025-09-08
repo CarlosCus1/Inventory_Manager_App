@@ -4,7 +4,7 @@
 //                                                                             #
 // --------------------------------------------------------------------------- #
 
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import { DevolucionesPage } from './pages/DevolucionesPage';
@@ -20,7 +20,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 // ProtectedRoute component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoggedIn } = useAuth();
-  const location = useLocation();
   if (!isLoggedIn) {
     return <Navigate to="/" replace />;
   }

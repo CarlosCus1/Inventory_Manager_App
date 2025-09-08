@@ -64,9 +64,11 @@ export const DevolucionesPage: React.FC = () => {
           type="number"
           aria-label={`Cantidad para ${item.nombre}`}
           placeholder="0"
+          max={1000000}
+          step={0.01}
           value={item.cantidad}
           onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
-          className="input input-module-devoluciones w-full text-gray-900 dark:text-gray-100"
+          className="input input-module-devoluciones input-qty w-28 md:w-32 text-gray-900 dark:text-gray-100"
         />
       )
     },
@@ -194,7 +196,6 @@ export const DevolucionesPage: React.FC = () => {
             moduloKey="devoluciones"
             showStockRef={false}
             buttonClassName="btn btn-module-devoluciones ml-3"
-            themeClass="title-devoluciones btn-module-devoluciones"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista (Devoluciones).`);

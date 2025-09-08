@@ -34,7 +34,7 @@
   }
 
   .navbar-inner {
-    @apply max-w-7xl mx-auto px-4 h-16 flex items-center justify-between;
+  @apply max-w-7xl mx-auto px-4 h-14 flex items-center justify-between;
   }
 
   .navbar-title {
@@ -48,11 +48,11 @@
 
   /* Page Headers */
   .page-header {
-    @apply mb-8 text-center;
+    @apply mb-6 text-center;
   }
 
   .page-title {
-    @apply text-4xl font-extrabold mb-4;
+    @apply text-4xl font-extrabold mb-2;
     background: linear-gradient(135deg, var(--module-primary), var(--module-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -60,7 +60,7 @@
   }
 
   .page-description {
-    @apply text-lg max-w-3xl mx-auto;
+    @apply text-lg max-w-3xl mx-auto mb-2;
     color: var(--text-secondary);
   }
 
@@ -75,7 +75,7 @@
 
   /* Module Cards en Home */
   .module-card {
-    @apply relative overflow-hidden rounded-2xl p-6 transition-all duration-300;
+    @apply relative overflow-hidden rounded-2xl p-4 transition-all duration-300;
     background: var(--surface-primary);
     border: 1px solid var(--border-primary);
     box-shadow: var(--shadow-sm);
@@ -98,12 +98,12 @@
   }
 
   .module-card-title {
-    @apply text-xl font-bold mb-3;
+    @apply text-xl font-bold mb-2;
     color: var(--module-primary);
   }
 
   .module-card-description {
-    @apply text-sm mb-6 leading-relaxed;
+    @apply text-sm mb-3 leading-relaxed;
     color: var(--text-secondary);
   }
 
@@ -117,14 +117,14 @@
   }
 
   .data-table th {
-    @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
     background-color: var(--bg-secondary);
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-primary);
   }
 
   .data-table td {
-    @apply px-6 py-4 text-sm;
+    @apply px-4 py-3 text-sm;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border-primary);
   }
@@ -139,11 +139,11 @@
 
   /* Forms mejorados */
   .form-section {
-    @apply space-y-8;
+    @apply space-y-6;
   }
 
   .form-group {
-    @apply space-y-3;
+    @apply space-y-2;
   }
 
   .form-label {
@@ -230,7 +230,7 @@
   }
 
   .search-item {
-    @apply p-4 cursor-pointer transition-colors duration-200;
+    @apply p-3 cursor-pointer transition-colors duration-200;
     border-bottom: 1px solid var(--border-primary);
   }
 
@@ -302,6 +302,69 @@
   .scale-in {
     animation: scaleIn 0.2s ease-out;
   }
+
+  /* Botones por módulo */
+  .btn-module-devoluciones {
+    @apply bg-[var(--color-devoluciones-primary)] text-white hover:bg-[var(--color-devoluciones-light)];
+  }
+  .btn-module-pedido {
+    @apply bg-[var(--color-pedido-primary)] text-white hover:bg-[var(--color-pedido-light)];
+  }
+  .btn-module-inventario {
+    @apply bg-[var(--color-inventario-primary)] text-white hover:bg-[var(--color-inventario-light)];
+  }
+  .btn-module-comparador {
+    @apply bg-[var(--color-comparador-primary)] text-white hover:bg-[var(--color-comparador-light)];
+  }
+
+  .btn-danger {
+    @apply bg-[var(--color-danger)] text-white;
+  }
+}
+
+/* Compact utilities for report tables and inputs */
+@layer components {
+  /* Compact table spacing */
+  .table-compact th,
+  .table-compact td {
+    @apply px-3 py-2; /* tighter cells */
+  }
+
+  /* Compact input used inside tables */
+  .input-compact {
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    @apply px-2 py-1 text-sm rounded-md;
+    line-height: 1;
+  }
+
+  /* Keep inputs single-line inside compact tables and hide overflow with ellipsis */
+  .table-compact input,
+  .table-compact textarea,
+  .table-compact .input {
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 44px;
+  }
+
+  /* Quantity input: tighter horizontal padding to avoid clipping large numbers */
+  .input-qty {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    box-sizing: border-box;
+    text-align: right;
+  }
+
+  /* Column width helpers (use with <col className="col-name" /> ) */
+  .col-name  { width: 40%; }
+  .col-qty   { width: 12%; }
+  .col-box   { width: 10%; }
+  .col-price { width: 10%; }
+  .col-weight{ width: 8%;  }
+  .col-obs   { width: 20%; }
 }
 
 /* ========================================
@@ -362,7 +425,7 @@
 
   .data-table th,
   .data-table td {
-    @apply px-3 py-2;
+    @apply px-2 py-2;
   }
 
   .fab {

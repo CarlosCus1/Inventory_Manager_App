@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
 import { ModuleType } from '../enums';
@@ -10,7 +10,6 @@ type LineSelectorModalTriggerProps = {
   moduloKey: keyof State['listas'];
   showStockRef?: boolean;
   buttonClassName?: string;
-  themeClass?: string;
   onConfirm?: (added: IProducto[], skipped: IProducto[]) => void;
 };
 
@@ -21,7 +20,6 @@ export function LineSelectorModalTrigger({
   moduloKey,
   showStockRef = false,
   buttonClassName,
-  themeClass,
   onConfirm,
 }: LineSelectorModalTriggerProps) {
   const [open, setOpen] = useState(false);
@@ -32,6 +30,7 @@ export function LineSelectorModalTrigger({
       case 'devoluciones': return ModuleType.DEVOLUCIONES;
       case 'pedido': return ModuleType.PEDIDO;
       case 'inventario': return ModuleType.INVENTARIO;
+      case 'precios': return ModuleType.COMPARADOR;
       case 'comparador': return ModuleType.COMPARADOR;
       default: return ModuleType.PEDIDO;
     }
@@ -217,11 +216,12 @@ function LineSelectorModal({
         key: 'stock_referencial',
         header: 'Stock Ref.',
         width: '100px',
-        align: 'right' as const,
         render: (item: ProductoLocal) => (
-          <span className="font-mono text-sm">
-            {typeof item.stock_referencial === "number" ? item.stock_referencial.toLocaleString() : "-"}
-          </span>
+          <div className="text-right">
+            <span className="font-mono text-sm">
+              {typeof item.stock_referencial === "number" ? item.stock_referencial.toLocaleString() : "-"}
+            </span>
+          </div>
         )
       });
     }

@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------------- #
 
 import React from 'react';
-import { ModuleType } from '../enums';
+
 
 interface PageHeaderProps {
   title: string;

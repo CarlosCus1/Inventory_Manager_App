@@ -10,6 +10,7 @@ const inputVariants = cva(
         pedido: 'border-pedido-light-secondary focus:ring-pedido-light-primary focus:border-pedido-light-primary',
         inventario: 'border-inventario-light-secondary focus:ring-inventario-light-primary focus:border-inventario-light-primary',
         comparador: 'border-comparador-light-secondary focus:ring-comparador-light-primary focus:border-comparador-light-primary',
+        
         default: 'border-gray-300 focus:ring-blue-500 focus:border-blue-500',
       },
     },
@@ -20,16 +21,21 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
-  variant: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
-    }
+  variant?: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
+  compact?: boolean; // when true, apply compact input sizing (44px)
+}
 
 const StyledInput = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, variant, ...props }, ref) => {
+  ({ className, variant, compact = true, ...rest }, ref) => {
+  // prevent compact from being forwarded to the DOM as an unknown attribute
+  const props = { ...(rest as Record<string, unknown>) } as Record<string, unknown>;
+  if ('compact' in props) delete props.compact;
+
     return (
       <input
-        className={inputVariants({ variant, className })}
+        className={`${inputVariants({ variant, className })} ${compact ? 'input-compact' : ''}`}
         ref={ref}
         {...props}
       />

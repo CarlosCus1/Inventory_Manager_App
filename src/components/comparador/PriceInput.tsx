@@ -47,7 +47,7 @@ export const PriceInput: React.FC<PriceInputProps> = ({ initialValue, onPriceCha
       value={displayValue}
       onChange={handleInputChange}
       onBlur={handleInputBlur}
-      className="input input-module-comparador w-full"
+      className="input input-module-comparador w-16 px-2"
     />
   );
 };

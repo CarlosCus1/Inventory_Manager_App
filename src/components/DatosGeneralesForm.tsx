@@ -155,7 +155,7 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
         {fieldConfig.showMontoOriginal && (
             <FormGroup>
                 <Label htmlFor="montoOriginal">Monto Total (S/)</Label>
-                <StyledInput id="montoOriginal" name="montoOriginal" type="number" required value={formState.montoOriginal || ''} onChange={handleChange} variant={variant} />
+                <StyledInput id="montoOriginal" name="montoOriginal" type="number" required value={formState.montoOriginal || ''} onChange={handleChange} variant={variant} max={1000000} step={0.01} className="input-qty w-32" />
             </FormGroup>
         )}
 

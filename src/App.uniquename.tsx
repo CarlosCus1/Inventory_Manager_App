@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { Button, Input, Card, FormGroup, Container, ModuleDebugger, Modal, Select, Checkbox, DataTable, SearchInput } from './components/ui';
+import { Button, Input, Card, FormGroup, Container, ModuleDebugger } from './components/ui';
 import { LineSelectorModalTrigger } from './components/LineSelectorModal';
 import { ModuleType } from './enums';
 
@@ -123,6 +123,9 @@ const DesignSystemDemo: React.FC = () => {
                   placeholder="0.00"
                   value={inputValues.amount}
                   onChange={(e) => handleInputChange('amount', e.target.value)}
+                  max={1000000}
+                  step={0.01}
+                  className="input-qty w-32"
                   leftIcon={<span>S/.</span>}
                   helpText="Ingresa el monto para comparación"
                 />

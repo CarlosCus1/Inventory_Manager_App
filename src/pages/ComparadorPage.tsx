@@ -9,11 +9,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IForm, FieldConfig } from '../interfaces';
+import type { IProducto, IForm, FieldConfig, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { calculateDataWithPercentages, calculateSummary } from '../utils/comparisonUtils';
-import { ComparisonTable } from '../components/comparador/ComparisonTable';
+import { DataTable, type IColumn } from '../components/DataTable';
+import { PriceInput } from '../components/comparador/PriceInput';
+
+type ComparisonTableRow = IProductoEditado & Record<string, string | number | undefined>;
 
 // --- 2. Definición del Componente de Página ---
 export const ComparadorPage: React.FC = () => {
@@ -126,10 +129,78 @@ export const ComparadorPage: React.FC = () => {
     if (!value) return 'text-[var(--text-secondary)] font-semibold';
     const parsed = parseFloat(value.replace('%',''));
     if (isNaN(parsed)) return 'text-[var(--text-secondary)] font-semibold';
-    if (parsed > 0) return 'text-[var(--color-danger)] font-semibold'; // Usar variable de tema
-    if (parsed < 0) return 'text-[var(--color-success)] font-semibold'; // Usar variable de tema
+    if (parsed > 0) return 'text-[var(--color-danger)] font-bold';
+    if (parsed < 0) return 'text-[var(--color-success)] font-normal';
     return 'text-[var(--text-primary)] font-semibold';
   };
+
+  const columns = useMemo((): IColumn<ComparisonTableRow>[] => {
+    const dynamicCompetitorColumns: IColumn<ComparisonTableRow>[] = competidores.map((comp, idx) => ({
+      header: idx === 0 ? `${comp} (Base)` : comp,
+      accessor: `precios.${comp}`,
+      cellRenderer: (item) => (
+        <PriceInput
+          initialValue={item.precios?.[comp] ?? null}
+          onPriceChange={(value) => handlePriceChange(item.codigo, comp, value)}
+          competidor={comp}
+          item={item}
+        />
+      ),
+    }));
+
+    const dynamicPercentageColumns: IColumn<ComparisonTableRow>[] = competidores.slice(1).map((comp) => ({
+      header: `% ${comp} vs ${competidores[0]}`,
+      accessor: `% vs ${comp}`,
+      cellRenderer: (item) => {
+        const keyPct = `% vs ${comp}`;
+        const valorPct = (item as unknown as Record<string, string | undefined>)[keyPct] || 'N/A';
+        return <span className={getPercentageCellClass(valorPct)}>{valorPct}</span>;
+      },
+    }));
+
+    return [
+      { header: 'Código', accessor: 'codigo' },
+      { header: 'Cod. EAN', accessor: 'cod_ean' },
+      { header: 'Nombre', accessor: 'nombre' },
+      ...dynamicCompetitorColumns,
+      {
+        header: 'Precio Sugerido',
+        accessor: 'precio_sugerido',
+        cellRenderer: (item) => (
+          <PriceInput
+            initialValue={item.precio_sugerido ?? null}
+            onPriceChange={(value) => handlePriceChange(item.codigo, 'precio_sugerido', value)}
+            competidor="Sugerido"
+            item={item}
+          />
+        ),
+      },
+      ...dynamicPercentageColumns,
+      {
+        header: '% Descuento a Sugerido',
+        accessor: '% Descuento a Sugerido',
+        cellRenderer: (item) => {
+          const valorPct = (item as unknown as Record<string, string | undefined>)['% Descuento a Sugerido'] || 'N/A';
+          return <span className={getPercentageCellClass(valorPct)}>{valorPct}</span>;
+        },
+      },
+      {
+        header: 'Acción',
+        accessor: 'accion',
+        cellRenderer: (item) => (
+          <button
+            onClick={() => eliminarProductoDeLista('precios', item.codigo)}
+            className="btn btn-module-comparador"
+            aria-label={`Eliminar ${item.nombre}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+            </svg>
+          </button>
+        ),
+      },
+    ];
+  }, [competidores, handlePriceChange, eliminarProductoDeLista, getPercentageCellClass]);
 
   const fieldConfig: FieldConfig = {
     showRucDni: true,
@@ -167,7 +238,6 @@ export const ComparadorPage: React.FC = () => {
             moduloKey="precios"
             showStockRef={false}
             buttonClassName="btn btn-module-comparador ml-3"
-            themeClass="title-comparador btn-module-comparador"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista (Comparador).`);
@@ -218,12 +288,19 @@ export const ComparadorPage: React.FC = () => {
           <span>Min: <strong className="title-comparador">{resumenPorcentajes.min.toFixed(2)}%</strong></span>
           <span>Max: <strong className="title-comparador">{resumenPorcentajes.max.toFixed(2)}%</strong></span>
         </div>
-        <ComparisonTable
+        <DataTable
           data={dataConPorcentajes}
-          competidores={competidores}
-          onPriceChange={handlePriceChange}
-          onDelete={(codigo) => eliminarProductoDeLista('precios', codigo)}
-          getPercentageCellClass={getPercentageCellClass}
+          columns={columns}
+          colClasses={[
+            'w-24',
+            'w-32',
+            'w-4/12',
+            ...Array(competidores.length).fill('w-32'),
+            'w-32',
+            ...Array(competidores.length > 1 ? competidores.length - 1 : 0).fill('w-24'),
+            'w-24',
+            'w-20',
+          ]}
         />
         <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-lg font-semibold">

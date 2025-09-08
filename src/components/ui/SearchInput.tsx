@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModuleType } from '../../enums';
 
-interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   onClear?: () => void;
   module?: ModuleType;
   size?: 'sm' | 'md' | 'lg';

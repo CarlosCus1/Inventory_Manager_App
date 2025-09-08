@@ -21,7 +21,6 @@ from report_generators.inventario_generator import InventarioReportGenerator
 from report_generators.pedido_generator import PedidoReportGenerator
 from report_generators.devoluciones_generator import DevolucionesReportGenerator
 from report_generators.precios_generator import PreciosReportGenerator
-from report_generators.planificador_generator import PlanificadorReportGenerator
 
 # --- 2. Inicialización de la aplicación Flask ---
 app = Flask(__name__)
@@ -170,7 +169,6 @@ REPORT_GENERATORS = {
     'pedido': PedidoReportGenerator,
     'devoluciones': DevolucionesReportGenerator,
     'precios': PreciosReportGenerator,
-    'planificador': PlanificadorReportGenerator,
 }
 
 @app.route('/export-xlsx', methods=['POST'])
@@ -182,16 +180,11 @@ def export_xlsx():
     try:
         data = request.get_json()
         if not data or 'tipo' not in data or 'form' not in data or 'list' not in data:
-            # For planificador, 'list' might be empty, but 'data' should be present
-            if data.get('tipo') == 'planificador' and 'data' not in data:
-                return jsonify({"error": "Faltan datos en la petición para planificador (se requiere 'tipo', 'form' y 'data')"}), 400
-            elif data.get('tipo') != 'planificador':
-                return jsonify({"error": "Faltan datos en la petición (se requiere 'tipo', 'form' y 'list')"}), 400
+            return jsonify({"error": "Faltan datos en la petición (se requiere 'tipo', 'form' y 'list')"}), 400
 
         tipo_gestion = data.get('tipo', 'desconocido')
         form_data = data.get('form', {})
         list_data = data.get('list', [])
-        planner_data = data.get('data', {}) # For planificador
 
         GeneratorClass = REPORT_GENERATORS.get(tipo_gestion)
 
@@ -200,14 +193,11 @@ def export_xlsx():
 
         output_buffer = io.BytesIO()
         with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-            if tipo_gestion == 'planificador':
-                generator = GeneratorClass(writer, form_data, list_data, planner_data)
-            else:
-                generator = GeneratorClass(writer, form_data, list_data)
+            generator = GeneratorClass(writer, form_data, list_data)
             generator.generate()
 
         output_buffer.seek(0)
-        
+
         # Get filename from the generator instance if it was set
         filename = getattr(generator, 'filename', f"{tipo_gestion}_report.xlsx")
 

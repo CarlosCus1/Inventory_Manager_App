@@ -47,11 +47,12 @@ export const DetailTable: React.FC<DetailTableProps> = ({ montosAsignadosStr, on
                     <span className="text-sm">{item.date}</span>
                     <StyledInput
                       type="number"
-                      step="0.01"
+                      step={0.01}
+                      max={1000000}
                       value={item.amount}
                       onChange={(e) => onMontoChange(item.date, e.target.value)}
-                      variant="planificador"
-                      className="w-28 text-right"
+                      // variant removed
+                      className="input-qty w-28 text-right"
                     />
                   </div>
                 ))}

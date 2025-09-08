@@ -64,7 +64,7 @@ export const SeleccionFechas: React.FC<Props> = ({
       
       <Box sx={{ mb: 4 }}>
         <ModuleCalendar
-          module="planificador"
+          // module removed
           selectedDates={selectedDates}
           onDateClick={handleDateClick}
           fetchCalendarEvents={fetchCalendarEvents}
@@ -147,7 +147,7 @@ export const SeleccionFechas: React.FC<Props> = ({
         sx={{ mt: 3 }}
       >
         <ModuleButton
-          module="planificador"
+          // module removed
           variant="outlined"
           onClick={onClearSelectedDates}
           title="Limpiar todas las fechas seleccionadas"
@@ -156,7 +156,7 @@ export const SeleccionFechas: React.FC<Props> = ({
         </ModuleButton>
         
         <ModuleButton
-          module="planificador"
+          // module removed
           variant="contained"
           size="large"
           onClick={onCalcular}

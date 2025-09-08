@@ -11,7 +11,7 @@ import { type DayCellMountArg } from '@fullcalendar/core';
 type ModuleVariant = 'devoluciones' | 'pedido' | 'inventario' | 'comparador' | 'default';
 
 interface ModuleCalendarProps {
-  module: ModuleVariant;
+  module?: ModuleVariant;
   selectedDates: Set<string>;
   onDateClick?: (arg: DateClickArg) => void;
   fetchCalendarEvents?: (info: { start: Date; end: Date; timeZone: string; }, successCallback: (events: Array<{ date: string; name: string; }>) => void, failureCallback: (error: Error) => void) => void;
@@ -182,14 +182,14 @@ const StyledCalendarContainer = styled(Paper)<{ module: ModuleVariant }>(({ them
 });
 
 export const ModuleCalendar: React.FC<ModuleCalendarProps> = ({
-  module,
+  module = 'default',
   onDateClick,
   fetchCalendarEvents,
   onDayCellMount
 }) => {
 
   return (
-    <StyledCalendarContainer module={module}>
+  <StyledCalendarContainer module={module}>
       <Box sx={{ width: '100%', overflow: 'auto' }}>
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}

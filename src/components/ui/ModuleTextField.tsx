@@ -14,10 +14,10 @@ const StyledModuleTextField = styled(TextField)<{ module: ModuleVariant }>(({ th
   
   return {
     '& .MuiOutlinedInput-root': {
-      backgroundColor: theme.palette.grey[100],
-      borderRadius: theme.shape.borderRadius,
-      fontSize: '0.875rem',
-      height: '40px',
+  backgroundColor: theme.palette.grey[100],
+  borderRadius: theme.shape.borderRadius,
+  fontSize: '0.875rem',
+  height: '44px',
       
       '& fieldset': {
         borderColor: theme.palette.grey[300],

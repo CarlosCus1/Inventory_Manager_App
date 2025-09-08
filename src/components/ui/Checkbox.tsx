@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModuleType } from '../../enums';
 
-interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   label?: string;
   description?: string;
   module?: ModuleType;

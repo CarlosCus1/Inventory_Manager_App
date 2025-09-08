@@ -109,9 +109,11 @@ export const InventarioPage: React.FC = () => {
         <input
           type="number"
           min={0}
-          value={Number(item.cantidad) || 0}
+          max={1000000}
+          step={0.01}
+          value={item.cantidad}
           onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
-          className="input input-module-inventario w-24 text-right text-gray-900 dark:text-gray-100"
+          className="input input-module-inventario input-qty w-32 text-right text-gray-900 dark:text-gray-100"
           aria-label={`Cantidad para ${item.nombre}`}
         />
       )
@@ -194,7 +196,6 @@ export const InventarioPage: React.FC = () => {
           <LineSelectorModalTrigger
             moduloKey="inventario"
             buttonClassName="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3"
-            themeClass="title-inventario btn-module-inventario"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista.`);

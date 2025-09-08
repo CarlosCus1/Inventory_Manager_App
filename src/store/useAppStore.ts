@@ -20,8 +20,8 @@ interface ModuleStats {
   pedido: number;
   inventario: number;
   comparador: number;
-
 }
+
 
 // --- 2. Definición de la forma del Estado (State) ---
 export interface State {
@@ -35,16 +35,14 @@ export interface State {
     pedido: IForm;
     inventario: IForm;
     precios: IForm;
-
-    comparador: IForm;
+  comparador: IForm;
   };
   listas: {
     devoluciones: IProductoEditado[];
     pedido: IProductoEditado[];
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
-
-    comparador: IProductoEditado[];
+  comparador: IProductoEditado[];
   };
   loading: boolean;
   error: string | null;
@@ -88,22 +86,20 @@ const initialState: Omit<State, keyof Actions> = {
   },
   incompleteTasks: 5,
   lastActivity: {},
-  formState: {
-    devoluciones: { motivo: 'falla_fabrica' },
-    pedido: {},
-    inventario: {},
-    precios: {},
-
-    comparador: {},
-  },
-  listas: {
-    devoluciones: [],
-    pedido: [],
-    inventario: [],
-    precios: [],
-
-    comparador: [],
-  },
+    formState: {
+      devoluciones: { motivo: 'falla_fabrica' },
+      pedido: {},
+      inventario: {},
+      precios: {},
+      comparador: {},
+    },
+    listas: {
+      devoluciones: [],
+      pedido: [],
+      inventario: [],
+      precios: [],
+      comparador: [],
+    },
   loading: false,
   error: null,
   rucCache: {},

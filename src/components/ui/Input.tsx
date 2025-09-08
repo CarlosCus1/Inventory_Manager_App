@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModuleType } from '../../enums';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
   helpText?: string;

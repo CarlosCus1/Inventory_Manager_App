@@ -64,9 +64,11 @@ export const PedidoPage: React.FC = () => {
           type="number"
           aria-label={`Cantidad para ${item.nombre}`}
           placeholder="0"
+          max={1000000}
+          step={0.01}
           value={item.cantidad}
           onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
-          className="input input-module-pedido w-full text-gray-900 dark:text-gray-100"
+          className="input input-module-pedido input-qty w-28 md:w-32 text-gray-900 dark:text-gray-100"
         />
       )
     },
@@ -179,7 +181,6 @@ export const PedidoPage: React.FC = () => {
             moduloKey="pedido"
             showStockRef={true}
             buttonClassName="btn btn-module-pedido ml-3"
-            themeClass="title-pedido btn-module-pedido"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista (Pedido).`);

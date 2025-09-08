@@ -136,6 +136,8 @@ export interface FieldConfig {
   showMotivo?: boolean;
   showMarcas?: boolean;
   showMontoOriginal?: boolean;
+  showPedidoPlanificador?: boolean;
+  showLineaPlanificadorColor?: boolean;
 
   showCargarRespaldo?: boolean;
 }
