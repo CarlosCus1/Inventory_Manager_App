@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "schema:types": "json2ts --input schemas/all_schemas.schema.json > src/types/schemas.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -19,8 +20,10 @@
     "@mui/material": "^7.3.1",
     "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.7.1",
     "zod": "^4.0.14",
     "zustand": "^5.0.7"
@@ -39,10 +42,13 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "json-schema-to-typescript": "^15.0.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.3",
+    "tsx": "^4.16.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "zod-to-json-schema": "^3.23.0"
   }
 }

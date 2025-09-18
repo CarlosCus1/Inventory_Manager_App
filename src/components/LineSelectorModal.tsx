@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
 import { ModuleType } from '../enums';
-import { Modal, Select, SearchInput, DataTable, Button } from './ui';
+import { Modal, Select, SearchInput, Button } from './ui';
+import { DataTable, type IColumn } from './DataTable';
 
 import type { State } from "../store/useAppStore";
 
@@ -76,46 +77,7 @@ type LineSelectorModalProps = {
   onConfirm: (added: IProducto[], skipped: IProducto[]) => void;
 };
 
-type ProductoLocal = IProducto & {
-  linea?: string;
-  stock_referencial?: number;
-};
-
-function useProductosLocal() {
-  const [data, setData] = useState<ProductoLocal[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let cancel = false;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch("/productos_local.json");
-        if (!res.ok) throw new Error("No se pudo cargar productos_local.json");
-        const json = (await res.json()) as ProductoLocal[];
-        if (!cancel) setData(json);
-      } catch (e: unknown) {
-        const message =
-          e && typeof e === "object" && "message" in e
-            ? String((e as { message?: unknown }).message ?? "Error cargando datos")
-            : "Error cargando datos";
-        if (!cancel) setError(message);
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => {
-      cancel = true;
-    };
-  }, []);
-
-  return { data, error, loading };
-}
-
-function getUniqueSortedLineas(productos: ProductoLocal[]): string[] {
+function getUniqueSortedLineas(productos: IProducto[]): string[] {
   const set = new Set<string>();
   for (const p of productos) {
     const linea = (p.linea ?? "").toString().trim();
@@ -125,7 +87,7 @@ function getUniqueSortedLineas(productos: ProductoLocal[]): string[] {
   return Array.from(set).sort((a, b) => collator.compare(a, b));
 }
 
-function sortByCodigoAsc(productos: ProductoLocal[]): ProductoLocal[] {
+function sortByCodigoAsc(productos: IProducto[]): IProducto[] {
   const collator = new Intl.Collator("es-PE", { numeric: true, sensitivity: "base" });
   return [...productos].sort((a, b) =>
     collator.compare(String(a.codigo ?? ""), String(b.codigo ?? ""))
@@ -139,30 +101,21 @@ function normalize(s: string) {
 /**
  * Modal de selección por línea mejorado con componentes modulares.
  */
-function LineSelectorModal({ 
-  isOpen, 
-  moduloKey, 
-  module, 
-  showStockRef, 
-  onClose, 
-  onConfirm 
+function LineSelectorModal({
+  isOpen,
+  moduloKey,
+  module,
+  showStockRef,
+  onClose,
+  onConfirm
 }: LineSelectorModalProps) {
   // Store
-  const lista = useAppStore((s) => {
-    switch (moduloKey as keyof State['listas']) {
-      case "inventario": return s.listas.inventario;
-      case "precios": return s.listas.precios;
-      case "devoluciones": return s.listas.devoluciones;
-      case "pedido": return s.listas.pedido;
-      case "comparador": return s.listas.comparador;
-      default: return [];
-    }
-  });
-
+  const catalogo = useAppStore((s) => s.catalogo);
+  
+  const error = useAppStore((s) => s.error);
   const agregarProductoToLista = useAppStore((s) => s.agregarProductoToLista);
-
-  // Carga de productos
-  const { data, error, loading } = useProductosLocal();
+  const listas = useAppStore((s) => s.listas);
+  const lista = listas[moduloKey];
 
   // Estados del modal
   const [selectedLinea, setSelectedLinea] = useState<string>('');
@@ -178,32 +131,71 @@ function LineSelectorModal({
     }
   }, [isOpen]);
 
-  const lineas = useMemo(() => (data ? getUniqueSortedLineas(data) : []), [data]);
+  const lineas = useMemo(() => (catalogo ? getUniqueSortedLineas(catalogo) : []), [catalogo]);
 
   const productosDeLinea = useMemo(() => {
-    if (!data || !selectedLinea) return [];
-    const base = data.filter((p) => (p.linea ?? "").toString().trim() === selectedLinea);
+    if (!catalogo || !selectedLinea) return [];
+    const base = catalogo.filter((p) => (p.linea ?? "").toString().trim() === selectedLinea);
     const ordenados = sortByCodigoAsc(base);
     if (!searchNombre.trim()) return ordenados;
     const term = normalize(searchNombre.trim());
-    return ordenados.filter((p: ProductoLocal) => normalize(p.nombre ?? "").includes(term));
-  }, [data, selectedLinea, searchNombre]);
+    return ordenados.filter((p: IProducto) => normalize(p.nombre ?? "").includes(term));
+  }, [catalogo, selectedLinea, searchNombre]);
+
+  const toggleSelection = (codigo: string | number) => {
+    setSelectedCodigos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(codigo)) {
+        newSet.delete(codigo);
+      } else {
+        newSet.add(codigo);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCodigos.size === productosDeLinea.length) {
+      setSelectedCodigos(new Set());
+    } else {
+      setSelectedCodigos(new Set(productosDeLinea.map(p => p.codigo)));
+    }
+  };
 
   // Configuración de columnas para la tabla
-  const columns = useMemo(() => {
-    const baseColumns = [
+  const columns: IColumn<IProducto>[] = useMemo(() => {
+    const baseColumns: IColumn<IProducto>[] = [
       {
-        key: 'codigo',
+        header: (
+          <input
+            type="checkbox"
+            className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+            checked={selectedCodigos.size === productosDeLinea.length && productosDeLinea.length > 0}
+            onChange={toggleSelectAll}
+          />
+        ),
+        accessor: 'codigo',
+        align: 'center',
+        cellRenderer: (item: IProducto) => (
+          <input
+            type="checkbox"
+            className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+            checked={selectedCodigos.has(item.codigo)}
+            onChange={() => toggleSelection(item.codigo)}
+          />
+        )
+      },
+      {
         header: 'Código',
-        width: '120px',
-        render: (item: ProductoLocal) => (
+        accessor: 'codigo',
+        cellRenderer: (item: IProducto) => (
           <span className="font-mono text-sm">{item.codigo}</span>
         )
       },
       {
-        key: 'nombre',
         header: 'Nombre',
-        render: (item: ProductoLocal) => (
+        accessor: 'nombre',
+        cellRenderer: (item: IProducto) => (
           <span className="truncate max-w-xs" title={item.nombre}>
             {item.nombre}
           </span>
@@ -213,10 +205,10 @@ function LineSelectorModal({
 
     if (showStockRef) {
       baseColumns.push({
-        key: 'stock_referencial',
         header: 'Stock Ref.',
-        width: '100px',
-        render: (item: ProductoLocal) => (
+        accessor: 'stock_referencial',
+        align: 'right',
+        cellRenderer: (item: IProducto) => (
           <div className="text-right">
             <span className="font-mono text-sm">
               {typeof item.stock_referencial === "number" ? item.stock_referencial.toLocaleString() : "-"}
@@ -227,13 +219,13 @@ function LineSelectorModal({
     }
 
     return baseColumns;
-  }, [showStockRef]);
+  }, [showStockRef, selectedCodigos, productosDeLinea]);
 
   const handleConfirm = () => {
-    if (!data) return;
-    
+    if (!catalogo) return;
+
     // Productos seleccionados por código
-    const seleccionados = productosDeLinea.filter((p) => 
+    const seleccionados = productosDeLinea.filter((p) =>
       selectedCodigos.has(String(p.codigo))
     );
 
@@ -245,9 +237,9 @@ function LineSelectorModal({
     for (const p of seleccionados) {
       const codigo = String(p.codigo);
       if (yaEnLista.has(codigo)) {
-        duplicados.push(p as unknown as IProducto);
+        duplicados.push(p);
       } else {
-        nuevos.push(p as unknown as IProducto);
+        nuevos.push(p);
       }
     }
 
@@ -262,7 +254,7 @@ function LineSelectorModal({
 
   const actions = (
     <>
-      <Button variant="outline" onClick={onClose}>
+      <Button variant="outline" module={module} onClick={onClose} className="cancel-button-orange">
         Cancelar
       </Button>
       <Button
@@ -310,13 +302,17 @@ function LineSelectorModal({
         {/* Paso 2: Búsqueda y selección de productos */}
         {selectedLinea && (
           <div className="space-y-4">
-            <SearchInput
-              placeholder="Buscar productos por nombre..."
-              value={searchNombre}
-              onChange={(e) => setSearchNombre(e.target.value)}
-              onClear={() => setSearchNombre('')}
-              module={module}
-            />
+            <div className="form-group">
+              <label htmlFor="search-productos" className="form-label">Buscar productos</label>
+              <SearchInput
+                id="search-productos"
+                placeholder="Buscar productos por nombre..."
+                value={searchNombre}
+                onChange={(e) => setSearchNombre(e.target.value)}
+                onClear={() => setSearchNombre('')}
+                module={module}
+              />
+            </div>
 
             {error && (
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -327,14 +323,8 @@ function LineSelectorModal({
             <DataTable
               data={productosDeLinea}
               columns={columns}
-              module={module}
-              selectable
-              selectedItems={selectedCodigos}
-              onSelectionChange={setSelectedCodigos}
-              getItemId={(item) => String(item.codigo)}
-              loading={loading}
-              emptyMessage={
-                selectedLinea 
+              noDataMessage={
+                selectedLinea
                   ? "No hay productos para la línea seleccionada con el filtro actual."
                   : "Seleccione una línea para ver los productos disponibles."
               }

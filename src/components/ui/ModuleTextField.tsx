@@ -11,10 +11,10 @@ interface ModuleTextFieldProps extends Omit<React.ComponentProps<typeof TextFiel
 
 const StyledModuleTextField = styled(TextField)<{ module: ModuleVariant }>(({ theme, module }) => {
   const colors = (module === 'default' ? theme.palette.primary : theme.palette[module as keyof typeof theme.palette]) as PaletteColor;
-  
+
   return {
     '& .MuiOutlinedInput-root': {
-  backgroundColor: theme.palette.grey[100],
+  backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[800],
   borderRadius: theme.shape.borderRadius,
   fontSize: '0.875rem',
   height: '44px',

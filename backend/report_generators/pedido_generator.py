@@ -1,84 +1,117 @@
-from .base_generator import BaseReportGenerator, STYLE_CONFIG, autosize_columns
-from openpyxl.styles import PatternFill, Font, Alignment
+from .base_generator import BaseReportGenerator, autosize_columns
 from datetime import datetime
-import pandas as pd
+from typing import Any, Dict, List, Optional
+from collections import defaultdict
+import logging
 
 class PedidoReportGenerator(BaseReportGenerator):
+    def __init__(self, writer: Any, form_data: Dict[str, Any], list_data: List[Dict[str, Any]], data: Optional[Dict[str, Any]] = None, usuario_data: Optional[Dict[str, Any]] = None):
+        super().__init__(writer, form_data, list_data, data, usuario_data)
+        self.report_type = "HOJA DE PEDIDO"
+        self.report_key = "pedido"
+
+    def _get_normalized_headers(self) -> List[str]:
+        """Encabezados normalizados para la hoja de pedido"""
+        return [
+            "Código", "EAN", "EAN14", "Nombre", "Cantidad de unidades a pedir", 
+            "Total de cajas a pedir", "Precio referencial", "Valor total del pedido", 
+            "Línea de producto", "Peso total del pedido", "Observaciones"
+        ]
+
     def generate(self):
-        config = {
-            'sheet_name': "pedido",
-            'df_cols': ["codigo", "cod_ean", "nombre", "cantidad", "peso", "observaciones"],
-            'info_fields': [
-                ("hoja de pedido", ""),
-                ("Cliente", self.form_data.get('cliente', '')),
-                ("RUC o DNI", self.form_data.get('documento_cliente', '')),
-                ("Código Cliente", self.form_data.get('codigo_cliente', '')),
-                ("Fecha", self.form_data.get('fecha', ''))
-            ],
-            'header_start_row': 7,
-            'number_formats': {'D': '0', 'E': '#,##0.00'}
+        sheet_name = "PEDIDO"
+        worksheet = self.workbook.create_sheet(title=sheet_name, index=0)
+        if len(self.workbook.sheetnames) > 1 and "Sheet" in self.workbook.sheetnames:
+            self.workbook.remove(self.workbook["Sheet"])
+
+        # Datos Generales normalizados
+        doc_type = self.form_data.get('documentType', '').upper()
+        doc_num = self.form_data.get('documento_cliente', '')
+        doc_display = f"{doc_type}: {doc_num}" if doc_type and doc_num else doc_num
+
+        general_data = {
+            "Cliente": self.cliente,
+            "Documento": doc_display,
+            "Código de Cliente": self.form_data.get('codigo_cliente', ''),
+            "Sucursal": self.form_data.get('sucursal') or 'principal',
+            "Fecha": datetime.now(),
+            "Responsable": self.usuario,
         }
+        table_start_row = self._create_general_data_block(worksheet, general_data, start_row=1)
 
-        sheet_name = config['sheet_name']
+        # Encabezados de la tabla normalizados
+        headers = self._get_normalized_headers()
+        for col_num, header in enumerate(headers, 1):
+            worksheet.cell(row=table_start_row, column=col_num, value=header)
+
+        # Cuerpo de la tabla con datos normalizados
+        current_row = table_start_row + 1
         
-        fecha_raw = str(self.form_data.get('fecha', '')).strip()
-        try:
-            dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
-            fecha_ddmmyy = dt.strftime('%d-%m-%y')
-        except (ValueError, TypeError):
-            fecha_ddmmyy = datetime.now().strftime('%d-%m-%y')
+        all_data_rows = [] # To store data rows for styling
 
-        for i, (label, _) in enumerate(config['info_fields']):
-            if label == "Fecha":
-                config['info_fields'][i] = ("Fecha", fecha_ddmmyy)
+        total_unidades_a_pedir_sum = 0
+        total_cajas_a_pedir_sum = 0
+        valor_total_pedido_sum = 0
+        peso_total_pedido_sum = 0
 
-        df = pd.DataFrame(self.list_data)
-        for col in config['df_cols']:
-            if col not in df.columns:
-                df[col] = "" if col in ("cod_ean", "observaciones", "nombre", "linea") else 0
-        df = df[config['df_cols']]
+        for item in self.list_data:
+            cantidad = float(item.get("cantidad", 0))
+            u_por_caja = float(item.get("cantidad_por_caja", 0))
+            precio = float(item.get("precio_referencial", 0))
+            peso_unidad = float(item.get("peso", 0))
 
-        data_start_row = config['header_start_row']
-        df.to_excel(self.writer, sheet_name=sheet_name, startrow=data_start_row, index=False, header=False)
-        ws = self.writer.sheets[sheet_name]
+            total_cajas_a_pedir_item = round(cantidad / u_por_caja if u_por_caja != 0 else 0, 2)
+            valor_total_pedido_item = round(cantidad * precio, 2)
+            peso_total_pedido_item = round(cantidad * peso_unidad, 2)
 
-        style_info = STYLE_CONFIG.get('pedido', STYLE_CONFIG['default'])
-
-        current_row = 1
-        for label, value in config['info_fields']:
-            cell = ws.cell(row=current_row, column=1, value=label)
-            self._apply_header_style(cell, style_info)
-            if value:
-                ws.cell(row=current_row, column=2, value=value)
+            row_values = [
+                self._normalize_value(item.get("codigo")),
+                self._normalize_value(item.get("cod_ean")),
+                self._normalize_value(item.get("ean_14")),
+                self._normalize_value(item.get("nombre")),
+                cantidad,
+                total_cajas_a_pedir_item,
+                precio,
+                valor_total_pedido_item,
+                self._normalize_value(item.get("linea")),
+                peso_total_pedido_item,
+                self._normalize_value(item.get("observaciones"))
+            ]
+            all_data_rows.append(row_values)
+            
+            total_unidades_a_pedir_sum += cantidad
+            total_cajas_a_pedir_sum += total_cajas_a_pedir_item
+            valor_total_pedido_sum += valor_total_pedido_item
+            peso_total_pedido_sum += peso_total_pedido_item
+        
+        # Write all data rows to worksheet
+        for row_data in all_data_rows:
+            for col_num, value in enumerate(row_data, 1):
+                worksheet.cell(row=current_row, column=col_num, value=value)
             current_row += 1
-
-        for idx, h in enumerate(config['df_cols'], start=1):
-            cell = ws.cell(row=data_start_row, column=idx, value=h)
-            self._apply_header_style(cell, style_info)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        data_first_row_idx = data_start_row + 1
-        for r_idx in range(data_first_row_idx, data_first_row_idx + len(df)):
-            for col_letter, fmt in config['number_formats'].items():
-                ws[f'{col_letter}{r_idx}'].number_format = fmt
-
-        total_row_idx = data_start_row + len(df) + 2
-        cell = ws.cell(row=total_row_idx, column=1, value="totales")
-        self._apply_header_style(cell, style_info)
-
-        if len(df) > 0:
-            start_row_data_formula = data_start_row + 1
-            end_row_data_formula = data_start_row + len(df)
-            
-            total_cantidad_cell = ws.cell(row=total_row_idx, column=4)
-            total_cantidad_cell.value = f"=SUM(D{start_row_data_formula}:D{end_row_data_formula})"
-            total_cantidad_cell.number_format = "0"
-            
-            total_peso_cell = ws.cell(row=total_row_idx, column=5)
-            total_peso_cell.value = f"=SUMPRODUCT(D{start_row_data_formula}:D{end_row_data_formula},E{start_row_data_formula}:E{end_row_data_formula})"
-            total_peso_cell.number_format = "#,##0.00"
-        else:
-            ws.cell(row=total_row_idx, column=4, value=0).number_format = "0"
-            ws.cell(row=total_row_idx, column=5, value=0).number_format = "#,##0.00"
         
-        autosize_columns(ws)
+        data_rows_end = current_row - 1 # End of actual data rows
+
+        # Aplicar estilos a las filas de datos
+        self._apply_table_styles(worksheet, table_start_row, data_rows_end, len(headers))
+
+        # Fila de Totales normalizada
+        totals_row = current_row
+        worksheet.cell(row=totals_row, column=1, value="TOTALES GENERALES:")
+        worksheet.cell(row=totals_row, column=5, value=total_unidades_a_pedir_sum)
+        worksheet.cell(row=totals_row, column=6, value=round(total_cajas_a_pedir_sum, 2))
+        worksheet.cell(row=totals_row, column=8, value=round(valor_total_pedido_sum, 2))
+        worksheet.cell(row=totals_row, column=10, value=round(peso_total_pedido_sum, 2))
+
+        # Aplicar estilo a la fila de totales
+        self._apply_totals_style(totals_row, 1, 11, worksheet)
+
+        # Ajustar columnas
+        autosize_columns(worksheet)
+
+    def get_filename(self) -> str:
+        """Genera nombre de archivo para la hoja de pedido"""
+        client_name = self.cliente.lower().replace(" ", "_").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        date_str = datetime.now().strftime("%d-%m-%y")
+        filename = f"pedido_{client_name}_{date_str}.xlsx"
+        return filename

@@ -1,10 +1,3 @@
-// --------------------------------------------------------------------------- #
-//                                                                             #
-//                    src/pages/ComparadorPage.tsx                           #
-//                                                                             #
-// --------------------------------------------------------------------------- #
-
-// --- 1. Importaciones necesarias ---
 import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
@@ -12,9 +5,14 @@ import { useSearch } from '../hooks/useSearch';
 import type { IProducto, IForm, FieldConfig, IProductoEditado } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
-import { calculateDataWithPercentages, calculateSummary } from '../utils/comparisonUtils';
+import { calculateDataWithPercentages } from '../utils/comparisonUtils';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { PriceInput } from '../components/comparador/PriceInput';
+import { PercentageDisplay } from '../components/ui';
+import { exportXlsxApi } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+
 
 type ComparisonTableRow = IProductoEditado & Record<string, string | number | undefined>;
 
@@ -24,7 +22,7 @@ export const ComparadorPage: React.FC = () => {
   const catalogo = useAppStore((state) => state.catalogo);
   const cargarCatalogo = useAppStore((state) => state.cargarCatalogo);
   const formState = useAppStore((state) => state.formState.precios);
-  const lista = useAppStore((state) => state.listas.precios);
+  const lista = useAppStore((state) => state.listas.precios) || [];
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
   const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
@@ -35,7 +33,10 @@ export const ComparadorPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [competidores, setCompetidores] = useState<string[]>([]);
 
-  // Derivar los competidores de formState.precios
+  // --- C. Hooks y Utilidades ---
+  const { addToast } = useToast();
+
+  // Derivar los competidores de formState.precios con manejo de duplicados
   useEffect(() => {
     const marcas = [];
     for (let i = 1; i <= 5; i++) {
@@ -48,7 +49,24 @@ export const ComparadorPage: React.FC = () => {
     if (marcas.length < 2) {
       setCompetidores(['Competidor 1', 'Competidor 2']);
     } else {
-      setCompetidores(marcas);
+      // Manejar duplicados agregando numerales automáticamente
+      const marcasUnicas: string[] = [];
+      const contadorMarcas: { [key: string]: number } = {};
+
+      for (const marca of marcas) {
+        if (marcasUnicas.includes(marca)) {
+          // Es un duplicado, agregar numeral
+          contadorMarcas[marca] = (contadorMarcas[marca] || 1) + 1;
+          const marcaConNumeral = `${marca}${contadorMarcas[marca]}`;
+          marcasUnicas.push(marcaConNumeral);
+        } else {
+          // Primera ocurrencia
+          contadorMarcas[marca] = 1;
+          marcasUnicas.push(marca);
+        }
+      }
+
+      setCompetidores(marcasUnicas);
     }
   }, [formState]);
 
@@ -82,35 +100,64 @@ export const ComparadorPage: React.FC = () => {
     return calculateDataWithPercentages(lista, competidores);
   }, [lista, competidores]);
 
-  const resumenPorcentajes = useMemo(() => {
-    return calculateSummary(dataConPorcentajes, competidores);
-  }, [dataConPorcentajes, competidores]);
+
 
   const totales = useMemo(() => {
     const totalElementos = lista.length;
     return { totalElementos };
   }, [lista]);
 
+  const { userName, userEmail } = useAuth();
+
   const handleExport = async () => {
+    const errors: string[] = [];
+    const formData = { ...formState };
+
+    if (!formData.sucursal) {
+      formData.sucursal = '[principal]';
+    }
+
+    if (!formData.documento_cliente || !formData.cliente) {
+      errors.push('El Documento y Nombre del cliente son obligatorios.');
+    }
+
+    if (!formData.fecha) {
+      errors.push('La Fecha es obligatoria.');
+    }
+
+    const marcas = [];
+    for (let i = 1; i <= 5; i++) {
+      const marca = formData[`marca${i}` as keyof IForm];
+      if (typeof marca === 'string' && marca.trim() !== '') {
+        marcas.push(marca.trim());
+      }
+    }
+    if (marcas.length < 2) {
+      errors.push('Debe ingresar al menos 2 marcas para comparar.');
+    }
+
+    if (errors.length > 0) {
+      errors.forEach(error => addToast(error, 'warning'));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/export-xlsx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          tipo: 'precios', 
-          form: formState, 
-          list: dataConPorcentajes
-        }),
-      });
-
-      if (!response.ok) throw new Error('Error en la respuesta del servidor.');
-
-      const blob = await response.blob();
+      const payload: any = {
+        tipo: 'precios',
+        form: formData,
+        list: dataConPorcentajes,
+        usuario: {
+          'nombre': userName,
+          'correo': userEmail
+        },
+        totales: totales
+      };
+      const blob = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'comparador_prices.xlsx';
+      a.download = (blob as any).name || 'comparador_prices.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -127,10 +174,18 @@ export const ComparadorPage: React.FC = () => {
 
   const getPercentageCellClass = (value: string | undefined): string => {
     if (!value) return 'text-[var(--text-secondary)] font-semibold';
-    const parsed = parseFloat(value.replace('%',''));
+    const parsed = parseFloat(value.replace('%', ''));
     if (isNaN(parsed)) return 'text-[var(--text-secondary)] font-semibold';
-    if (parsed > 0) return 'text-[var(--color-danger)] font-bold';
-    if (parsed < 0) return 'text-[var(--color-success)] font-normal';
+
+    // Clases base para el borde y negrita
+    const baseClasses = 'px-1 py-0.5 rounded border font-bold';
+
+    if (parsed > 0) {
+      return `${baseClasses} border-[var(--color-danger)]`;
+    }
+    if (parsed < 0) {
+      return `${baseClasses} border-[var(--color-success)]`;
+    }
     return 'text-[var(--text-primary)] font-semibold';
   };
 
@@ -207,7 +262,7 @@ export const ComparadorPage: React.FC = () => {
     showCodigoCliente: true,
     showSucursal: true,
     showFecha: true,
-    showColaborador: true,
+
     showMarcas: true,
   };
 
@@ -239,7 +294,7 @@ export const ComparadorPage: React.FC = () => {
             showStockRef={false}
             buttonClassName="btn btn-module-comparador ml-3"
             onConfirm={(_, skipped) => {
-              if (skipped.length > 0) {
+              if (skipped && skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista (Comparador).`);
               }
             }}
@@ -250,6 +305,7 @@ export const ComparadorPage: React.FC = () => {
                 codigo: searchTerm,
                 nombre: searchTerm,
                 cod_ean: '',
+                ean_14: '', // Added this line
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
@@ -263,17 +319,24 @@ export const ComparadorPage: React.FC = () => {
           >
             Añadir Manualmente
           </button>
+          <button
+            onClick={handleExport}
+            disabled={isSubmitting || lista.length === 0}
+            className="btn btn-module-comparador ml-3"
+          >
+            {isSubmitting ? 'Generando...' : '▼ Reporte XLSX'}
+          </button>
         </div>
         {searchResults.length > 0 && (
           <ul className="surface surface-border rounded-md max-h-60 overflow-y-auto">
             {searchResults.map((producto: IProducto) => (
-              <li 
-                key={producto.codigo} 
-                onClick={() => { 
-                  agregarProductoToLista('precios', producto); 
+              <li
+                key={producto.codigo}
+                onClick={() => {
+                  agregarProductoToLista('precios', producto);
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
+                className="p-3 cursor-pointer border-b border-[var(--border-primary)] hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -283,14 +346,16 @@ export const ComparadorPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="form-section-title title-comparador">Tabla de Comparación</h2>
-        <div className="mb-4 flex flex-wrap gap-6 text-sm md:text-base" title={`Cálculo sobre columnas “% vs …”. Muestras: ${resumenPorcentajes.n}`}>
-          <span>Min: <strong className="title-comparador">{resumenPorcentajes.min.toFixed(2)}%</strong></span>
-          <span>Max: <strong className="title-comparador">{resumenPorcentajes.max.toFixed(2)}%</strong></span>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h2 className="form-section-title title-comparador mb-0">Tabla de Comparación</h2>
+          <div className="text-lg font-semibold flex items-center gap-6 mt-4 md:mt-0">
+            <span>Total Elementos: <span className="font-extrabold title-comparador">{totales.totalElementos}</span></span>
+          </div>
         </div>
         <DataTable
           data={dataConPorcentajes}
           columns={columns}
+          tableClassName="comparador-table"
           colClasses={[
             'w-24',
             'w-32',
@@ -302,20 +367,6 @@ export const ComparadorPage: React.FC = () => {
             'w-20',
           ]}
         />
-        <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-lg font-semibold">
-            <span>Total Elementos: <span className="font-extrabold title-comparador">{totales.totalElementos}</span></span>
-          </div>
-          <div className="flex gap-2 mt-4 md:mt-0">
-            <button
-              onClick={handleExport}
-              disabled={isSubmitting || lista.length === 0 || !formState.colaborador_personal}
-              className="btn btn-module-comparador w-full md:w-auto"
-            >
-              {isSubmitting ? 'Generando...' : 'Descargar Comparación (XLSX)'}
-            </button>
-          </div>
-        </div>
       </section>
     </div>
   );

@@ -45,7 +45,6 @@ export function useRucDni(moduloKey: ModuloKey) {
     }
 
     if (!isValid) {
-      addToast(errorMessage!, 'error');
       setRucError(errorMessage);
       actualizarFormulario(moduloKey, 'cliente' as keyof IForm, '');
       setRucEstado(null);

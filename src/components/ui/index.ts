@@ -11,3 +11,4 @@ export { Select } from './Select';
 export { Checkbox } from './Checkbox';
 export { DataTable } from './DataTable';
 export { SearchInput } from './SearchInput';
+export { PercentageDisplay } from './PercentageDisplay';

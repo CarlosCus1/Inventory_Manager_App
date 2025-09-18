@@ -1,7 +1,11 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------- #
-#                       backend/app.py - Versión Refactorizada                #
-#                                                                             #
+#           backend/app.py - Versión Refactorizada                             #
+#                                                                             #
 # --------------------------------------------------------------------------- #
 
 # --- 1. Importaciones necesarias ---
@@ -16,36 +20,24 @@ import io
 import unicodedata
 from typing import Any, Dict, List, Optional
 from openpyxl.worksheet.worksheet import Worksheet
-from report_generators.base_generator import BaseReportGenerator
-from report_generators.inventario_generator import InventarioReportGenerator
-from report_generators.pedido_generator import PedidoReportGenerator
-from report_generators.devoluciones_generator import DevolucionesReportGenerator
-from report_generators.precios_generator import PreciosReportGenerator
+from .report_generators.base_generator import BaseReportGenerator
+from .report_generators.inventario_generator import InventarioReportGenerator
+from .report_generators.pedido_generator import PedidoReportGenerator
+from .report_generators.devoluciones_generator import DevolucionesReportGenerator
+from .report_generators.precios_generator import PreciosReportGenerator
+from .constants import UserKeys
+from backend.validation import validate_with_schema
+import logging
 
 # --- 2. Inicialización de la aplicación Flask ---
 app = Flask(__name__)
+
+# Configuración básica de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 # Permitimos solicitudes CORS de cualquier origen para el desarrollo
 # En producción, se recomienda restringir esto a dominios específicos
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, expose_headers=["Content-Disposition"])
-
-# Datos de ejemplo para el endpoint de días festivos.
-HOLIDAYS_2025 = [
-    {"date": "01/01/2025", "name": "Año Nuevo"},
-    {"date": "17/04/2025", "name": "Jueves Santo"},
-    {"date": "18/04/2025", "name": "Viernes Santo"},
-    {"date": "01/05/2025", "name": "Día del Trabajo"},
-    {"date": "07/06/2025", "name": "Batalla de Arica y Día de la Bandera"},
-    {"date": "29/06/2025", "name": "San Pedro y San Pablo"},
-    {"date": "23/07/2025", "name": "Día de la Fuerza Aérea del Perú"},
-    {"date": "28/07/2025", "name": "Fiestas Patrias"},
-    {"date": "29/07/2025", "name": "Fiestas Patrias"},
-    {"date": "06/08/2025", "name": "Batalla de Junín"},
-    {"date": "30/08/2025", "name": "Santa Rosa de Lima"},
-    {"date": "08/10/2025", "name": "Combate de Angamos"},
-    {"date": "01/11/2025", "name": "Día de Todos los Santos"},
-    {"date": "08/12/2025", "name": "Inmaculada Concepción"},
-    {"date": "09/12/2025", "name": "Batalla de Ayacucho"},
-]
 
 
 # --- 5. Definición de Endpoints ---
@@ -97,7 +89,7 @@ def calculate():
             try:
                 # Se asume que el formato de fecha es 'DD/MM/YYYY'
                 fecha_obj = datetime.strptime(fecha_str, '%d/%m/%Y')
-                mes_anio = fecha_obj.strftime('%Y-%m') # Formato 'YYYY-MM'
+                mes_anio = fecha_obj.strftime('%Y-%m') # Formato 'YYYY-%m'
                 
                 if mes_anio in resumen_mensual:
                     resumen_mensual[mes_anio] += monto
@@ -150,20 +142,6 @@ def consultar_ruc():
         return jsonify({"error": "El número de documento debe tener 8 u 11 dígitos."}), 400
 
 
-@app.route('/api/getHolidays', methods=['GET'])
-def get_holidays():
-    """
-    Endpoint para obtener los días festivos. Actualmente solo soporta 2025.
-    """
-    # Se obtiene el año de los argumentos, por defecto 2025 si no se especifica.
-    year = request.args.get('year', default=2025, type=int)
-    if year == 2025:
-        return jsonify(HOLIDAYS_2025)
-    else:
-        # Para cualquier otro año, devuelve una lista vacía con estado 200 OK.
-        # Esto evita que los servidores de desarrollo devuelvan index.html en un 404.
-        return jsonify([])
-
 REPORT_GENERATORS = {
     'inventario': InventarioReportGenerator,
     'pedido': PedidoReportGenerator,
@@ -172,19 +150,21 @@ REPORT_GENERATORS = {
 }
 
 @app.route('/export-xlsx', methods=['POST'])
+@validate_with_schema()
 def export_xlsx():
+    app.logger.info('Received request to /export-xlsx')
     """
     Endpoint principal que recibe datos JSON, genera un archivo Excel
     con formato y lo envía como una descarga.
     """
     try:
         data = request.get_json()
-        if not data or 'tipo' not in data or 'form' not in data or 'list' not in data:
-            return jsonify({"error": "Faltan datos en la petición (se requiere 'tipo', 'form' y 'list')"}), 400
 
         tipo_gestion = data.get('tipo', 'desconocido')
         form_data = data.get('form', {})
         list_data = data.get('list', [])
+        usuario_data = data.get('usuario', {})
+        totales_data = data.get('totales', {})
 
         GeneratorClass = REPORT_GENERATORS.get(tipo_gestion)
 
@@ -193,13 +173,12 @@ def export_xlsx():
 
         output_buffer = io.BytesIO()
         with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
-            generator = GeneratorClass(writer, form_data, list_data)
+            generator = GeneratorClass(writer, form_data, list_data, data=totales_data, usuario_data=usuario_data)
             generator.generate()
 
         output_buffer.seek(0)
 
-        # Get filename from the generator instance if it was set
-        filename = getattr(generator, 'filename', f"{tipo_gestion}_report.xlsx")
+        filename = generator.get_filename()
 
         return send_file(
             output_buffer,

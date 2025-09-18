@@ -18,7 +18,7 @@ import type { IProducto } from '../interfaces';
  * @param {string} searchTerm - El término de búsqueda introducido por el usuario.
  * @returns {IProducto[]} - Un array de productos que coinciden con el término de búsqueda.
  */
-export const useSearch = (items: IProducto[], searchTerm: string): IProducto[] => {
+export const useSearch = (items: IProducto[] = [], searchTerm: string): IProducto[] => {
   // `useMemo` es un hook de React que memoriza el resultado de una función.
   // Esto significa que la lógica de filtrado solo se volverá a ejecutar si
   // `items` o `searchTerm` cambian, optimizando el rendimiento al evitar

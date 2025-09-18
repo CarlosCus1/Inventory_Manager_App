@@ -27,6 +27,9 @@ export const ProductoSchema = z.object({
   /** Código de barras EAN del producto. */
   cod_ean: z.string(),
 
+  /** Código de barras EAN-14 del producto. */
+  ean_14: z.string(),
+
   /** Nombre descriptivo del producto. */
   nombre: z.string().min(1, 'El nombre es requerido.'),
 
@@ -93,8 +96,7 @@ export const FormSchema = z.object({
   /** Fecha de la operación (común a todos los módulos). */
   fecha: z.string().optional(),
 
-  /** Nombre del colaborador o personal (usado en Inventario, Comparador). */
-  colaborador_personal: z.string().optional(),
+  
 
   /** Nombre de la Marca 1 para comparación de precios. */
   marca1: z.string().optional(),
@@ -132,7 +134,7 @@ export interface FieldConfig {
   showCodigoCliente?: boolean;
   showSucursal?: boolean;
   showFecha?: boolean;
-  showColaborador?: boolean;
+  
   showMotivo?: boolean;
   showMarcas?: boolean;
   showMontoOriginal?: boolean;

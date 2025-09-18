@@ -118,7 +118,7 @@ La aplicación sigue una arquitectura cliente-servidor donde el frontend (React)
     ```bash
     python backend\app.py
     ```
-    El endpoint principal de exportación es: `POST http://localhost:5000/export-xlsx`
+    El endpoint principal de exportación es: `POST http://localhost:5001/export-xlsx`
 
 
 ## Arquitectura de Carpetas (Resumen)
@@ -232,13 +232,24 @@ El proyecto ha sido limpiado de todo rastro del módulo planificador. La estruct
 
 ## Changelog Reciente (Resumen)
 
-*   Eliminado módulo planificador y toda su lógica, estilos y dependencias.
+### ✅ Mejoras en Comparador de Precios
+*   **Manejo inteligente de marcas duplicadas:** Al ingresar marcas con el mismo nombre (ej: "Vinifan", "Vinifan"), se agregan automáticamente numerales ("Vinifan", "Vinifan2") para comparación entre sucursales/franquicias.
+*   **Tooltips informativos:** Aparecen automáticamente al perder foco cuando hay duplicados, explicando que se renombrarán para evitar conflictos.
+*   **Toasts con auto-cierre:** Las notificaciones se cierran automáticamente en 5 segundos para no interrumpir el flujo de trabajo.
 
+### ✅ Optimizaciones en Backend
+*   **Fórmula STDEV corregida:** Cambiada de `DESVEST.P` a `STDEV` para máxima compatibilidad y evitar problemas con "@" en versiones modernas de Excel.
+*   **Headers optimizados:** Abreviaturas en columnas largas ("DESVIACIÓN ESTÁNDAR" → "DESV. STD", "+ BARATOS", "+ CAROS") y ancho máximo reducido a 30 caracteres.
+*   **Autoajuste inteligente:** Columnas se ajustan automáticamente según contenido con límites apropiados.
+
+### ✅ Limpieza y Mantenimiento
+*   Eliminado módulo planificador y toda su lógica, estilos y dependencias.
 *   Paletas por módulo implementadas (rojo/azul/verde/naranja).
 *   Altura uniforme en todos los inputs/selects (20px).
 *   Comparador: inputs de precio 45×20 con `.price-cell-45`; cabecera responsive.
 *   **Comparador:** Corregida la estructura del archivo Excel para que la fila 10 esté vacía, la fila 11 contenga los encabezados y los datos comiencen en la fila 12.
 *   Removido tema global y dependencias no usadas; build Tailwind v4 estabilizado.
+*   **Limpieza de repositorio:** Eliminados archivos innecesarios (`changes.patch`, `.git_disabled/`, `.kombai/`).
 
 ## Licencia
 

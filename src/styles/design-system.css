@@ -36,6 +36,7 @@
   --color-comparador-border: #FED7AA;
 
   /* 🌈 Colores Base del Sistema */
+  --color-primary-light: #3B82F6;
   --color-danger: #DC2626;
   --color-success: #16A34A;
   --color-white: #FFFFFF;
@@ -134,7 +135,7 @@
   --surface-primary: rgba(255, 255, 255, 0.7); /* blanco con 70% opacidad */
   --surface-secondary: rgba(249, 250, 251, 0.6); /* gray-50 con 60% opacidad */
   --surface-elevated: rgba(255, 255, 255, 0.9); /* blanco con 90% opacidad */
-  --surface-glass: rgba(255, 255, 255, 0.3); /* blanco con 30% opacidad */
+  --surface-glass: rgba(243, 244, 246, 0.8); /* gray-100 con 80% opacidad para mejor contraste */
 }
 
 /* 🌙 Tema Oscuro con Transparencias */
@@ -142,21 +143,31 @@
   --bg-primary: var(--color-gray-900);
   --bg-secondary: rgba(31, 41, 55, 0.7); /* gray-800 con 70% opacidad */
   --bg-tertiary: rgba(55, 65, 81, 0.8);  /* gray-700 con 80% opacidad */
-  
+
   --text-primary: var(--color-gray-100);
   --text-secondary: var(--color-gray-300);
   --text-tertiary: var(--color-gray-400);
-  
+
   --border-primary: rgba(55, 65, 81, 0.6); /* gray-700 con 60% opacidad */
   --border-secondary: rgba(75, 85, 99, 0.7); /* gray-600 con 70% opacidad */
-  
+
   --surface-primary: rgba(31, 41, 55, 0.7); /* gray-800 con 70% opacidad */
   --surface-secondary: rgba(55, 65, 81, 0.6); /* gray-700 con 60% opacidad */
   --surface-elevated: rgba(45, 55, 72, 0.9); /* gray-750 con 90% opacidad */
-  --surface-glass: rgba(0, 0, 0, 0.3); /* negro con 30% opacidad */
+  --surface-glass: #1f2937; /* gray-800 sólido para mejor contraste */
 
   /* Ajustes de superficie para modo oscuro */
   --color-gray-750: #2D3748;
+
+  /* 🎯 Colores por Módulo (Modo Oscuro) */
+  --color-devoluciones-surface-dark: #450A0A;
+  --color-devoluciones-border-dark: #571313;
+  --color-pedido-surface-dark: #1E3A8A;
+  --color-pedido-border-dark: #1E40AF;
+  --color-inventario-surface-dark: #14532D;
+  --color-inventario-border-dark: #166534;
+  --color-comparador-surface-dark: #4A210A;
+  --color-comparador-border-dark: #5C2E10;
   
   /* Sombras ajustadas para modo oscuro */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -315,6 +326,12 @@ p {
   --module-border: var(--color-devoluciones-border);
 }
 
+.dark .module-devoluciones,
+.dark [data-module="devoluciones"] {
+  --module-surface: var(--color-devoluciones-surface-dark);
+  --module-border: var(--color-devoluciones-border-dark);
+}
+
 /* Pedido - Azul */
 .module-pedido,
 [data-module="pedido"] {
@@ -323,6 +340,12 @@ p {
   --module-dark: var(--color-pedido-dark);
   --module-surface: var(--color-pedido-surface);
   --module-border: var(--color-pedido-border);
+}
+
+.dark .module-pedido,
+.dark [data-module="pedido"] {
+  --module-surface: var(--color-pedido-surface-dark);
+  --module-border: var(--color-pedido-border-dark);
 }
 
 /* Inventario - Verde */
@@ -335,6 +358,12 @@ p {
   --module-border: var(--color-inventario-border);
 }
 
+.dark .module-inventario,
+.dark [data-module="inventario"] {
+  --module-surface: var(--color-inventario-surface-dark);
+  --module-border: var(--color-inventario-border-dark);
+}
+
 /* Comparador - Naranja */
 .module-comparador,
 [data-module="comparador"] {
@@ -343,6 +372,21 @@ p {
   --module-dark: var(--color-comparador-dark);
   --module-surface: var(--color-comparador-surface);
   --module-border: var(--color-comparador-border);
+}
+
+.dark .module-comparador,
+.dark [data-module="comparador"] {
+  --module-surface: var(--color-comparador-surface-dark);
+  --module-border: var(--color-comparador-border-dark);
+}
+
+/* Fallback para cuando no hay módulo específico */
+:root:not(.module-devoluciones):not(.module-pedido):not(.module-inventario):not(.module-comparador) {
+  --module-primary: var(--color-gray-600);
+  --module-light: var(--color-gray-500);
+  --module-dark: var(--color-gray-700);
+  --module-surface: var(--color-gray-100);
+  --module-border: var(--color-gray-300);
 }
 
 /* Fallback para cuando no hay módulo específico */
@@ -422,8 +466,8 @@ p {
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
   line-height: 1.5;
-  color: var(--text-primary);
-  background-color: var(--surface-glass);
+  color: var(--text-primary) !important;
+  background-color: var(--surface-glass) !important;
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
   backdrop-filter: blur(8px);
@@ -435,7 +479,7 @@ p {
 .input:focus {
   outline: none;
   border-color: var(--module-primary, var(--color-gray-400));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, #9CA3AF) 30%, transparent),
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, var(--color-gray-400)) 30%, transparent),
               inset 0 1px 3px rgba(0, 0, 0, 0.1);
   background-color: var(--surface-elevated);
   transform: translateY(-1px);
@@ -481,8 +525,100 @@ p {
 }
 
 /* ========================================
-   📱 RESPONSIVE UTILITIES
-   ======================================== */
+    🎯 FORZAR CONTRASTE GLOBAL
+    ======================================== */
+
+/* Forzar contraste en todos los elementos de texto */
+* {
+  color: var(--text-primary) !important;
+}
+
+/* Forzar fondo solo en elementos principales específicos */
+/* body, html, main, section, article, div {
+  background-color: var(--bg-primary) !important;
+} */
+
+/* Forzar colores en cards y contenedores */
+.surface, .surface-card, .surface-elevated, .surface-glass {
+  background-color: var(--surface-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Forzar colores en modo oscuro */
+.dark .surface,
+.dark .surface-card,
+.dark .surface-elevated,
+.dark .surface-glass {
+  background-color: var(--surface-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Asegurar que los inputs mantengan sus colores específicos */
+.input, .input:focus, .input:hover {
+  color: var(--text-primary) !important;
+  background-color: var(--surface-glass) !important;
+}
+
+/* Forzar colores en elementos de texto generales, pero preservar lógica de colores específicos */
+h1, h2, h3, h4, h5, h6, p, div, section, article {
+  color: var(--text-primary) !important;
+}
+
+/* Preservar colores específicos para porcentajes y valores */
+.percentage-positive,
+.percentage-negative,
+.text-green,
+.text-red,
+.positive-value,
+.negative-value,
+.text-\[var\(--color-success\)\],
+.text-\[var\(--color-danger\)\],
+.text-success,
+.text-error,
+.value-positive,
+.value-negative {
+  color: inherit !important; /* Mantener colores originales específicos */
+}
+
+/* Aplicar colores específicos para lógica de porcentajes */
+.percentage-positive,
+.positive-value,
+.value-positive {
+  color: var(--color-danger) !important; /* Rojo para valores positivos */
+}
+
+.percentage-negative,
+.negative-value,
+.value-negative {
+  color: var(--color-success) !important; /* Verde para valores negativos */
+}
+
+/* Aplicar color del tema solo a elementos que no tienen lógica específica */
+span:not(.percentage-positive):not(.percentage-negative):not(.text-green):not(.text-red):not(.positive-value):not(.negative-value),
+.text-percentage:not(.percentage-positive):not(.percentage-negative),
+.percentage-value:not(.percentage-positive):not(.percentage-negative) {
+  color: var(--text-primary) !important;
+}
+
+/* Forzar colores en botones */
+.btn, .btn-module {
+  color: var(--color-white) !important;
+}
+
+/* Botón cancelar con fondo del módulo */
+.cancel-button-orange {
+  background-color: var(--module-primary) !important;
+  color: var(--color-white) !important;
+  border: none !important;
+}
+
+.cancel-button-orange:hover:not(:disabled) {
+  background-color: var(--module-dark) !important;
+}
+
+/* ========================================
+    📱 RESPONSIVE UTILITIES
+    ======================================== */
 
 @media (max-width: 640px) {
   .container-app {

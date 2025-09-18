@@ -54,18 +54,3 @@ export const formatDecimal = (value: number | string): string => {
   }
   return numberValue.toFixed(2);
 };
-
-/**
- * Format quantity for display according to rules:
- * - Whole numbers are shown without decimals (e.g. 200000)
- * - Numbers with fractional part show two decimals (e.g. 10.50)
- */
-export const formatQuantityDisplay = (value: number | string): string => {
-  const n = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(n)) return '0';
-  if (Math.abs(n - Math.round(n)) < 1e-9) {
-    // integer
-    return String(Math.round(n));
-  }
-  return n.toFixed(2);
-};

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { theme as appTheme, Theme as AppTheme } from "../theme";
 
 /**
  * Tema global independiente del navegador/sistema.
@@ -6,20 +7,21 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
  * Aplica/remueve la clase 'dark' en <html> (document.documentElement) para Tailwind.
  */
 
-type Theme = "light" | "dark";
+type ThemeMode = "light" | "dark";
 
 type ThemeContextValue = {
-  theme: Theme;
+  mode: ThemeMode;
   isDark: boolean;
   toggleTheme: () => void;
-  setTheme: (t: Theme) => void;
+  setTheme: (t: ThemeMode) => void;
+  theme: AppTheme;
 };
 
 const THEME_STORAGE_KEY = "app_theme";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function getInitialTheme(): Theme {
+function getInitialTheme(): ThemeMode {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "dark" || stored === "light") return stored;
@@ -31,12 +33,12 @@ function getInitialTheme(): Theme {
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const [mode, setMode] = useState<ThemeMode>(getInitialTheme);
 
   // Aplica/remueve clase 'dark' en <html> y persiste en localStorage
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
+    if (mode === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
@@ -52,7 +54,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.head.appendChild(meta);
       }
       // Light: blanco; Dark: gris muy oscuro
-      meta.setAttribute("content", theme === "dark" ? "#111827" : "#ffffff");
+      meta.setAttribute("content", mode === "dark" ? "#111827" : "#ffffff");
     };
     try {
       ensureThemeMeta();
@@ -61,34 +63,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      localStorage.setItem(THEME_STORAGE_KEY, mode);
       // Sincronizar multi-pestaña: notificar el cambio explícitamente
       window.localStorage.setItem(`${THEME_STORAGE_KEY}_last_change`, String(Date.now()));
       // Log de depuración
-      console.debug("[theme][provider] set theme =", theme, "html.dark?", root.classList.contains("dark"));
+      console.debug("[theme][provider] set theme =", mode, "html.dark?", root.classList.contains("dark"));
     } catch {
       // ignore
     }
-  }, [theme]);
+  }, [mode]);
 
   // Escuchar cambios de tema realizados en otras pestañas y aplicarlos en vivo
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (!e.key) return;
       if (e.key === THEME_STORAGE_KEY) {
-        const newTheme = (e.newValue === "dark" ? "dark" : "light") as Theme;
+        const newTheme = (e.newValue === "dark" ? "dark" : "light") as ThemeMode;
         console.debug("[theme][storage] detected change to", newTheme);
-        setThemeState((prev) => (prev !== newTheme ? newTheme : prev));
+        setMode((prev) => (prev !== newTheme ? newTheme : prev));
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const setTheme = (t: Theme) => setThemeState(t);
+  const setTheme = (t: ThemeMode) => setMode(t);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+    setMode((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   // Guardián opcional: detectar si algo externo manipula la clase 'dark' en <html> y reportarlo
@@ -96,7 +98,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
     const observer = new MutationObserver(() => {
       const hasDark = root.classList.contains("dark");
-      const expected = theme === "dark";
+      const expected = mode === "dark";
       if (hasDark !== expected) {
         console.warn("[theme][observer] html.dark changed externally. expected:", expected, "got:", hasDark);
         // Reaplicar nuestro estado como fuente de verdad
@@ -106,16 +108,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
     observer.observe(root, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
-  }, [theme]);
+  }, [mode]);
+
+  const currentTheme = useMemo(() => {
+    const themeForMode = mode === 'light' ? appTheme.light : appTheme.dark;
+    return {
+      ...appTheme,
+      ...themeForMode,
+    }
+  }, [mode]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
-      theme,
-      isDark: theme === "dark",
+      mode,
+      isDark: mode === "dark",
       toggleTheme,
       setTheme,
+      theme: currentTheme,
     }),
-    [theme]
+    [mode, currentTheme]
   );
 
   // Devolver con React.createElement para evitar problemas con configuración de JSX/erasableSyntaxOnly

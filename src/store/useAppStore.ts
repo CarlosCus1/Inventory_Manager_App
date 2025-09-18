@@ -7,13 +7,12 @@
 // --- 1. Importaciones necesarias ---
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getCatalogFromIndexedDB, saveCatalogToIndexedDB } from '../utils/indexedDb';
+import { saveCatalogToIndexedDB } from '../utils/indexedDb';
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
 import { consultarRucApi, fetchHolidaysApi } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 
 // --- Tipos Adicionales ---
-type Theme = 'light' | 'dark';
 
 interface ModuleStats {
   devoluciones: number;
@@ -25,7 +24,6 @@ interface ModuleStats {
 
 // --- 2. Definición de la forma del Estado (State) ---
 export interface State {
-  theme: Theme;
   catalogo: IProducto[];
   moduleUsage: ModuleStats;
   incompleteTasks: number;
@@ -48,11 +46,11 @@ export interface State {
   error: string | null;
   rucCache: Record<string, unknown>;
   holidays: Array<{ date: string; name: string }>;
+  theme: 'light' | 'dark';
 }
 
 // --- 3. Definición de las Acciones (Actions) ---
 interface Actions {
-  toggleTheme: () => void;
   updateModuleUsage: (module: keyof ModuleStats) => void;
   addIncompleteTask: () => void;
   completeTask: () => void;
@@ -71,11 +69,11 @@ interface Actions {
   resetearModulo: (tipo: keyof State['listas']) => void;
   fetchRuc: (ruc: string) => Promise<RucData>;
   fetchHolidays: (year: number) => Promise<Array<{ date: string; name: string }>>;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 // --- 4. Estado Inicial ---
 const initialState: Omit<State, keyof Actions> = {
-  theme: 'light',
   catalogo: [],
   moduleUsage: {
     devoluciones: 75,
@@ -87,7 +85,7 @@ const initialState: Omit<State, keyof Actions> = {
   incompleteTasks: 5,
   lastActivity: {},
     formState: {
-      devoluciones: { motivo: 'falla_fabrica' },
+      devoluciones: {},
       pedido: {},
       inventario: {},
       precios: {},
@@ -104,6 +102,7 @@ const initialState: Omit<State, keyof Actions> = {
   error: null,
   rucCache: {},
   holidays: [],
+  theme: 'light',
 };
 
 // --- 5. Adaptador de Datos para el nuevo JSON de productos ---
@@ -113,6 +112,7 @@ const mapRawProductToIProducto = (rawProduct: any): IProducto => {
     codigo: rawProduct.codigo || '',
     nombre: rawProduct.nombre || '',
     cod_ean: rawProduct.ean || '',
+    ean_14: rawProduct.ean_14 || '',
     linea: rawProduct.linea || '',
     peso: rawProduct.can_kg_um || 0,
     stock_referencial: rawProduct.stock_referencial || 0,
@@ -130,23 +130,13 @@ export const useAppStore = create<State & Actions>()(
       ...initialState,
 
       // --- Implementación de las Acciones ---
-      toggleTheme: () => {
-        set((state) => ({
-          theme: state.theme === 'light' ? 'dark' : 'light',
-        }));
-      },
 
       cargarCatalogo: async () => {
         if (get().loading || get().catalogo.length > 0) return;
 
         set({ loading: true, error: null });
         try {
-          const indexedDBCatalog = await getCatalogFromIndexedDB();
-          if (indexedDBCatalog && indexedDBCatalog.length > 0) {
-            // console.log('Catálogo cargado desde IndexedDB.');
-            set({ catalogo: indexedDBCatalog, loading: false });
-            return;
-          }
+          
 
           const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
           // console.log(`Intentando cargar catálogo desde la red: ${url}`);
@@ -318,17 +308,21 @@ export const useAppStore = create<State & Actions>()(
 
       completeTask: () => set((state) => ({
         incompleteTasks: Math.max(0, state.incompleteTasks - 1)
+      })),
+
+      setTheme: (theme: 'light' | 'dark') => set(() => ({
+        theme: theme
       }))
     }),
     {
       name: 'app-storage',
       partialize: (state) => ({ 
         formState: state.formState, 
-        theme: state.theme, 
         listas: state.listas,
         moduleUsage: state.moduleUsage,
         incompleteTasks: state.incompleteTasks,
-        lastActivity: state.lastActivity
+        lastActivity: state.lastActivity,
+        theme: state.theme,
       }),
       storage: createJSONStorage(() => localStorage),
     }

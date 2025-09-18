@@ -1,87 +1,121 @@
-from .base_generator import BaseReportGenerator, STYLE_CONFIG, autosize_columns
-from openpyxl.styles import PatternFill, Font, Alignment
+from .base_generator import BaseReportGenerator, autosize_columns
 from datetime import datetime
-import pandas as pd
+from typing import Any, Dict, List, Optional
+from collections import defaultdict
+from ..constants import FormKeys, ProductKeys
 
 class InventarioReportGenerator(BaseReportGenerator):
+    def __init__(self, writer: Any, form_data: Dict[str, Any], list_data: List[Dict[str, Any]], data: Optional[Dict[str, Any]] = None, usuario_data: Optional[Dict[str, Any]] = None):
+        super().__init__(writer, form_data, list_data, data, usuario_data)
+        self.report_type = "REPORTE DE INVENTARIO FÍSICO"
+        self.report_key = "inventario"
+
+    def get_filename(self) -> str:
+        """Genera nombre de archivo para el reporte de inventario"""
+        client_name = self.cliente.lower().replace(" ", "_").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        date_str = datetime.now().strftime("%d-%m-%y")
+        filename = f"inventario_{client_name}_{date_str}.xlsx"
+        return filename
+
+    def _get_normalized_headers(self) -> List[str]:
+        """Encabezados normalizados para el reporte de inventario"""
+        return [
+            "Código", "EAN", "EAN14", "Nombre", "Existencia en almacén", 
+            "Total de cajas en stock", "Línea de producto", "Peso total en stock", 
+            "Precio referencial", "Valor total del inventario", "Observaciones"
+        ]
+
     def generate(self):
-        config = {
-            'sheet_name': "inventario",
-            'df_cols': ["codigo", "cod_ean", "nombre", "cantidad", "linea", "observaciones"],
-            'info_fields': [
-                ("inventario", ""),
-                ("Cliente", self.form_data.get('cliente', '')),
-                ("RUC o DNI", self.form_data.get('documento_cliente', '')),
-                ("Colaborador", self.form_data.get('colaborador_personal', '')),
-                ("Fecha", self.form_data.get('fecha', ''))
-            ],
-            'header_start_row': 7,
-            'number_formats': {'D': '0'}
+        sheet_name = "INVENTARIO"
+        worksheet = self.workbook.create_sheet(title=sheet_name, index=0)
+        if len(self.workbook.sheetnames) > 1 and "Sheet" in self.workbook.sheetnames:
+            self.workbook.remove(self.workbook["Sheet"])
+
+        # Datos Generales normalizados
+        doc_type = self.form_data.get(FormKeys.DOCUMENT_TYPE, '').upper()
+        doc_num = self.form_data.get(FormKeys.DOCUMENTO_CLIENTE, '')
+        doc_display = f"{doc_type}: {doc_num}" if doc_type and doc_num else doc_num
+
+        general_data = {
+            "Cliente": self.cliente,
+            "Documento": doc_display,
+            "Código de Cliente": self.form_data.get(FormKeys.CODIGO_CLIENTE, ''),
+            "Sucursal": self.form_data.get(FormKeys.SUCURSAL) or 'principal',
+            "Responsable": self.usuario,
+            "Fecha": datetime.now(),
+            "Total Productos": len(self.list_data),
+            "Total Líneas Únicas": self.data.get('totalLineas', 0)
         }
+        table_start_row = self._create_general_data_block(worksheet, general_data, start_row=1)
 
-        sheet_name = config['sheet_name']
+        # Encabezados de la tabla normalizados
+        headers = self._get_normalized_headers()
+        for col_num, header in enumerate(headers, 1):
+            worksheet.cell(row=table_start_row, column=col_num, value=header)
+
+        all_data_rows = []
         
-        fecha_raw = str(self.form_data.get('fecha', '')).strip()
-        try:
-            dt = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00'))
-            fecha_ddmmyy = dt.strftime('%d-%m-%y')
-        except (ValueError, TypeError):
-            fecha_ddmmyy = datetime.now().strftime('%d-%m-%y')
+        total_existencia_sum = 0
+        total_cajas_stock_sum = 0
+        total_peso_stock_sum = 0
+        total_valor_inventario_sum = 0
 
-        for i, (label, _) in enumerate(config['info_fields']):
-            if label == "Fecha":
-                config['info_fields'][i] = ("Fecha", fecha_ddmmyy)
+        # Procesar cada producto individualmente
+        for item in self.list_data:
+            cantidad_ingresada = float(item.get(ProductKeys.CANTIDAD, 0))
+            u_por_caja = float(item.get(ProductKeys.CANTIDAD_POR_CAJA, 0))
+            peso_unidad = float(item.get(ProductKeys.PESO, 0))
+            precio_referencial = float(item.get(ProductKeys.PRECIO_REFERENCIA, 0))
 
-        df = pd.DataFrame(self.list_data)
-        for col in config['df_cols']:
-            if col not in df.columns:
-                df[col] = "" if col in ("cod_ean", "observaciones", "nombre", "linea") else 0
-        df = df[config['df_cols']]
+            total_cajas_en_stock_item = round(cantidad_ingresada / u_por_caja if u_por_caja > 0 else 0, 2)
+            peso_total_en_stock_item = round(cantidad_ingresada * peso_unidad, 2)
+            valor_total_inventario_item = round(cantidad_ingresada * precio_referencial, 2)
 
-        data_start_row = config['header_start_row']
-        df.to_excel(self.writer, sheet_name=sheet_name, startrow=data_start_row, index=False, header=False)
-        ws = self.writer.sheets[sheet_name]
-
-        style_info = STYLE_CONFIG.get('inventario', STYLE_CONFIG['default'])
-
-        current_row = 1
-        for label, value in config['info_fields']:
-            cell = ws.cell(row=current_row, column=1, value=label)
-            self._apply_header_style(cell, style_info)
-            if value:
-                ws.cell(row=current_row, column=2, value=value)
+            row_values = [
+                self._normalize_value(item.get(ProductKeys.CODIGO)),
+                self._normalize_value(item.get(ProductKeys.COD_EAN)),
+                self._normalize_value(item.get(ProductKeys.EAN_14)),
+                self._normalize_value(item.get(ProductKeys.NOMBRE)),
+                cantidad_ingresada,
+                total_cajas_en_stock_item,
+                self._normalize_value(item.get(ProductKeys.LINEA)),
+                peso_total_en_stock_item,
+                precio_referencial,
+                valor_total_inventario_item,
+                self._normalize_value(item.get(ProductKeys.OBSERVACIONES))
+            ]
+            all_data_rows.append(row_values)
+            
+            # Acumular totales directamente
+            total_existencia_sum += cantidad_ingresada
+            total_cajas_stock_sum += total_cajas_en_stock_item
+            total_peso_stock_sum += peso_total_en_stock_item
+            total_valor_inventario_sum += valor_total_inventario_item
+        
+        # Initialize current_row after headers
+        current_row = table_start_row + 1
+        
+        # Write all data rows to worksheet
+        for row_data in all_data_rows:
+            for col_num, value in enumerate(row_data, 1):
+                worksheet.cell(row=current_row, column=col_num, value=value)
             current_row += 1
-
-        for idx, h in enumerate(config['df_cols'], start=1):
-            cell = ws.cell(row=data_start_row, column=idx, value=h)
-            self._apply_header_style(cell, style_info)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        data_first_row_idx = data_start_row + 1
-        for r_idx in range(data_first_row_idx, data_first_row_idx + len(df)):
-            for col_letter, fmt in config['number_formats'].items():
-                ws[f'{col_letter}{r_idx}'].number_format = fmt
-
-        total_row_idx = data_start_row + len(df) + 2
-        cell = ws.cell(row=total_row_idx, column=1, value="totales")
-        self._apply_header_style(cell, style_info)
-
-        if len(df) > 0:
-            start_row_data_formula = data_start_row + 1
-            end_row_data_formula = data_start_row + len(df)
-            
-            total_cantidad_cell = ws.cell(row=total_row_idx, column=4)
-            total_cantidad_cell.value = f"=SUM(D{start_row_data_formula}:D{end_row_data_formula})"
-            total_cantidad_cell.number_format = "0"
-            
-            unique_lines = df['linea'].dropna().apply(lambda x: str(x).strip().upper()).nunique()
-            cell = ws.cell(row=total_row_idx, column=5, value="Total Líneas Únicas:")
-            self._apply_header_style(cell, style_info)
-            ws.cell(row=total_row_idx, column=6, value=unique_lines).number_format = "0"
-        else:
-            ws.cell(row=total_row_idx, column=4, value=0).number_format = "0"
-            cell = ws.cell(row=total_row_idx, column=5, value="Total Líneas Únicas:")
-            self._apply_header_style(cell, style_info)
-            ws.cell(row=total_row_idx, column=6, value=0).number_format = "0"
         
-        autosize_columns(ws)
+        data_rows_end = current_row - 1 # End of actual data rows
+
+        # Aplicar estilos a las filas de datos
+        self._apply_table_styles(worksheet, table_start_row, data_rows_end, len(headers))
+
+        # Fila de Totales normalizada
+        totals_row = current_row
+        worksheet.cell(row=totals_row, column=1, value="TOTALES GENERALES:")
+        worksheet.cell(row=totals_row, column=5, value=total_existencia_sum)
+        worksheet.cell(row=totals_row, column=6, value=round(total_cajas_stock_sum, 2))
+        worksheet.cell(row=totals_row, column=8, value=round(total_peso_stock_sum, 2))
+        worksheet.cell(row=totals_row, column=10, value=round(total_valor_inventario_sum, 2))
+
+        # Aplicar estilo a la fila de totales
+        self._apply_totals_style(totals_row, 1, 11, worksheet)
+
+        # Ajustar columnas
+        autosize_columns(worksheet)

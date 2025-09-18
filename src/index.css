@@ -510,8 +510,8 @@
 
 .select:focus {
   outline: none;
-  border-color: var(--module-primary, #3B82F6);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, #3B82F6) 30%, transparent);
+  border-color: var(--module-primary, var(--color-primary-light));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--module-primary, var(--color-primary-light)) 30%, transparent);
 }
 
 .dark .select {
@@ -546,4 +546,12 @@
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.comparador-table .text-\[var\(--color-danger\)\] {
+  color: var(--color-danger) !important;
+}
+
+.comparador-table .text-\[var\(--color-success\)\] {
+  color: var(--color-success) !important;
 }

@@ -1,59 +1,59 @@
-import React from 'react';
-import { formatQuantityDisplay } from '../../stringFormatters';
+import React, { forwardRef } from 'react';
 
-interface InputQtyProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  value: number | string;
-  onValueChange: (v: string) => void; // raw change while typing
-  onCommit?: (v: string) => void; // called on blur with formatted value
+interface SchemaProps {
+  minimum?: number;
+  maximum?: number;
+  step?: number;
+  exclusiveMinimum?: number; // Added for completeness, though not directly used in clamping
 }
 
-export const InputQty: React.FC<InputQtyProps> = ({ value, onValueChange, onCommit, className = '', ...rest }) => {
-  const [display, setDisplay] = React.useState<string>(() => {
-    if (value === undefined || value === null || value === '') return '';
-    return String(value);
-  });
-  const [focused, setFocused] = React.useState(false);
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+  schema: SchemaProps;
+  value: number; // Assuming value will always be a number for this component
+  onValueChange: (value: number) => void; // New prop for custom change handler
+}
 
-  // sync when external value changes and not focused
-  React.useEffect(() => {
-    if (!focused) {
-      if (value === undefined || value === null || value === '') setDisplay('');
-      else setDisplay(formatQuantityDisplay(value));
-    }
-  }, [value, focused]);
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(true);
-    // show raw value for editing
-    setDisplay(value === undefined || value === null ? '' : String(value));
-    if (rest.onFocus) rest.onFocus(e);
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(false);
-    // format for display
-    const formatted = display === '' ? '' : formatQuantityDisplay(display);
-    setDisplay(formatted);
-    if (onCommit) onCommit(formatted);
-    if (rest.onBlur) rest.onBlur(e);
-  };
+export const InputQty = forwardRef<HTMLInputElement, InputProps>(({ 
+  schema,
+  value,
+  onValueChange, // Changed from onChange
+  ...props 
+}, ref) => {
+  const { minimum = 0, maximum, step = 0.01, exclusiveMinimum } = schema;
+  
+  const effectiveMinimum = exclusiveMinimum !== undefined ? exclusiveMinimum + (step || 0.01) : minimum;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplay(e.target.value);
-    onValueChange(e.target.value);
-    if (rest.onChange) rest.onChange(e as any);
+    const newValue = parseFloat(e.target.value);
+    let clampedValue = newValue;
+
+    if (!isNaN(newValue)) {
+      if (effectiveMinimum !== undefined) {
+        clampedValue = Math.max(effectiveMinimum, clampedValue);
+      }
+      if (maximum !== undefined) {
+        clampedValue = Math.min(maximum, clampedValue);
+      }
+    } else {
+      clampedValue = effectiveMinimum !== undefined ? effectiveMinimum : minimum;
+    }
+
+    onValueChange(clampedValue); // Changed from onChange
   };
 
   return (
     <input
-      {...rest}
-      value={display}
+      {...props}
+      ref={ref}
+      type="number"
+      min={effectiveMinimum}
+      max={maximum}
+      step={step}
+      value={value}
       onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      className={`${className}`}
+      className="input-qty"
     />
   );
-};
+});
 
 export default InputQty;

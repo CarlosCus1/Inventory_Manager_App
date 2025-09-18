@@ -12,7 +12,8 @@ import React from 'react';
 // Interfaz para definir la estructura de una columna.
 // Usamos un tipo genérico <T> para que funcione con cualquier tipo de dato.
 export interface IColumn<T> {
-  header: string; // El texto que se mostrará en el encabezado <th>.
+  key?: string; // Add this line
+  header: React.ReactNode; // El texto que se mostrará en el encabezado <th>.
   accessor: keyof T | (string & {}); // La clave para acceder al dato en el objeto de la fila.
   cellRenderer?: (row: T) => React.ReactNode; // Función opcional para renderizado personalizado.
   align?: 'left' | 'center' | 'right'; // Added this line
@@ -30,7 +31,7 @@ interface Props<T> {
 // Usamos un tipo genérico <T> y le damos una restricción para que los datos siempre
 // tengan una propiedad `codigo` que podamos usar como `key` para la fila.
 export const DataTable = <T extends { codigo: string }>({ 
-  data, 
+  data = [], 
   columns, 
   noDataMessage = 'No hay productos en la lista.',
   compact = false,
@@ -42,7 +43,7 @@ export const DataTable = <T extends { codigo: string }>({
       {/* El contenedor `overflow-x-auto` es clave para la responsividad en móviles. */}
       {/* Permite que la tabla se desplace horizontalmente si no cabe en la pantalla. */}
       <div className="overflow-x-auto">
-        <table className={`min-w-full surface ${compact ? 'table-compact' : ''}`}>
+        <table className={`min-w-full data-table surface ${compact ? 'table-compact' : ''}`}>
           {colClasses.length > 0 && (
             <colgroup>
               {colClasses.map((c, idx) => (
@@ -51,7 +52,7 @@ export const DataTable = <T extends { codigo: string }>({
             </colgroup>
           )}
           {/* Encabezado de la Tabla */}
-          <thead className="surface-contrast">
+          <thead className="bg-secondary">
             <tr>
               {columns.map((column) => (
                 <th
@@ -68,7 +69,7 @@ export const DataTable = <T extends { codigo: string }>({
           <tbody>
             {data.length > 0 ? (
               data.map((row) => (
-                <tr key={row.codigo} className="transition-colors duration-150 hover:opacity-90">
+                <tr key={row.codigo} className="transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-800">
                   {columns.map((column) => (
                     <td key={String(column.accessor)} className={`px-4 py-2 break-words text-sm text-${column.align || 'left'}`}>
                       {/* Si hay un `cellRenderer`, lo usamos. Si no, mostramos el dato directamente. */}
@@ -82,7 +83,7 @@ export const DataTable = <T extends { codigo: string }>({
             ) : (
               // Mensaje cuando no hay datos en la tabla.
               <tr>
-                <td colSpan={columns.length} className="text-center py-10 muted">
+                <td colSpan={columns.length} className="text-center py-10 text-tertiary">
                   {noDataMessage}
                 </td>
               </tr>

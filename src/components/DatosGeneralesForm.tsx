@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------------- #
 
 // --- 1. Importaciones necesarias ---
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { FormGroup, Label } from './ui/FormControls';
 import { StyledInput } from './ui/StyledInput';
@@ -27,7 +27,7 @@ interface Props {
 }
 
 // --- 3. Definición del Componente Universal ---
-export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenBackupModal }) => {
+export const DatosGeneralesForm = React.forwardRef<{ getGeneralData: () => Record<string, string | number | boolean> }, Props>(({ tipo, fieldConfig, onOpenBackupModal }, ref) => {
   // --- A. Conexión con el Store de Zustand ---
   const formState = useAppStore((state) => state.formState[tipo]);
   const actualizarFormulario = useAppStore((state) => state.actualizarFormulario);
@@ -45,6 +45,9 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
   const { validate } = useFormValidation();
   const { addToast } = useToast();
 
+  // Estado para tooltips de marcas duplicadas
+  const [marcaTooltips, setMarcaTooltips] = useState<{ [key: string]: string }>({});
+
   // --- C. Lógica de Manejo de Cambios y Validación ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -55,9 +58,6 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
       rules = [{ type: 'required', message: 'La fecha es obligatoria.' }, { type: 'isValidDate', message: 'La fecha no es válida.' }];
     } else if (name === 'codigo_cliente') {
       rules = [{ type: 'isNumeric', message: 'El código de cliente debe ser numérico.' }];
-    } else if (name === 'documento_cliente') {
-      if (formState.documentType === 'dni') rules = [{ type: 'isDni', message: 'El DNI debe tener 8 dígitos.' }];
-      else if (formState.documentType === 'ruc') rules = [{ type: 'isRuc', message: 'El RUC debe tener 11 dígitos.' }];
     }
 
     const { isValid, errorMessage } = validate(value, rules);
@@ -66,7 +66,50 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
     }
 
     actualizarFormulario(tipo, name as keyof IForm, value);
-  };
+    };
+ 
+    // Función para manejar cambios en inputs de marca (limpia tooltips)
+    const handleMarcaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleChange(e);
+      // Limpiar tooltips cuando se cambia cualquier marca
+      setMarcaTooltips({});
+    };
+ 
+    // Función para manejar pérdida de foco en inputs de marca
+    const handleMarcaBlur = () => {
+      if (!fieldConfig.showMarcas) return;
+ 
+      const marcas: string[] = [];
+      const duplicados: { [key: string]: number } = {};
+ 
+      // Recopilar todas las marcas
+      for (let i = 1; i <= 5; i++) {
+        const marca = formState[`marca${i}` as keyof IForm] as string;
+        if (marca && marca.trim()) {
+          marcas.push(marca.trim());
+        }
+      }
+ 
+      // Detectar duplicados
+      const newTooltips: { [key: string]: string } = {};
+      const seen = new Set<string>();
+ 
+      for (let i = 1; i <= 5; i++) {
+        const marca = formState[`marca${i}` as keyof IForm] as string;
+        if (marca && marca.trim()) {
+          const marcaTrim = marca.trim();
+          if (seen.has(marcaTrim)) {
+            // Es un duplicado
+            duplicados[marcaTrim] = (duplicados[marcaTrim] || 1) + 1;
+            newTooltips[`marca${i}`] = `Esta marca se duplicará como "${marcaTrim}${duplicados[marcaTrim]}" para comparación entre sucursales.`;
+          } else {
+            seen.add(marcaTrim);
+          }
+        }
+      }
+ 
+      setMarcaTooltips(newTooltips);
+    };
 
   // --- D. Efecto para setear la fecha actual por defecto ---
   useEffect(() => {
@@ -84,6 +127,53 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
   ];
 
 
+
+  // --- F. Función para obtener datos generales ---
+  const getGeneralData = (): Record<string, string | number | boolean> => {
+    const data: Record<string, string | number | boolean> = {};
+
+    if (fieldConfig.showRucDni) {
+      data['Cliente'] = formState.cliente || '';
+      data['Documento de Cliente'] = formState.documento_cliente || '';
+    }
+
+    if (fieldConfig.showCodigoCliente) {
+      data['Código de Cliente'] = formState.codigo_cliente || '';
+    }
+
+    if (fieldConfig.showSucursal) {
+      data['Sucursal'] = formState.sucursal || '';
+    }
+
+    if (fieldConfig.showFecha) {
+      data['Fecha'] = formState.fecha || '';
+    }
+
+    if (fieldConfig.showMotivo && tipo === 'devoluciones') {
+      data['Motivo'] = (formState as IForm & { motivo?: string }).motivo || '';
+    }
+
+    if (fieldConfig.showMarcas) {
+      for (let i = 1; i <= 5; i++) {
+        const marcaKey = `marca${i}` as keyof IForm;
+        const marcaValue = formState[marcaKey] as string;
+        if (marcaValue) {
+          data[`Marca ${i}`] = marcaValue;
+        }
+      }
+    }
+
+    if (fieldConfig.showMontoOriginal) {
+      data['Monto Total (S/)'] = formState.montoOriginal || '';
+    }
+
+    return data;
+  };
+
+  // Exponer la función para que pueda ser usada desde el componente padre
+  React.useImperativeHandle(ref, () => ({
+    getGeneralData,
+  }));
 
   // --- F. Renderizado del Componente ---
   return (
@@ -127,29 +217,45 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
           </FormGroup>
         )}
 
-        {fieldConfig.showColaborador && (
-          <FormGroup>
-            <Label htmlFor="colaborador_personal">Colaborador</Label>
-            <StyledInput type="text" id="colaborador_personal" name="colaborador_personal" value={formState.colaborador_personal || ''} onChange={handleChange} placeholder="Nombre del colaborador" variant={variant} />
-          </FormGroup>
-        )}
+        
 
         {fieldConfig.showMotivo && tipo === 'devoluciones' && (
           <FormGroup>
             <Label htmlFor="motivo">Motivo de Devolución</Label>
-            <StyledSelect id="motivo" name="motivo" value={(formState as IForm & { motivo?: 'falla_fabrica' | 'acuerdos_comerciales' }).motivo || ''} onChange={(e) => setMotivoDevolucion(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales')} variant={variant}>
-              {motivoOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            <StyledSelect id="motivo" name="motivo" value={(formState as IForm & { motivo?: 'falla_fabrica' | 'acuerdos_comerciales' }).motivo || ''} onChange={(e) => setMotivoDevolucion(e.target.value as 'falla_fabrica' | 'acuerdos_comerciales')} variant={variant} required>
+              {motivoOptions.map((option, index) => <option key={option.value} value={option.value} disabled={index === 0}>{option.label}</option>)}
             </StyledSelect>
           </FormGroup>
         )}
 
         {fieldConfig.showMarcas && (
-          Array.from({ length: 5 }).map((_, i) => (
-            <FormGroup key={i}>
-              <Label htmlFor={`marca${i + 1}`}>{`Marca ${i + 1}`}</Label>
-              <StyledInput type="text" id={`marca${i + 1}`} name={`marca${i + 1}`} value={formState[`marca${i + 1}` as keyof IForm] as string || ''} onChange={handleChange} placeholder={`Marca ${i + 1}`} variant={variant} />
-            </FormGroup>
-          ))
+          Array.from({ length: 5 }).map((_, i) => {
+            const marcaKey = `marca${i + 1}`;
+            const hasTooltip = marcaTooltips[marcaKey];
+
+            return (
+              <FormGroup key={i}>
+                <Label htmlFor={marcaKey}>{`Marca ${i + 1}`}</Label>
+                <div className="relative">
+                  <StyledInput
+                    type="text"
+                    id={marcaKey}
+                    name={marcaKey}
+                    value={formState[marcaKey as keyof IForm] as string || ''}
+                    onChange={handleMarcaChange}
+                    onBlur={handleMarcaBlur}
+                    placeholder={`Marca ${i + 1}`}
+                    variant={variant}
+                  />
+                  {hasTooltip && (
+                    <div className="absolute top-full left-0 mt-1 px-2 py-1 text-xs text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-10 max-w-xs">
+                      {marcaTooltips[marcaKey]}
+                    </div>
+                  )}
+                </div>
+              </FormGroup>
+            );
+          })
         )}
 
         {fieldConfig.showMontoOriginal && (
@@ -171,4 +277,4 @@ export const DatosGeneralesForm: React.FC<Props> = ({ tipo, fieldConfig, onOpenB
       </div>
     </div>
   );
-};
+});

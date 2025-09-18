@@ -1,15 +1,16 @@
 
+import type { PedidoExport, InventarioExport, DevolucionesExport, PreciosExport } from '../api/schemas';
 import type { ICalcularApiParams, ICalcularApiResponse, RucData } from '../interfaces';
 
-const EXPORT_API_BASE_URL = 'http://localhost:5000';
-const RUC_API_BASE_URL = 'http://localhost:5000'; // Assuming RUC API is also on port 5000
-const HOLIDAYS_API_BASE_URL = 'http://localhost:5000'; // Assuming Holidays API is also on port 5000
+const EXPORT_API_BASE_URL = 'http://localhost:5001';
+const RUC_API_BASE_URL = 'http://localhost:5001'; // Assuming RUC API is also on port 5000
+const HOLIDAYS_API_BASE_URL = 'http://localhost:5001'; // Assuming Holidays API is also on port 5000
 
 export const calcularApi = async (params: ICalcularApiParams): Promise<ICalcularApiResponse> => {
   const { montoTotal, fechasValidas } = params;
 
   try {
-  const response = await fetch(`http://localhost:5000/calculate`, {
+  const response = await fetch(`http://localhost:5001/calculate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +34,7 @@ export const calcularApi = async (params: ICalcularApiParams): Promise<ICalcular
   }
 };
 
-export const exportXlsxApi = async (payload: Record<string, unknown>): Promise<Blob> => {
+export const exportXlsxApi = async (payload: PedidoExport | InventarioExport | DevolucionesExport | PreciosExport): Promise<Blob> => {
   try {
     const response = await fetch(`${EXPORT_API_BASE_URL}/export-xlsx`, {
       method: 'POST',
@@ -44,16 +45,28 @@ export const exportXlsxApi = async (payload: Record<string, unknown>): Promise<B
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al exportar el archivo XLSX');
+      let errorMessage = 'Error desconocido al exportar el archivo XLSX';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (jsonError) {
+        errorMessage = await response.text();
+      }
+      throw new Error(errorMessage);
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'reporte.xlsx';
+    let filename = 'reporte.xlsx'; // Default filename
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1];
+      const match = contentDisposition.match(/filename\*?=['"]?(?:UTF-8''|[^;]*?)([^\s;]+?)(?:['"]|$)/i);
+      if (match && match[1]) {
+        filename = decodeURIComponent(match[1]);
+      } else {
+        // Fallback for older or non-standard headers
+        const fallbackMatch = contentDisposition.match(/filename=['"]?([^;]+?)['"]?$/i);
+        if (fallbackMatch && fallbackMatch[1]) {
+          filename = fallbackMatch[1];
+        }
       }
     }
 

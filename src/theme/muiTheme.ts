@@ -1,9 +1,9 @@
 import { createTheme } from '@mui/material/styles';
 
 // Create a comprehensive MUI theme with module-specific colors
-const theme = createTheme({
+const theme = (mode: 'light' | 'dark') => createTheme({
   palette: {
-    mode: 'light',
+    mode: mode,
     // Module-specific color palette integrated directly
     devoluciones: {
       main: '#DC2626',
@@ -50,7 +50,7 @@ const theme = createTheme({
       contrastText: '#ffffff'
     },
     info: {
-  main: '#0EA5E9',
+      main: '#0EA5E9',
       light: '#29b6f6',
       dark: '#0284c7',
       contrastText: '#ffffff'
@@ -62,13 +62,13 @@ const theme = createTheme({
       contrastText: '#ffffff'
     },
     text: {
-      primary: '#111827',
-      secondary: '#374151',
-      disabled: '#9ca3af'
+      primary: mode === 'light' ? '#111827' : '#f9fafb',
+      secondary: mode === 'light' ? '#374151' : '#d1d5db',
+      disabled: mode === 'light' ? '#9ca3af' : '#6b7280'
     },
     background: {
-      default: '#ffffff',
-      paper: '#ffffff'
+      default: mode === 'light' ? '#ffffff' : '#0f172a',
+      paper: mode === 'light' ? '#ffffff' : '#1e293b'
     },
     grey: {
       50: '#f9fafb',
@@ -94,59 +94,77 @@ const theme = createTheme({
       fontSize: '2.25rem',
       fontWeight: 800,
       letterSpacing: '-0.025em',
-      lineHeight: 1.2
+      lineHeight: 1.2,
+      color: mode === 'light' ? '#111827' : '#f9fafb'
     },
     h2: {
       fontSize: '1.875rem',
       fontWeight: 700,
       letterSpacing: '-0.025em',
-      lineHeight: 1.3
+      lineHeight: 1.3,
+      color: mode === 'light' ? '#111827' : '#f9fafb'
     },
     h3: {
       fontSize: '1.5rem',
       fontWeight: 600,
       letterSpacing: '-0.025em',
-      lineHeight: 1.4
+      lineHeight: 1.4,
+      color: mode === 'light' ? '#111827' : '#f9fafb'
     },
     body1: {
       fontSize: '1rem',
-      lineHeight: 1.5
+      lineHeight: 1.5,
+      color: mode === 'light' ? '#374151' : '#d1d5db'
     },
     body2: {
       fontSize: '0.875rem',
-      lineHeight: 1.43
+      lineHeight: 1.43,
+      color: mode === 'light' ? '#374151' : '#d1d5db'
     }
   },
   shape: {
     borderRadius: 8
   },
-  shadows: [
-    'none',
-    '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-  ]
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 8
+        }
+      }
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8
+        }
+      }
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          color: mode === 'light' ? '#111827' : '#f9fafb'
+        }
+      }
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: mode === 'light' ? '#111827' : '#f9fafb',
+          backgroundColor: mode === 'light' ? '#f3f4f6' : '#1f2937', // grey-100 : grey-800
+          '&.Mui-focused': {
+            color: mode === 'light' ? '#111827' : '#f9fafb'
+          }
+        },
+        input: {
+          '&::placeholder': {
+            color: mode === 'light' ? '#6b7280' : '#9ca3af'
+          }
+        }
+      }
+    }
+  }
 });
 
 export default theme;

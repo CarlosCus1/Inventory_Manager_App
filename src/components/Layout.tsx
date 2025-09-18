@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import ThemeToggle from './ThemeToggle';
@@ -20,28 +20,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isHomePage = location.pathname === '/';
   const resetCurrentModule = useAppStore((state) => state.resetearModulo);
   const recordActivity = useAppStore((state) => state.recordActivity);
-  const logoutButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    const button = logoutButtonRef.current;
-
-    const handleLogoutClick = () => {
-      if (window.confirm('¿Seguro que deseas cerrar sesión?')) {
-        logout();
-        navigate('/');
-      }
-    };
-
-    if (button) {
-      button.addEventListener('click', handleLogoutClick);
+  const handleLogoutClick = () => {
+    if (window.confirm('¿Seguro que deseas cerrar sesión?')) {
+      logout();
+      navigate('/');
     }
-
-    return () => {
-      if (button) {
-        button.removeEventListener('click', handleLogoutClick);
-      }
-    };
-  }, [logout, navigate]);
+  };
 
   // Map pathnames to module keys and styling presets
   const paletteMap: { [key: string]: 'devoluciones' | 'pedido' | 'inventario' | 'comparador' } = {
@@ -128,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <LiveDateTime />
             <NotificationBell />
             <button
-              ref={logoutButtonRef}
+              onClick={handleLogoutClick}
               className="btn btn-module module-devoluciones interactive px-4 py-2"
               title="Cerrar sesión"
             >
@@ -149,7 +134,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className="relative z-10">
+      <main className="relative z-20 min-h-screen">
         {children}
       </main>
 

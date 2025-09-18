@@ -1,20 +1,16 @@
-// --------------------------------------------------------------------------- #
-//                                                                             #
-//                       src/pages/PedidoPage.tsx                              #
-//                                                                             #
-// --------------------------------------------------------------------------- #
-
-// --- 1. Importaciones necesarias ---
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
+import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IProductoEditado, FieldConfig } from '../interfaces';
+import type { IProductoEditado, IProducto, FieldConfig } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
+import { useAuth } from '../contexts/AuthContext';
+import { exportXlsxApi } from '../utils/api';
+import type { PedidoExport } from '../api/schemas';
 
 // --- 2. Definición del Componente de Página ---
 export const PedidoPage: React.FC = () => {
@@ -24,7 +20,9 @@ export const PedidoPage: React.FC = () => {
   const formState = useAppStore((state) => state.formState.pedido);
   const lista = useAppStore((state) => state.listas.pedido);
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
-  const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
+  const actualizarProductoEnLista = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
+    useAppStore.getState().actualizarProductoEnLista('pedido', codigo, campo as any, valor);
+  }, []);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
 
@@ -48,11 +46,6 @@ export const PedidoPage: React.FC = () => {
   }, [lista]);
 
   // --- F. Definición de las Columnas para DataTable ---
-  const handleInputChange = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
-    const valorFinal = campo === 'cantidad' ? Number(valor) : valor;
-    actualizarProductoEnLista('pedido', codigo, campo, valorFinal);
-  }, [actualizarProductoEnLista]);
-
   const columns = useMemo((): IColumn<IProductoEditado>[] => [
     { header: 'Código', accessor: 'codigo' },
     { header: 'Cod. EAN', accessor: 'cod_ean' },
@@ -67,7 +60,7 @@ export const PedidoPage: React.FC = () => {
           max={1000000}
           step={0.01}
           value={item.cantidad}
-          onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista(item.codigo, 'cantidad', e.target.value)}
           className="input input-module-pedido input-qty w-28 md:w-32 text-gray-900 dark:text-gray-100"
         />
       )
@@ -84,7 +77,7 @@ export const PedidoPage: React.FC = () => {
           aria-label={`Observaciones para ${item.nombre}`}
           placeholder="Añadir observaciones"
           value={item.observaciones ?? ''}
-          onChange={(e) => handleInputChange(item.codigo, 'observaciones', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista(item.codigo, 'observaciones', e.target.value)}
           className="input input-module-pedido w-full text-gray-900 dark:text-gray-100"
         />
       )
@@ -101,36 +94,48 @@ export const PedidoPage: React.FC = () => {
         </button>
       )
     }
-  ], [handleInputChange, eliminarProductoDeLista]);
+  ], [eliminarProductoDeLista, actualizarProductoEnLista]);
 
   const { addToast } = useToast(); // Initialize useToast
+  const { userName, userEmail } = useAuth();
 
   // --- G. Lógica de Exportación a Excel ---
   const handleExport = async () => {
-    if (!formState.documento_cliente || !formState.cliente) {
-      addToast('Por favor, complete los campos obligatorios (Documento Cliente, Cliente) antes de descargar.', 'warning');
+    const errors: string[] = [];
+    const formData = { ...formState };
+
+    if (!formData.sucursal) {
+      formData.sucursal = '[principal]';
+    }
+
+    if (!formData.documento_cliente || !formData.cliente) {
+      errors.push('El Documento y Nombre del cliente son obligatorios.');
+    }
+    if (!formData.fecha) {
+      errors.push('La Fecha es obligatoria.');
+    }
+
+    if (errors.length > 0) {
+      errors.forEach(error => addToast(error, 'warning'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5001/export-xlsx', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'pedido',
-          form: formState,
-          list: lista
-        }),
-      });
-
-      if (!response.ok) throw new Error('Error en la respuesta del servidor.');
-
-      const blob = await response.blob();
+      const payload: PedidoExport = {
+        tipo: 'pedido',
+        form: formData as any,
+        list: lista,
+        usuario: {
+          nombre: userName || '',
+          correo: userEmail || ''
+        }
+      };
+      const blob = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'pedido.xlsx';
+      a.download = (blob as any).name || 'pedido.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -193,6 +198,7 @@ export const PedidoPage: React.FC = () => {
                 codigo: searchTerm,
                 nombre: searchTerm,
                 cod_ean: '',
+                ean_14: '', // Added this line
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
@@ -206,6 +212,13 @@ export const PedidoPage: React.FC = () => {
           >
             Añadir Manualmente
           </button>
+          <button
+            onClick={handleExport}
+            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente}
+            className="btn btn-module-pedido ml-3"
+          >
+            {isSubmitting ? 'Generando...' : '▼ Reporte XLSX'}
+          </button>
         </div>
         {searchResults.length > 0 && (
           <ul className="surface surface-border rounded-md max-h-60 overflow-y-auto">
@@ -216,7 +229,7 @@ export const PedidoPage: React.FC = () => {
                   agregarProductoToLista('pedido', producto); 
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]">
+                className="p-3 cursor-pointer border-b border-[var(--border-primary)] hover:bg-gray-100 dark:hover:bg-gray-800">
                 {producto.nombre} ({producto.codigo}) - Stock: {formatDecimal(producto.stock_referencial)}
               </li>
             ))}
@@ -226,25 +239,18 @@ export const PedidoPage: React.FC = () => {
 
       {/* Sección 3: Reporte Final (Tabla de Productos) */}
       <section className="section-card">
-        <h2 className="form-section-title title-pedido">Hoja de Pedido</h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h2 className="form-section-title title-pedido mb-0">Hoja de Pedido</h2>
+          <div className="text-lg font-semibold flex items-center gap-6 mt-4 md:mt-0">
+            <span>Total Unidades: <span className="font-extrabold title-pedido">{formatDecimal(totales.totalUnidades)}</span></span>
+            <span>Total Peso: <span className="font-extrabold title-pedido">{formatDecimal(totales.totalPeso)} kg</span></span>
+          </div>
+        </div>
         <DataTable 
           data={lista} 
           // Se usan columnas tipadas para DataTable
           columns={columns}
         />
-        <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-lg font-semibold">
-            <span>Total Unidades: <span className="font-extrabold title-pedido">{formatDecimal(totales.totalUnidades)}</span></span>
-            <span className="ml-6">Total Peso: <span className="font-extrabold title-pedido">{formatDecimal(totales.totalPeso)} kg</span></span>
-          </div>
-          <button
-            onClick={handleExport}
-            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente}
-            className="btn btn-module-pedido mt-4 md:mt-0 w-full md:w-auto"
-          >
-            {isSubmitting ? 'Generando...' : 'Descargar Pedido (XLSX)'}
-          </button>
-        </div>
       </section>
     </div>
   );

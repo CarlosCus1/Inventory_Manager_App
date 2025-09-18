@@ -32,14 +32,9 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
   onRazonSocialChange,
   variant = 'default'
 }) => {
-
-
-
-  // Estado local para el error de documento, estable y persistente
   const [showDocError, setShowDocError] = useState(false);
   const errorTimeout = useRef<number | null>(null);
 
-  // Limpia el timeout al desmontar
   React.useEffect(() => {
     return () => {
       if (errorTimeout.current) clearTimeout(errorTimeout.current);
@@ -68,11 +63,13 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
     if (documentType === 'ruc' && documentNumber.length > 0 && documentNumber.length !== 11) {
       isInvalid = true;
     }
-    if (isInvalid) {
-      setShowDocError(true);
-      if (errorTimeout.current) clearTimeout(errorTimeout.current);
-      errorTimeout.current = window.setTimeout(() => setShowDocError(false), 5000);
-    }
+
+    // Set showDocError based on validation result
+    setShowDocError(isInvalid);
+
+    // Remove the timeout as the user wants the message to persist until corrected
+    if (errorTimeout.current) clearTimeout(errorTimeout.current);
+    errorTimeout.current = null; // Clear the ref
   };
 
   const handleRazonSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,14 +115,23 @@ export const RucDniInput: React.FC<RucDniInputProps> = ({
         fullWidth
       />
 
-      {showDocError && documentType === 'dni' && (
-        <Typography variant="body2" color="error" className="text-sm font-medium">
-          El DNI debe tener 8 dígitos.
-        </Typography>
-      )}
-      {showDocError && documentType === 'ruc' && (
-        <Typography variant="body2" color="error" className="text-sm font-medium">
-          El RUC debe tener 11 dígitos.
+      {showDocError && (
+        <Typography
+          variant="caption"
+          sx={{
+            bgcolor: 'error.main',
+            color: 'error.contrastText',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+            display: 'inline-block',
+            mt: 0.5,
+            fontSize: '0.75rem',
+          }}
+        >
+          {documentType === 'ruc'
+            ? 'El RUC debe tener 11 dígitos.'
+            : 'El DNI debe tener 8 dígitos.'}
         </Typography>
       )}
       

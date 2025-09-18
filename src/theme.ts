@@ -1,0 +1,223 @@
+const colors = {
+  white: '#FFFFFF',
+  black: '#000000',
+  devoluciones: {
+    primary: '#DC2626',
+    light: '#EF4444',
+    dark: '#B91C1C',
+    surface: '#FEF2F2',
+    border: '#FECACA',
+    surfaceDark: '#450A0A',
+    borderDark: '#571313',
+  },
+  pedido: {
+    primary: '#2563EB',
+    light: '#3B82F6',
+    dark: '#1D4ED8',
+    surface: '#EFF6FF',
+    border: '#BFDBFE',
+    surfaceDark: '#1E3A8A',
+    borderDark: '#1E40AF',
+  },
+  inventario: {
+    primary: '#16A34A',
+    light: '#22C55E',
+    dark: '#15803D',
+    surface: '#F0FDF4',
+    border: '#BBF7D0',
+    surfaceDark: '#14532D',
+    borderDark: '#166534',
+  },
+  comparador: {
+    primary: '#EA580C',
+    light: '#F97316',
+    dark: '#C2410C',
+    surface: '#FFF7ED',
+    border: '#FED7AA',
+    surfaceDark: '#4A210A',
+    borderDark: '#5C2E10',
+  },
+  danger: '#DC2626',
+  success: '#16A34A',
+  grey: {
+    50: '#F9FAFB',
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+    900: '#111827',
+  },
+};
+
+const lightTheme = {
+  background: {
+    primary: colors.white,
+    secondary: 'rgba(249, 250, 251, 0.7)',
+    tertiary: 'rgba(243, 244, 246, 0.8)',
+  },
+  text: {
+    primary: colors.grey[900],
+    secondary: colors.grey[700],
+    tertiary: colors.grey[500],
+  },
+  border: {
+    primary: 'rgba(229, 231, 235, 0.6)',
+    secondary: 'rgba(209, 213, 219, 0.7)',
+  },
+  surface: {
+    primary: 'rgba(255, 255, 255, 0.7)',
+    secondary: 'rgba(249, 250, 251, 0.6)',
+    elevated: 'rgba(255, 255, 255, 0.9)',
+    glass: 'rgba(255, 255, 255, 0.3)',
+  },
+  module: {
+    devoluciones: {
+      primary: colors.devoluciones.primary,
+      light: colors.devoluciones.light,
+      dark: colors.devoluciones.dark,
+      surface: colors.devoluciones.surface,
+      border: colors.devoluciones.border,
+    },
+    pedido: {
+      primary: colors.pedido.primary,
+      light: colors.pedido.light,
+      dark: colors.pedido.dark,
+      surface: colors.pedido.surface,
+      border: colors.pedido.border,
+    },
+    inventario: {
+      primary: colors.inventario.primary,
+      light: colors.inventario.light,
+      dark: colors.inventario.dark,
+      surface: colors.inventario.surface,
+      border: colors.inventario.border,
+    },
+    comparador: {
+      primary: colors.comparador.primary,
+      light: colors.comparador.light,
+      dark: colors.comparador.dark,
+      surface: colors.comparador.surface,
+      border: colors.comparador.border,
+    },
+  },
+};
+
+const darkTheme = {
+  background: {
+    primary: colors.grey[900],
+    secondary: 'rgba(31, 41, 55, 0.7)',
+    tertiary: 'rgba(55, 65, 81, 0.8)',
+  },
+  text: {
+    primary: colors.grey[100],
+    secondary: colors.grey[300],
+    tertiary: colors.grey[400],
+  },
+  border: {
+    primary: 'rgba(55, 65, 81, 0.6)',
+    secondary: 'rgba(75, 85, 99, 0.7)',
+  },
+  surface: {
+    primary: 'rgba(31, 41, 55, 0.7)',
+    secondary: 'rgba(55, 65, 81, 0.6)',
+    elevated: 'rgba(45, 55, 72, 0.9)',
+    glass: 'rgba(0, 0, 0, 0.3)',
+  },
+  module: {
+    devoluciones: {
+      primary: colors.devoluciones.primary,
+      light: colors.devoluciones.light,
+      dark: colors.devoluciones.dark,
+      surface: colors.devoluciones.surfaceDark,
+      border: colors.devoluciones.borderDark,
+    },
+    pedido: {
+      primary: colors.pedido.primary,
+      light: colors.pedido.light,
+      dark: colors.pedido.dark,
+      surface: colors.pedido.surfaceDark,
+      border: colors.pedido.borderDark,
+    },
+    inventario: {
+      primary: colors.inventario.primary,
+      light: colors.inventario.light,
+      dark: colors.inventario.dark,
+      surface: colors.inventario.surfaceDark,
+      border: colors.inventario.borderDark,
+    },
+    comparador: {
+      primary: colors.comparador.primary,
+      light: colors.comparador.light,
+      dark: colors.comparador.dark,
+      surface: colors.comparador.surfaceDark,
+      border: colors.comparador.borderDark,
+    },
+  },
+};
+
+export const theme = {
+  colors,
+  light: lightTheme,
+  dark: darkTheme,
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '0.75rem',
+    lg: '1rem',
+    xl: '1.5rem',
+    '2xl': '2rem',
+    '3xl': '3rem',
+    '4xl': '4rem',
+    '5xl': '5rem',
+    '6xl': '6rem',
+  },
+  font: {
+    family: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
+    size: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+      '3xl': '1.875rem',
+      '4xl': '2.25rem',
+    },
+    weight: {
+      light: 300,
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+      extrabold: 800,
+      black: 900,
+    },
+  },
+  radius: {
+    sm: '0.25rem',
+    md: '0.5rem',
+    lg: '0.75rem',
+    xl: '1rem',
+    '2xl': '1.5rem',
+    full: '9999px',
+  },
+  shadow: {
+    xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    sm: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  },
+  transition: {
+    fast: '150ms ease-in-out',
+    normal: '200ms ease-in-out',
+    slow: '300ms ease-in-out',
+  },
+};
+
+export type Theme = typeof theme;

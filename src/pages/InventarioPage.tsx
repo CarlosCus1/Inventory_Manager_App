@@ -1,20 +1,16 @@
-// --------------------------------------------------------------------------- #
-//                                                                             #
-//                    src/pages/InventarioPage.tsx                           #
-//                                                                             #
-// --------------------------------------------------------------------------- #
-
-// --- 1. Importaciones necesarias ---
-import React, { useState, useEffect, useMemo, useCallback } from 'react'; 
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, IProductoEditado, FieldConfig } from '../interfaces';
+import type { FieldConfig, IProducto } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
+import { exportXlsxApi } from '../utils/api';
+import type { InventarioExport, ProductoEditado } from '../api/schemas';
+import { useAuth } from '../contexts/AuthContext';
 
 // --- 2. Definición del Componente de Página ---
 export const InventarioPage: React.FC = () => {
@@ -26,7 +22,9 @@ export const InventarioPage: React.FC = () => {
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
-  const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
+  const actualizarProductoEnLista = useCallback((codigo: string, campo: keyof ProductoEditado, valor: string | number) => {
+    useAppStore.getState().actualizarProductoEnLista('inventario', codigo, campo as any, valor);
+  }, []);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,32 +52,55 @@ export const InventarioPage: React.FC = () => {
 
   // --- F. Lógica de Exportación a Excel ---
   const { addToast } = useToast(); // Initialize useToast
+  const { userName, userEmail } = useAuth();
 
   const handleExport = async () => {
-    if (!formState.documento_cliente || !formState.cliente || !formState.colaborador_personal) {
-      addToast('Por favor, complete los campos obligatorios (Documento Cliente, Cliente, Colaborador/Personal) antes de descargar.', 'warning');
+    const errors: string[] = [];
+    const formData = { ...formState };
+
+    if (!formData.sucursal) {
+      formData.sucursal = '[principal]';
+    }
+
+    if (!formData.documento_cliente || !formData.cliente) {
+      errors.push('El Documento y Nombre del cliente son obligatorios.');
+    }
+    if (!formData.fecha) {
+      errors.push('La Fecha es obligatoria.');
+    }
+
+    if (errors.length > 0) {
+      errors.forEach(error => addToast(error, 'warning'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/export-xlsx`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'inventario',
-          form: formState,
-          list: lista
-        }),
-      });
-
-      if (!response.ok) throw new Error('Error en la respuesta del servidor.');
-
-      const blob = await response.blob();
+      // Transformación final antes de enviar
+      const payload: InventarioExport = {
+        tipo: 'inventario',
+        form: {
+          ...formData,
+          fecha: formData.fecha ? new Date(formData.fecha).toISOString() : new Date().toISOString(),
+        },
+        list: lista.map(item => ({
+          ...item,
+          cantidad: Math.floor(Number(item.cantidad)), // Forzar entero
+          ean_14: item.ean_14 || '', // Asegurar campo requerido
+          precio_referencial: typeof item.precio_referencial === 'number' ? item.precio_referencial : undefined,
+        })),
+        usuario: {
+          nombre: userName || 'Usuario Desconocido',
+          correo: userEmail?.includes('@') ? userEmail : 'correo@invalido.com'
+        },
+        
+      };
+      console.log('Payload para inventario:', JSON.stringify(payload, null, 2));
+      const blob = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'inventario.xlsx';
+      a.download = (blob as unknown as { name?: string }).name || 'inventario.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -95,15 +116,12 @@ export const InventarioPage: React.FC = () => {
   };
 
   // --- G. Renderizado del Componente ---
-  const handleInputChange = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
-    actualizarProductoEnLista('inventario', codigo, campo, valor);
-  }, [actualizarProductoEnLista]);
-
-  const columns: IColumn<IProductoEditado>[] = useMemo(() => [
+  const columns: IColumn<ProductoEditado>[] = useMemo(() => [
     { header: 'Código', accessor: 'codigo' },
     { header: 'Cod. EAN', accessor: 'cod_ean' },
     { header: 'Nombre', accessor: 'nombre' },
-    { header: 'Cantidad',
+    {
+      header: 'Cantidad',
       accessor: 'cantidad',
       cellRenderer: (item) => (
         <input
@@ -112,7 +130,10 @@ export const InventarioPage: React.FC = () => {
           max={1000000}
           step={0.01}
           value={item.cantidad}
-          onChange={(e) => handleInputChange(item.codigo, 'cantidad', e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value.trim() === '' ? 0 : Number(e.target.value);
+            actualizarProductoEnLista(item.codigo, 'cantidad', value);
+          }}
           className="input input-module-inventario input-qty w-32 text-right text-gray-900 dark:text-gray-100"
           aria-label={`Cantidad para ${item.nombre}`}
         />
@@ -126,7 +147,7 @@ export const InventarioPage: React.FC = () => {
         <input
           type="text"
           value={String(item.linea ?? '')}
-          onChange={(e) => handleInputChange(item.codigo, 'linea', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista(item.codigo, 'linea', e.target.value)}
           className="input input-module-inventario w-40 text-gray-900 dark:text-gray-100"
           aria-label={`Línea para ${item.nombre}`}
         />
@@ -139,7 +160,7 @@ export const InventarioPage: React.FC = () => {
         <input
           type="text"
           value={String(item.observaciones ?? '')}
-          onChange={(e) => handleInputChange(item.codigo, 'observaciones', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista(item.codigo, 'observaciones', e.target.value)}
           className="input input-module-inventario w-full text-gray-900 dark:text-gray-100"
           aria-label={`Observaciones para ${item.nombre}`}
         />
@@ -147,7 +168,7 @@ export const InventarioPage: React.FC = () => {
     },
     {
       header: 'Acción',
-      accessor: 'accion' as unknown as keyof IProductoEditado,
+      accessor: 'accion' as unknown as keyof ProductoEditado,
       cellRenderer: (item) => (
         <button
           onClick={() => eliminarProductoDeLista('inventario', item.codigo)}
@@ -160,14 +181,14 @@ export const InventarioPage: React.FC = () => {
         </button>
       ),
     },
-  ], [handleInputChange, eliminarProductoDeLista]);
+  ], [eliminarProductoDeLista, actualizarProductoEnLista]);
 
   const fieldConfig: FieldConfig = {
     showRucDni: true,
     showCodigoCliente: true,
     showSucursal: true,
     showFecha: true,
-    showColaborador: true,
+
   };
 
   return (
@@ -195,7 +216,7 @@ export const InventarioPage: React.FC = () => {
           />
           <LineSelectorModalTrigger
             moduloKey="inventario"
-            buttonClassName="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3"
+            buttonClassName="btn btn-module-inventario ml-3"
             onConfirm={(_, skipped) => {
               if (skipped.length > 0) {
                 console.warn(`Se omitieron ${skipped.length} duplicados ya presentes en la lista.`);
@@ -208,6 +229,7 @@ export const InventarioPage: React.FC = () => {
                 codigo: searchTerm,
                 nombre: searchTerm,
                 cod_ean: '',
+                ean_14: '',
                 peso: 0,
                 stock_referencial: 0,
                 linea: '',
@@ -217,9 +239,16 @@ export const InventarioPage: React.FC = () => {
               setSearchTerm('');
             }}
             disabled={!searchTerm || searchResults.length > 0}
-            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary ml-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-module-inventario ml-3"
           >
             Añadir Manualmente
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente}
+            className="btn btn-module-inventario ml-3"
+          >
+            {isSubmitting ? 'Generando...' : '▼ Reporte XLSX'}
           </button>
         </div>
         {searchResults.length > 0 && (
@@ -232,7 +261,7 @@ export const InventarioPage: React.FC = () => {
                   agregarProductoToLista('inventario', producto);
                   setSearchTerm('');
                 }}
-                className="p-3 hover:opacity-90 cursor-pointer border-b border-[var(--border)]"
+                className="p-3 cursor-pointer border-b border-[var(--border-primary)] hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 {producto.nombre} ({producto.codigo})
               </li>
@@ -242,24 +271,17 @@ export const InventarioPage: React.FC = () => {
       </section>
 
       <section className="section-card">
-        <h2 className="form-section-title title-inventario">Conteo de Inventario</h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h2 className="form-section-title title-inventario mb-0">Conteo de Inventario</h2>
+          <div className="text-lg font-semibold flex items-center gap-6 mt-4 md:mt-0">
+            <span>Total Cantidades: <span className="font-extrabold title-inventario">{formatDecimal(totales.totalCantidades)}</span></span>
+            <span>Total Líneas: <span className="font-extrabold title-inventario">{totales.totalLineas}</span></span>
+          </div>
+        </div>
         <DataTable
           data={lista}
           columns={columns}
         />
-        <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-lg font-semibold">
-            <span>Total Cantidades: <span className="font-extrabold title-inventario">{formatDecimal(totales.totalCantidades)}</span></span>
-            <span className="ml-6">Total Líneas: <span className="font-extrabold title-inventario">{totales.totalLineas}</span></span>
-          </div>
-          <button
-            onClick={handleExport}
-            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.colaborador_personal}
-            className="bg-inventario-light-primary dark:bg-inventario-dark-primary text-white py-2 px-4 rounded-md shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-inventario-light-primary dark:focus:ring-inventario-dark-primary mt-4 md:mt-0 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Generando...' : 'Descargar Inventario (XLSX)'}
-          </button>
-        </div>
       </section>
     </div>
   );
