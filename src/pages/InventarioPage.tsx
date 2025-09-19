@@ -89,11 +89,15 @@ export const InventarioPage: React.FC = () => {
           ean_14: item.ean_14 || '', // Asegurar campo requerido
           precio_referencial: typeof item.precio_referencial === 'number' ? item.precio_referencial : undefined,
         })),
+        totales: {
+          totalCantidades: totales.totalCantidades,
+          totalLineas: totales.totalLineas
+        },
         usuario: {
           nombre: userName || 'Usuario Desconocido',
           correo: userEmail?.includes('@') ? userEmail : 'correo@invalido.com'
         },
-        
+
       };
       console.log('Payload para inventario:', JSON.stringify(payload, null, 2));
       const blob = await exportXlsxApi(payload);

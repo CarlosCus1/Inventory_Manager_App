@@ -106,13 +106,25 @@ class InventarioReportGenerator(BaseReportGenerator):
         # Aplicar estilos a las filas de datos
         self._apply_table_styles(worksheet, table_start_row, data_rows_end, len(headers))
 
-        # Fila de Totales normalizada
+        # Fila de Totales normalizada con fórmulas dinámicas
         totals_row = current_row
         worksheet.cell(row=totals_row, column=1, value="TOTALES GENERALES:")
-        worksheet.cell(row=totals_row, column=5, value=total_existencia_sum)
-        worksheet.cell(row=totals_row, column=6, value=round(total_cajas_stock_sum, 2))
-        worksheet.cell(row=totals_row, column=8, value=round(total_peso_stock_sum, 2))
-        worksheet.cell(row=totals_row, column=10, value=round(total_valor_inventario_sum, 2))
+
+        # Usar fórmulas de Excel para totales dinámicos
+        data_start_row = table_start_row + 1
+        data_end_row = data_rows_end
+
+        # Total existencia (columna E)
+        worksheet.cell(row=totals_row, column=5, value=f"=SUM(E{data_start_row}:E{data_end_row})")
+
+        # Total cajas en stock (columna F)
+        worksheet.cell(row=totals_row, column=6, value=f"=SUM(F{data_start_row}:F{data_end_row})")
+
+        # Peso total en stock (columna H)
+        worksheet.cell(row=totals_row, column=8, value=f"=SUM(H{data_start_row}:H{data_end_row})")
+
+        # Valor total inventario (columna J)
+        worksheet.cell(row=totals_row, column=10, value=f"=SUM(J{data_start_row}:J{data_end_row})")
 
         # Aplicar estilo a la fila de totales
         self._apply_totals_style(totals_row, 1, 11, worksheet)

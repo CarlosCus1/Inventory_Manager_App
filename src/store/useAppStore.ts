@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { saveCatalogToIndexedDB } from '../utils/indexedDb';
 import type { IForm, IProducto, IProductoEditado, RucData } from '../interfaces';
-import { consultarRucApi, fetchHolidaysApi } from '../utils/api';
+import { consultarRucApi } from '../utils/api';
 type MotivoDevolucion = 'falla_fabrica' | 'acuerdos_comerciales';
 
 // --- Tipos Adicionales ---
@@ -45,7 +45,6 @@ export interface State {
   loading: boolean;
   error: string | null;
   rucCache: Record<string, unknown>;
-  holidays: Array<{ date: string; name: string }>;
   theme: 'light' | 'dark';
 }
 
@@ -68,7 +67,6 @@ interface Actions {
   eliminarProductoDeLista: (tipo: keyof State['listas'], codigo: string) => void;
   resetearModulo: (tipo: keyof State['listas']) => void;
   fetchRuc: (ruc: string) => Promise<RucData>;
-  fetchHolidays: (year: number) => Promise<Array<{ date: string; name: string }>>;
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
@@ -101,7 +99,6 @@ const initialState: Omit<State, keyof Actions> = {
   loading: false,
   error: null,
   rucCache: {},
-  holidays: [],
   theme: 'light',
 };
 
@@ -240,6 +237,11 @@ export const useAppStore = create<State & Actions>()(
                 // console.log(`[Comparador] Guardando precio_sugerido para ${codigo}:`, nuevoValor);
                 return { ...p, precio_sugerido: nuevoValor };
               }
+              // Convertir cantidad a número entero
+              if (campo === 'cantidad') {
+                const cantidadValor = typeof valor === 'number' ? valor : parseInt(String(valor), 10) || 0;
+                return { ...p, cantidad: cantidadValor };
+              }
               return { ...p, [campo]: valor as string | number };
             }),
           },
@@ -283,10 +285,6 @@ export const useAppStore = create<State & Actions>()(
         return data;
       },
 
-      fetchHolidays: async (year) => {
-        const data = await fetchHolidaysApi(year);
-        return data;
-      },
 
       updateModuleUsage: (module: keyof ModuleStats) => set((state) => ({
         moduleUsage: {
@@ -316,8 +314,8 @@ export const useAppStore = create<State & Actions>()(
     }),
     {
       name: 'app-storage',
-      partialize: (state) => ({ 
-        formState: state.formState, 
+      partialize: (state) => ({
+        formState: state.formState,
         listas: state.listas,
         moduleUsage: state.moduleUsage,
         incompleteTasks: state.incompleteTasks,

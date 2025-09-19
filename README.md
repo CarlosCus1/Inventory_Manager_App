@@ -55,12 +55,15 @@ Esta aplicación se compone de los siguientes módulos principales, cada uno dis
 La aplicación sigue una arquitectura cliente-servidor donde el frontend (React) se encarga de la interfaz de usuario y la recolección de datos, y el backend (Flask) procesa estos datos para generar los reportes en formato Excel.
 
 1.  **Recolección de Datos (Frontend):** Cada módulo en el frontend recopila la información relevante a través de formularios interactivos. Los datos se estructuran en un objeto JSON que incluye un `tipo` de gestión (ej. `precios`, `inventario`), un objeto `form` con los datos generales del formulario y una `list` de ítems o productos.
-2.  **Envío al Backend:** El objeto JSON se envía al endpoint `/export-xlsx` del backend mediante una petición POST.
-3.  **Procesamiento (Backend):** El backend, implementado en Flask, recibe la petición:
+2.  **Validación y Conversión de Tipos:** Antes del envío, se aplican conversiones automáticas de tipos (ej: `cantidad` a integer) y validaciones según esquemas JSON para asegurar compatibilidad con el backend.
+3.  **Envío al Backend:** El objeto JSON validado se envía al endpoint `/export-xlsx` del backend mediante una petición POST.
+4.  **Procesamiento (Backend):** El backend, implementado en Flask, recibe la petición:
+    *   Valida los datos contra esquemas JSON específicos por módulo.
     *   Identifica el `tipo_gestion` para aplicar la lógica y estilos específicos del módulo.
     *   Utiliza la librería `pandas` para crear DataFrames a partir de los datos recibidos.
     *   Emplea `openpyxl` para escribir los DataFrames en un archivo Excel en memoria (`io.BytesIO`), aplicando estilos personalizados (colores de encabezado, fuentes, formatos numéricos) y autoajustando el ancho de las columnas para mejorar la legibilidad.
     *   Para el módulo **Comparador**, se asegura que la fila 10 esté vacía, los encabezados se coloquen en la fila 11 y los datos comiencen en la fila 12, permitiendo una mejor organización visual.
+    *   **Fórmulas dinámicas:** Los totales usan fórmulas Excel (`=SUM()`) que se actualizan automáticamente al modificar datos.
 4.  **Descarga del Archivo:** El archivo Excel generado se envía de vuelta al frontend como una descarga, con un nombre de archivo descriptivo basado en el tipo de reporte, cliente/colaborador y fecha.
 
 
@@ -236,11 +239,27 @@ El proyecto ha sido limpiado de todo rastro del módulo planificador. La estruct
 *   **Manejo inteligente de marcas duplicadas:** Al ingresar marcas con el mismo nombre (ej: "Vinifan", "Vinifan"), se agregan automáticamente numerales ("Vinifan", "Vinifan2") para comparación entre sucursales/franquicias.
 *   **Tooltips informativos:** Aparecen automáticamente al perder foco cuando hay duplicados, explicando que se renombrarán para evitar conflictos.
 *   **Toasts con auto-cierre:** Las notificaciones se cierran automáticamente en 5 segundos para no interrumpir el flujo de trabajo.
+*   **Exportación corregida:** Los nombres de marcas procesadas (con numerales) ahora se envían correctamente al backend, asegurando que los headers del Excel reflejen los nombres correctos.
+
+### ✅ Reportes Excel con Fórmulas Dinámicas
+*   **Totales automáticos:** Todas las filas de totales ahora usan fórmulas Excel dinámicas (`=SUM()`) en lugar de valores estáticos.
+*   **Actualización en tiempo real:** Al modificar cantidades directamente en el Excel, los totales se recalculan automáticamente.
+*   **Módulos actualizados:**
+    - **Pedido:** Total unidades, cajas y peso con fórmulas
+    - **Devoluciones:** Total unidades, cajas y peso con fórmulas
+    - **Inventario:** Total existencia, cajas, peso y valor con fórmulas
+*   **Beneficio:** No es necesario generar nuevos reportes para cambios menores de cantidad.
 
 ### ✅ Optimizaciones en Backend
 *   **Fórmula STDEV corregida:** Cambiada de `DESVEST.P` a `STDEV` para máxima compatibilidad y evitar problemas con "@" en versiones modernas de Excel.
 *   **Headers optimizados:** Abreviaturas en columnas largas ("DESVIACIÓN ESTÁNDAR" → "DESV. STD", "+ BARATOS", "+ CAROS") y ancho máximo reducido a 30 caracteres.
 *   **Autoajuste inteligente:** Columnas se ajustan automáticamente según contenido con límites apropiados.
+*   **Validación de esquemas mejorada:** Esquemas JSON actualizados para incluir campos requeridos como `totales` en inventario.
+
+### ✅ Correcciones de Tipos de Datos
+*   **Conversión automática de tipos:** Los campos numéricos (como `cantidad`) se convierten automáticamente a tipos correctos (integer/string) antes del envío al backend.
+*   **Validación de esquemas:** El backend ahora valida correctamente los tipos de datos según los esquemas JSON definidos.
+*   **Compatibilidad mejorada:** Eliminadas conversiones problemáticas que causaban errores de validación.
 
 ### ✅ Limpieza y Mantenimiento
 *   Eliminado módulo planificador y toda su lógica, estilos y dependencias.
@@ -250,6 +269,7 @@ El proyecto ha sido limpiado de todo rastro del módulo planificador. La estruct
 *   **Comparador:** Corregida la estructura del archivo Excel para que la fila 10 esté vacía, la fila 11 contenga los encabezados y los datos comiencen en la fila 12.
 *   Removido tema global y dependencias no usadas; build Tailwind v4 estabilizado.
 *   **Limpieza de repositorio:** Eliminados archivos innecesarios (`changes.patch`, `.git_disabled/`, `.kombai/`).
+*   **Código limpio:** Removidos logs de debug y código temporal después de las correcciones.
 
 ## Licencia
 

@@ -8,7 +8,7 @@ import PageHeader from '../components/PageHeader';
 import { calculateDataWithPercentages } from '../utils/comparisonUtils';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { PriceInput } from '../components/comparador/PriceInput';
-import { PercentageDisplay } from '../components/ui';
+
 import { exportXlsxApi } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -143,9 +143,17 @@ export const ComparadorPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // Update formData with processed brand names (with numbers for duplicates)
+      const updatedFormData = { ...formData };
+      competidores.forEach((processedBrand, index) => {
+        const marcaKey = `marca${index + 1}` as keyof IForm;
+        updatedFormData[marcaKey] = processedBrand;
+      });
+
+
       const payload: any = {
         tipo: 'precios',
-        form: formData,
+        form: updatedFormData,
         list: dataConPorcentajes,
         usuario: {
           'nombre': userName,
@@ -355,17 +363,8 @@ export const ComparadorPage: React.FC = () => {
         <DataTable
           data={dataConPorcentajes}
           columns={columns}
+          
           tableClassName="comparador-table"
-          colClasses={[
-            'w-24',
-            'w-32',
-            'w-4/12',
-            ...Array(competidores.length).fill('w-32'),
-            'w-32',
-            ...Array(competidores.length > 1 ? competidores.length - 1 : 0).fill('w-24'),
-            'w-24',
-            'w-20',
-          ]}
         />
       </section>
     </div>

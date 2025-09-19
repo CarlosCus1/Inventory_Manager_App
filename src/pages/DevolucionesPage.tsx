@@ -141,6 +141,10 @@ export const DevolucionesPage: React.FC = () => {
             newItem.cantidad_por_caja = (newItem as any).u_por_caja; // Map if it exists
             delete (newItem as any).u_por_caja; // Remove the old property
           }
+          // Ensure cantidad_por_caja is an integer if present
+          if (newItem.cantidad_por_caja !== null && newItem.cantidad_por_caja !== undefined) {
+            newItem.cantidad_por_caja = Math.floor(Number(newItem.cantidad_por_caja));
+          }
           // Ensure cantidad_por_caja is always a number, defaulting to 0 if undefined
           newItem.peso = typeof newItem.peso === 'number' ? newItem.peso : 0;
           newItem.precio_referencial = typeof newItem.precio_referencial === 'number' ? newItem.precio_referencial : 0;
@@ -148,10 +152,16 @@ export const DevolucionesPage: React.FC = () => {
           // Ensure cod_ean is a non-empty string
           newItem.cod_ean = newItem.cod_ean || 'N/A'; // Set to 'N/A' if falsy
 
+          // Ensure ean_14 is a non-empty string
+          newItem.ean_14 = newItem.ean_14 || 'N/A'; // Set to 'N/A' if falsy
+
           // Ensure keywords is an array
           if (!Array.isArray(newItem.keywords)) {
             newItem.keywords = []; // Default to empty array if not string or array
           }
+
+          // Ensure cantidad is an integer
+          newItem.cantidad = Math.floor(Number(newItem.cantidad));
 
           return newItem;
         }),

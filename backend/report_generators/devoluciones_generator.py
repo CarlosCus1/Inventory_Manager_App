@@ -91,12 +91,22 @@ class DevolucionesReportGenerator(BaseReportGenerator):
         # Aplicar estilos a las filas de datos
         self._apply_table_styles(worksheet, table_start_row, data_rows_end, len(headers))
 
-        # Fila de Totales normalizada
+        # Fila de Totales normalizada con fórmulas dinámicas
         totals_row = current_row # Totals row comes directly after data rows
         worksheet.cell(row=totals_row, column=1, value="TOTALES GENERALES:")
-        worksheet.cell(row=totals_row, column=5, value=total_unidades_devueltas_sum)
-        worksheet.cell(row=totals_row, column=6, value=round(total_cajas_devueltas_sum, 2))
-        worksheet.cell(row=totals_row, column=7, value=round(peso_total_devolucion_sum, 2))
+
+        # Usar fórmulas de Excel para totales dinámicos
+        data_start_row = table_start_row + 1
+        data_end_row = data_rows_end
+
+        # Total unidades devueltas (columna E)
+        worksheet.cell(row=totals_row, column=5, value=f"=SUM(E{data_start_row}:E{data_end_row})")
+
+        # Total cajas devueltas (columna F)
+        worksheet.cell(row=totals_row, column=6, value=f"=SUM(F{data_start_row}:F{data_end_row})")
+
+        # Peso total devolución (columna G)
+        worksheet.cell(row=totals_row, column=7, value=f"=SUM(G{data_start_row}:G{data_end_row})")
 
         # Aplicar estilo a la fila de totales
         self._apply_totals_style(totals_row, 1, 10, worksheet)

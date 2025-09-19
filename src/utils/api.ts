@@ -4,7 +4,7 @@ import type { ICalcularApiParams, ICalcularApiResponse, RucData } from '../inter
 
 const EXPORT_API_BASE_URL = 'http://localhost:5001';
 const RUC_API_BASE_URL = 'http://localhost:5001'; // Assuming RUC API is also on port 5000
-const HOLIDAYS_API_BASE_URL = 'http://localhost:5001'; // Assuming Holidays API is also on port 5000
+
 
 export const calcularApi = async (params: ICalcularApiParams): Promise<ICalcularApiResponse> => {
   const { montoTotal, fechasValidas } = params;
@@ -48,8 +48,9 @@ export const exportXlsxApi = async (payload: PedidoExport | InventarioExport | D
       let errorMessage = 'Error desconocido al exportar el archivo XLSX';
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (jsonError) {
+        errorMessage = errorData.message || errorData.error || errorMessage;
+        console.error('Backend validation error details:', errorData);
+      } catch {
         errorMessage = await response.text();
       }
       throw new Error(errorMessage);
@@ -103,19 +104,4 @@ export const consultarRucApi = async (documentNumber: string): Promise<RucData> 
   }
 };
 
-export const fetchHolidaysApi = async (year: number): Promise<Array<{ date: string; name: string }>> => {
-  try {
-    const response = await fetch(`${HOLIDAYS_API_BASE_URL}/holidays/${year}`);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al obtener feriados');
-    }
-
-    const data: Array<{ date: string; name: string }> = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error calling fetchHolidaysApi:', error);
-    throw error;
-  }
-};

@@ -25,6 +25,7 @@ interface Props<T> {
   noDataMessage?: string; // Mensaje opcional para cuando no hay datos.
   compact?: boolean; // use compact table spacing
   colClasses?: string[]; // optional classes for <col> elements to set widths
+  tableClassName?: string; // optional class for the <table> element
 }
 
 // --- 3. Definición del Componente ---
@@ -35,7 +36,8 @@ export const DataTable = <T extends { codigo: string }>({
   columns, 
   noDataMessage = 'No hay productos en la lista.',
   compact = false,
-  colClasses = []
+  colClasses = [],
+  tableClassName = ''
 }: Props<T>) => {
   // --- Renderizado del Componente ---
   return (
@@ -43,7 +45,7 @@ export const DataTable = <T extends { codigo: string }>({
       {/* El contenedor `overflow-x-auto` es clave para la responsividad en móviles. */}
       {/* Permite que la tabla se desplace horizontalmente si no cabe en la pantalla. */}
       <div className="overflow-x-auto">
-        <table className={`min-w-full data-table surface ${compact ? 'table-compact' : ''}`}>
+        <table className={`min-w-full data-table surface ${compact ? 'table-compact' : ''} ${tableClassName}`}>
           {colClasses.length > 0 && (
             <colgroup>
               {colClasses.map((c, idx) => (
@@ -70,11 +72,11 @@ export const DataTable = <T extends { codigo: string }>({
             {data.length > 0 ? (
               data.map((row) => (
                 <tr key={row.codigo} className="transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-800">
-                  {columns.map((column) => (
-                    <td key={String(column.accessor)} className={`px-4 py-2 break-words text-sm text-${column.align || 'left'}`}>
+                  {columns.map((column, colIndex) => (
+                    <td key={`${String(column.accessor)}-${colIndex}`} className={`px-4 py-2 break-words text-sm text-${column.align || 'left'}`}>
                       {/* Si hay un `cellRenderer`, lo usamos. Si no, mostramos el dato directamente. */}
-                      {column.cellRenderer 
-                        ? column.cellRenderer(row) 
+                      {column.cellRenderer
+                        ? column.cellRenderer(row)
                         : String(row[column.accessor as keyof T] ?? '')}
                     </td>
                   ))}

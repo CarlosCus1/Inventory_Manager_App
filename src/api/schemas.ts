@@ -17,6 +17,10 @@ const ExportBaseSchema = z.object({
 export const InventarioExportSchema = ExportBaseSchema.extend({
   tipo: z.literal('inventario'),
   form: FormSchema, // Usamos el FormSchema general
+  totales: z.object({
+    totalCantidades: z.number(),
+    totalLineas: z.number(),
+  }),
 });
 
 // Esquema específico para el reporte de Pedido

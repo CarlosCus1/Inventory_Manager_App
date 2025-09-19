@@ -120,12 +120,18 @@ export const PedidoPage: React.FC = () => {
       return;
     }
 
+    // Ensure cantidad is number for all items
+    const correctedLista = lista.map(item => ({
+      ...item,
+      cantidad: typeof item.cantidad === 'number' ? item.cantidad : parseInt(String(item.cantidad), 10) || 0
+    }));
+
     setIsSubmitting(true);
     try {
       const payload: PedidoExport = {
         tipo: 'pedido',
         form: formData as any,
-        list: lista,
+        list: correctedLista,
         usuario: {
           nombre: userName || '',
           correo: userEmail || ''

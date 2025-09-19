@@ -145,6 +145,18 @@
           ],
           "default": null,
           "title": "Montooriginal"
+        },
+        "motivo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Motivo"
         }
       },
       "title": "Form",
