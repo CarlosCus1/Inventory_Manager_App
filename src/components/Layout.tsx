@@ -42,7 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Session timer activity callback - will be set by SessionTimer component
-  const [sessionActivityCallback, setSessionActivityCallback] = useState<(() => void) | null>(null);
+  const [, setSessionActivityCallback] = useState<(() => void) | null>(null);
 
   /**
     * Authentication handlers

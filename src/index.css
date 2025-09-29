@@ -290,6 +290,110 @@
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 
+  /* ===========================
+     Priority Indicators for Modules
+     =========================== */
+  .priority-critical {
+    border-left: 4px solid var(--color-devoluciones-primary);
+    background: linear-gradient(90deg, rgba(220, 38, 38, 0.05), transparent);
+    animation-delay: 100ms;
+  }
+
+  .priority-high {
+    border-left: 4px solid var(--color-inventario-primary);
+    background: linear-gradient(90deg, rgba(22, 163, 74, 0.05), transparent);
+    animation-delay: 200ms;
+  }
+
+  .priority-medium {
+    border-left: 4px solid var(--color-pedido-primary);
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.05), transparent);
+    animation-delay: 300ms;
+  }
+
+  .priority-low {
+    border-left: 4px solid var(--color-comparador-primary);
+    background: linear-gradient(90deg, rgba(234, 88, 12, 0.05), transparent);
+    animation-delay: 400ms;
+  }
+
+  /* ===========================
+     Module Card Base Styles
+     =========================== */
+  .module-card {
+    position: relative;
+    height: 100%;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: var(--radius-2xl);
+    transition: all var(--transition-slow);
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--border-primary);
+    box-sizing: inherit;
+    color: var(--text-primary) !important;
+  }
+
+  /* Hover and Focus Effects */
+  .module-card:hover,
+  .module-card:focus {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* ===========================
+     Grid System for Home Page - Sistema Simple y Efectivo
+     =========================== */
+  .grid-prioritized {
+    display: grid;
+    width: 100%;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  /* Móvil: 1 columna vertical (≤767px) */
+  @media (max-width: 767px) {
+    .grid-prioritized {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "devoluciones"
+        "inventario"
+        "pedidos"
+        "comparador";
+      gap: 1rem;
+    }
+  }
+
+  /* Tablet: 2 columnas (768px-1279px) */
+  @media (min-width: 768px) and (max-width: 1279px) {
+    .grid-prioritized {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "devoluciones inventario"
+        "pedidos comparador";
+      gap: 1.5rem;
+      padding: 0 2rem;
+    }
+  }
+
+  /* Desktop grande: 4 columnas horizontales (≥1280px) */
+  @media (min-width: 1280px) {
+    .grid-prioritized {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-areas: "devoluciones inventario pedidos comparador";
+      gap: 2rem;
+      padding: 0 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+  }
+
+  /* Asignación de áreas del grid */
+  .grid-prioritized > div:nth-child(1) { grid-area: devoluciones; }
+  .grid-prioritized > div:nth-child(2) { grid-area: inventario; }
+  .grid-prioritized > div:nth-child(3) { grid-area: pedidos; }
+  .grid-prioritized > div:nth-child(4) { grid-area: comparador; }
+
   /* Animation utilities */
   .fade-in {
     animation: fadeIn 0.3s ease-in-out;
@@ -319,6 +423,73 @@
 
   .btn-danger {
     @apply bg-[var(--color-danger)] text-white;
+  }
+
+  /* Priority indicators for modules */
+  .priority-critical {
+    border-left: 4px solid #DC2626;
+    background: linear-gradient(90deg, rgba(220, 38, 38, 0.05), transparent);
+  }
+
+  .priority-high {
+    border-left: 4px solid #16A34A;
+    background: linear-gradient(90deg, rgba(22, 163, 74, 0.05), transparent);
+  }
+
+  .priority-medium {
+    border-left: 4px solid #2563EB;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.03), transparent);
+  }
+
+  .priority-low {
+    border-left: 4px solid #EA580C;
+    background: linear-gradient(90deg, rgba(234, 88, 12, 0.03), transparent);
+  }
+
+  /* Estilos específicos para áreas del grid */
+  .devoluciones-card {
+    /* Devoluciones - Primera posición siempre */
+  }
+
+  .inventario-card {
+    /* Inventario - Segunda posición siempre */
+  }
+
+  .pedidos-card {
+    /* Pedidos - Tercera posición siempre */
+  }
+
+  .comparador-card {
+    /* Comparador - Cuarta posición siempre */
+  }
+
+  /* Layout específico para 3+1 */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .devoluciones-card {
+      /* Primera fila, primera columna - tamaño doble */
+    }
+
+    .inventario-card {
+      /* Primera fila, segunda columna */
+    }
+
+    .pedidos-card {
+      /* Segunda fila, primera columna */
+    }
+
+    .comparador-card {
+      /* Segunda fila, segunda columna */
+    }
+  }
+
+  /* Layout horizontal para desktop grande */
+  @media (min-width: 1280px) {
+    .devoluciones-card,
+    .inventario-card,
+    .pedidos-card,
+    .comparador-card {
+      /* Todas las tarjetas en fila horizontal con igual ancho */
+    }
   }
 }
 
@@ -388,13 +559,27 @@
 }
 
 @keyframes scaleIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.9); 
+  from {
+    opacity: 0;
+    transform: scale(0.9);
   }
-  to { 
-    opacity: 1; 
-    transform: scale(1); 
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) skewX(-12deg);
+    opacity: 0;
   }
 }
 
@@ -430,6 +615,38 @@
 
   .fab {
     @apply bottom-4 right-4 w-12 h-12;
+  }
+}
+
+/* Responsive optimizations for grid layouts */
+@media (max-width: 640px) {
+  /* Additional mobile optimizations */
+  .grid-prioritized {
+    padding: 0 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .module-card {
+    padding: 1rem;
+  }
+
+  .module-card-title {
+    font-size: 1rem;
+  }
+
+  .module-card-description {
+    font-size: 0.8rem;
+  }
+}
+
+/* Reduce animations on mobile for performance */
+@media (prefers-reduced-motion: reduce) {
+  .shine-effect {
+    display: none;
+  }
+
+  .scale-in {
+    animation: none;
   }
 }
 

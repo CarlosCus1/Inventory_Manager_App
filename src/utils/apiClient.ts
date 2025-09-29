@@ -18,6 +18,14 @@ export interface ApiResponse<T> {
   ttl: number;
 }
 
+export interface RUCResponse {
+  success: boolean;
+  data?: Record<string, unknown>;
+  error?: string;
+  statusCode: number;
+  timestamp: string;
+}
+
 export interface ApiConfig {
   baseURL: string;
   timeout: number;
@@ -66,7 +74,7 @@ class ApiClient {
     if (this.config.batchRequests && this.requestQueue.has(cacheKey)) {
       const response = await this.requestQueue.get(cacheKey)!;
       return {
-        data: response,
+        data: response as T,
         status: 200,
         cached: false,
         timestamp: Date.now(),
@@ -154,7 +162,7 @@ class ApiClient {
   /**
    * Query SUNAT API for RUC information
    */
-  async queryRUC(ruc: string, token: string): Promise<any> {
+  async queryRUC(ruc: string, token: string): Promise<RUCResponse> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
