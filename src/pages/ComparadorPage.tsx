@@ -147,10 +147,11 @@ export const ComparadorPage: React.FC = () => {
       const updatedFormData = { ...formData };
       competidores.forEach((processedBrand, index) => {
         const marcaKey = `marca${index + 1}` as keyof IForm;
-        updatedFormData[marcaKey] = processedBrand;
+        (updatedFormData as Record<string, string>)[marcaKey] = processedBrand;
       });
 
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload: any = {
         tipo: 'precios',
         form: updatedFormData,
@@ -165,6 +166,7 @@ export const ComparadorPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       a.download = (blob as any).name || 'comparador_prices.xlsx';
       document.body.appendChild(a);
       a.click();

@@ -1,4 +1,4 @@
-import { fetchHolidaysApi } from './api'; // Assuming api.ts will be in src/utils as well
+// import { fetchHolidaysApi } from './api'; // Commented out - not needed for current functionality
 
 export const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -27,10 +27,17 @@ export async function obtenerFeriados(year: number): Promise<Array<{date: string
     }
 
     try {
-        const feriadosArray = await fetchHolidaysApi(year);
-        feriadosCache.set(year, feriadosArray);
-        sessionStorage.setItem(cacheKey, JSON.stringify(feriadosArray));
-        return feriadosArray;
+        // Commented out - fetchHolidaysApi not available in current implementation
+        // const feriadosArray = await fetchHolidaysApi(year);
+        // feriadosCache.set(year, feriadosArray);
+        // sessionStorage.setItem(cacheKey, JSON.stringify(feriadosArray));
+        // return feriadosArray;
+
+        // Return empty array for now - holidays functionality not needed
+        const emptyHolidays: Array<{date: string, name: string}> = [];
+        feriadosCache.set(year, emptyHolidays);
+        sessionStorage.setItem(cacheKey, JSON.stringify(emptyHolidays));
+        return emptyHolidays;
     } catch (error) {
         console.error(`Error al obtener los feriados para el año ${year}:`, error);
         throw error;

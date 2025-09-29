@@ -1,7 +1,7 @@
 {
-  "name": "new_project",
-  "private": true,
-  "version": "0.0.0",
+  "name": "cipsa-inventory-suite",
+  "version": "3.0.0",
+  "description": "Sistema integral de gestión de inventario para CIPSA con módulos especializados",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,12 +13,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@fullcalendar/core": "^6.1.19",
-    "@fullcalendar/daygrid": "^6.1.19",
-    "@fullcalendar/interaction": "^6.1.19",
-    "@fullcalendar/react": "^6.1.19",
     "@mui/material": "^7.3.1",
-    "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.1",
     "lucide-react": "^0.544.0",
     "react": "^19.1.0",
