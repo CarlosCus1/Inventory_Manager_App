@@ -39,8 +39,8 @@ const InventoryForm: React.FC = () => {
     alert(`Cantidad: ${data.cantidad}, Unidades por caja: ${data.cantidad_por_caja}`);
   };
 
-  const cantidadRules = getRulesFromSchema(mockInventarioSchema.properties.cantidad, true);
-  const uPorCajaRules = getRulesFromSchema(mockInventarioSchema.properties.cantidad_por_caja, true);
+  const cantidadRules: any = getRulesFromSchema(mockInventarioSchema.properties.cantidad, true);
+  const uPorCajaRules: any = getRulesFromSchema(mockInventarioSchema.properties.cantidad_por_caja, true);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-4">
@@ -49,7 +49,7 @@ const InventoryForm: React.FC = () => {
         <Controller
           name="cantidad"
           control={control}
-          rules={cantidadRules as any}
+          rules={cantidadRules}
           render={({ field }) => (
             <InputQty
               id="cantidad"
@@ -71,7 +71,7 @@ const InventoryForm: React.FC = () => {
         <Controller
           name="cantidad_por_caja"
           control={control}
-          rules={uPorCajaRules as any}
+          rules={uPorCajaRules}
           render={({ field }) => (
             <InputQty
               id="cantidad_por_caja"

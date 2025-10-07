@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
@@ -10,7 +10,10 @@ import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
 import { exportXlsxApi } from '../utils/api';
 import type { InventarioExport, ProductoEditado } from '../api/schemas';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
+
+// Tipo local para manejar el nombre del archivo en el blob de respuesta
+type BlobWithName = Blob & { name?: string };
 
 // --- 2. Definición del Componente de Página ---
 export const InventarioPage: React.FC = () => {
@@ -22,9 +25,7 @@ export const InventarioPage: React.FC = () => {
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
-  const actualizarProductoEnLista = useCallback((codigo: string, campo: keyof ProductoEditado, valor: string | number) => {
-    useAppStore.getState().actualizarProductoEnLista('inventario', codigo, campo as any, valor);
-  }, []);
+  const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
 
   // --- B. Estado Local del Componente ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,12 +100,11 @@ export const InventarioPage: React.FC = () => {
         },
 
       };
-      console.log('Payload para inventario:', JSON.stringify(payload, null, 2));
-      const blob = await exportXlsxApi(payload);
+      const blob: BlobWithName = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = (blob as unknown as { name?: string }).name || 'inventario.xlsx';
+      a.download = blob.name || 'inventario.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -136,7 +136,7 @@ export const InventarioPage: React.FC = () => {
           value={item.cantidad}
           onChange={(e) => {
             const value = e.target.value.trim() === '' ? 0 : Number(e.target.value);
-            actualizarProductoEnLista(item.codigo, 'cantidad', value);
+            actualizarProductoEnLista('inventario', item.codigo, 'cantidad', value);
           }}
           className="input input-module-inventario input-qty w-32 text-right text-gray-900 dark:text-gray-100"
           aria-label={`Cantidad para ${item.nombre}`}
@@ -151,7 +151,7 @@ export const InventarioPage: React.FC = () => {
         <input
           type="text"
           value={String(item.linea ?? '')}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'linea', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('inventario', item.codigo, 'linea', e.target.value)}
           className="input input-module-inventario w-40 text-gray-900 dark:text-gray-100"
           aria-label={`Línea para ${item.nombre}`}
         />
@@ -164,7 +164,7 @@ export const InventarioPage: React.FC = () => {
         <input
           type="text"
           value={String(item.observaciones ?? '')}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'observaciones', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('inventario', item.codigo, 'observaciones', e.target.value)}
           className="input input-module-inventario w-full text-gray-900 dark:text-gray-100"
           aria-label={`Observaciones para ${item.nombre}`}
         />

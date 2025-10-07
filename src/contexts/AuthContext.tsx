@@ -1,14 +1,5 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-
-interface AuthContextType {
-  isLoggedIn: boolean;
-  userName: string | null;
-  userEmail: string | null;
-  login: (name: string, email: string) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import React, { useState, ReactNode } from 'react';
+import { AuthContext } from './auth';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -45,12 +36,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

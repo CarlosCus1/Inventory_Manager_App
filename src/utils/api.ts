@@ -2,15 +2,15 @@
 import type { PedidoExport, InventarioExport, DevolucionesExport, PreciosExport } from '../api/schemas';
 import type { ICalcularApiParams, ICalcularApiResponse, RucData } from '../interfaces';
 
-const EXPORT_API_BASE_URL = 'http://localhost:5001';
-const RUC_API_BASE_URL = 'http://localhost:5001'; // Assuming RUC API is also on port 5000
+const EXPORT_API_BASE_URL = 'http://localhost:5003';
+const RUC_API_BASE_URL = 'http://localhost:5003'; // Assuming RUC API is also on port 5000
 
 
 export const calcularApi = async (params: ICalcularApiParams): Promise<ICalcularApiResponse> => {
   const { montoTotal, fechasValidas } = params;
 
   try {
-  const response = await fetch(`http://localhost:5001/calculate`, {
+  const response = await fetch(`http://localhost:5003/calculate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export const exportXlsxApi = async (payload: PedidoExport | InventarioExport | D
 
 export const consultarRucApi = async (documentNumber: string): Promise<RucData> => {
   try {
-    const response = await fetch(`${RUC_API_BASE_URL}/consultar-ruc`, {
+    const response = await fetch(`http://localhost:5003/consultar-ruc`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

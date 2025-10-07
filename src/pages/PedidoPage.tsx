@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProductoEditado, IProducto, FieldConfig } from '../interfaces';
+import type { IProductoEditado, IProducto, FieldConfig, IForm } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { useToast } from '../contexts/ToastContext';
 import { formatDecimal } from '../stringFormatters';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 import { exportXlsxApi } from '../utils/api';
 import type { PedidoExport } from '../api/schemas';
+
+// Tipo local para manejar el nombre del archivo en el blob de respuesta
+type BlobWithName = Blob & { name?: string };
 
 // --- 2. Definición del Componente de Página ---
 export const PedidoPage: React.FC = () => {
@@ -20,9 +23,7 @@ export const PedidoPage: React.FC = () => {
   const formState = useAppStore((state) => state.formState.pedido);
   const lista = useAppStore((state) => state.listas.pedido);
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
-  const actualizarProductoEnLista = useCallback((codigo: string, campo: keyof IProductoEditado, valor: string | number) => {
-    useAppStore.getState().actualizarProductoEnLista('pedido', codigo, campo as any, valor);
-  }, []);
+  const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
 
@@ -60,7 +61,7 @@ export const PedidoPage: React.FC = () => {
           max={1000000}
           step={0.01}
           value={item.cantidad}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'cantidad', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('pedido', item.codigo, 'cantidad', Number(e.target.value))}
           className="input input-module-pedido input-qty w-28 md:w-32 text-gray-900 dark:text-gray-100"
         />
       )
@@ -77,7 +78,7 @@ export const PedidoPage: React.FC = () => {
           aria-label={`Observaciones para ${item.nombre}`}
           placeholder="Añadir observaciones"
           value={item.observaciones ?? ''}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'observaciones', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('pedido', item.codigo, 'observaciones', e.target.value)}
           className="input input-module-pedido w-full text-gray-900 dark:text-gray-100"
         />
       )
@@ -102,7 +103,7 @@ export const PedidoPage: React.FC = () => {
   // --- G. Lógica de Exportación a Excel ---
   const handleExport = async () => {
     const errors: string[] = [];
-    const formData = { ...formState };
+    const formData: IForm = { ...formState };
 
     if (!formData.sucursal) {
       formData.sucursal = '[principal]';
@@ -130,18 +131,18 @@ export const PedidoPage: React.FC = () => {
     try {
       const payload: PedidoExport = {
         tipo: 'pedido',
-        form: formData as any,
+        form: formData,
         list: correctedLista,
         usuario: {
           nombre: userName || '',
           correo: userEmail || ''
         }
       };
-      const blob = await exportXlsxApi(payload);
+      const blob: BlobWithName = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = (blob as any).name || 'pedido.xlsx';
+      a.download = blob.name || 'pedido.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();

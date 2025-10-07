@@ -18,6 +18,7 @@ from openpyxl.utils import get_column_letter
 from datetime import datetime
 import io
 import unicodedata
+import requests # <--- Importado para llamadas a API externa
 from typing import Any, Dict, List, Optional
 from openpyxl.worksheet.worksheet import Worksheet
 from .report_generators.base_generator import BaseReportGenerator
@@ -28,6 +29,7 @@ from .report_generators.precios_generator import PreciosReportGenerator
 from .constants import UserKeys
 from backend.validation import validate_with_schema
 import logging
+import argparse # <--- Importado para leer argumentos
 
 # --- 2. Inicialización de la aplicación Flask ---
 app = Flask(__name__)
@@ -37,7 +39,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Permitimos solicitudes CORS de cualquier origen para el desarrollo
 # En producción, se recomienda restringir esto a dominios específicos
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, expose_headers=["Content-Disposition"])
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "https://5173-firebase-gestion360-1759544149010.cluster-gizzoza7hzhfyxzo5d76y3flkw.cloudworkstations.dev", "https://5174-firebase-gestion360-1759544149010.cluster-gizzoza7hzhfyxzo5d76y3flkw.cloudworkstations.dev"]}}, supports_credentials=True, expose_headers=["Content-Disposition"])
+
+# --- 3. Credenciales y Constantes (Mover a variables de entorno en producción) ---
+API_TOKEN_SUNAT = "apis-token-16452.eFeKMZDK8KQe3dGOhwSZJ2mgag9l5MU5"
+API_URL_SUNAT = "https://api.apis.net.pe/v2/sunat/ruc"
 
 
 # --- 5. Definición de Endpoints ---
@@ -115,31 +121,44 @@ def calculate():
         return jsonify({"error": f"Ocurrió un error interno: {str(e)}"}), 500
 
 
-@app.route('/api/consultar-ruc', methods=['GET'])
+@app.route('/api/consultar-ruc', methods=['POST'])
 def consultar_ruc():
     """
-    Endpoint mock para consultar RUC/DNI.
+    Endpoint para consultar RUC/DNI. Ahora se conecta a la API real.
     """
-    numero = request.args.get('numero', '')
-    if not numero.isdigit():
-        return jsonify({"error": "El número de documento debe contener solo dígitos."}), 400
+    data = request.get_json()
+    numero = data.get('documentNumber')
 
-    if len(numero) == 11:
-        # Simula una respuesta para un RUC
-        return jsonify({
-            "razonSocial": f"EMPRESA FICTICIA {numero}",
-            "estado": "ACTIVO",
-            "condicion": "HABIDO"
-        })
-    elif len(numero) == 8:
-        # Simula una respuesta para un DNI
-        return jsonify({
-            "razonSocial": f"PERSONA FICTICIA {numero}",
-            "estado": "ACTIVO",
-            "condicion": "HABIDO"
-        })
-    else:
-        return jsonify({"error": "El número de documento debe tener 8 u 11 dígitos."}), 400
+    if not numero or not numero.isdigit():
+        return jsonify({"error": "El número de documento es requerido y debe contener solo dígitos."}), 400
+    
+    # Aunque la API soporta DNI, nos centramos en RUC según la especificación
+    if len(numero) != 11:
+        return jsonify({"error": "El RUC debe tener 11 dígitos."}), 400
+
+    try:
+        headers = {
+            'Authorization': f'Bearer {API_TOKEN_SUNAT}',
+            'Content-Type': 'application/json'
+        }
+        response = requests.get(f"{API_URL_SUNAT}?numero={numero}", headers=headers)
+
+        # Propagar el error de la API externa si la solicitud no fue exitosa
+        response.raise_for_status()
+
+        return jsonify(response.json()), response.status_code
+
+    except requests.exceptions.HTTPError as err:
+        status_code = err.response.status_code
+        if status_code == 404:
+            return jsonify({"error": "El RUC no fue encontrado."}), 404
+        elif status_code == 401:
+            return jsonify({"error": "Autenticación fallida. Revisa el token de la API."}), 401
+        else:
+            return jsonify({"error": f"Error en el servicio de consulta: {err}"}), status_code
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error de conexión con la API de RUC: {e}")
+        return jsonify({"error": "No se pudo conectar con el servicio de consulta de RUC."}), 503
 
 
 REPORT_GENERATORS = {
@@ -193,5 +212,10 @@ def export_xlsx():
 
 # --- 6. Bloque de Ejecución Principal ---
 if __name__ == '__main__':
+    # Configurar el parser de argumentos para leer el puerto
+    parser = argparse.ArgumentParser(description='Run a Flask web server.')
+    parser.add_argument('--port', type=int, default=5001, help='The port to run the web server on.')
+    args = parser.parse_args()
+
     # La ejecución en modo debug es útil durante el desarrollo.
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=args.port)

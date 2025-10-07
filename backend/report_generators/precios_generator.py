@@ -12,7 +12,7 @@ class PreciosReportGenerator(BaseReportGenerator):
 
     def get_filename(self) -> str:
         """Genera nombre de archivo normalizado"""
-        client_name = self.cliente.lower().replace(" ", "_").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        client_name = self.cliente.lower().replace(" ", "_").replace("\u00e1", "a").replace("\u00e9", "e").replace("\u00ed", "i").replace("\u00f3", "o").replace("\u00fa", "u")
         date_str = datetime.now().strftime("%d-%m-%y")
         return f"comparativo_precios_{client_name}_{date_str}.xlsx"
 
@@ -25,10 +25,10 @@ class PreciosReportGenerator(BaseReportGenerator):
             "M4", "DIF. M4", "% M4",
             "M5", "DIF. M5", "% M5",
             "PRECIO MIN", "PRECIO MAX", "% MIN", "% MAX",
-            "PRECIO SUG.", "DIF. SUG.", "% SUG.",
-            "PROMEDIO", "DESVIACIÓN ESTÁNDAR", "DISPERSIÓN", "RANKING DE PRECIO",
-            "% DIF. VS PROMEDIO", "% DIF. VS MÍNIMO", "% DIF. VS MÁXIMO",
-            "% DIF. VS SUGERIDO", "COMPETIDORES MÁS BARATOS", "COMPETIDORES MÁS CAROS"
+            "PRECIO SUG.", "DIF. SUG.", "% AJUSTE SUG.",
+            "PROMEDIO", "DESVIACI\u00d3N EST\u00c1NDAR", "DISPERSI\u00d3N", "RANKING DE PRECIO",
+            "% DIF. VS PROMEDIO", "% DIF. VS M\u00cdNIMO", "% DIF. VS M\u00c1XIMO",
+            "% DIF. VS SUGERIDO", "COMPETIDORES M\u00c1S BARATOS", "COMPETIDORES M\u00c1S CAROS"
         ]
 
     def generate(self):
@@ -45,7 +45,7 @@ class PreciosReportGenerator(BaseReportGenerator):
         general_data = {
             "Cliente": self.cliente,
             "Documento": doc_display,
-            "Código de Cliente": self.form_data.get('codigo_cliente', ''),
+            "C\u00f3digo de Cliente": self.form_data.get('codigo_cliente', ''),
             "Sucursal": self.form_data.get('sucursal') or 'principal',
             "Responsable": self.usuario,
             "Fecha": datetime.now(),
@@ -61,7 +61,7 @@ class PreciosReportGenerator(BaseReportGenerator):
         # 2. Encabezados de la tabla normalizados
         headers = self._get_normalized_headers()
         
-        # Estilos específicos para este reporte
+        # Estilos espec\u00edficos para este reporte
         brand_fills = {
             'M2': PatternFill(start_color='ADD8E6', end_color='ADD8E6', fill_type='solid'),
             'M3': PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid'),
@@ -113,7 +113,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             current_header_col += 1
 
         # Suggested Price headers
-        static_headers_sugerido = ["PRECIO SUG.", "DIF. SUG.", "% SUG."]
+        static_headers_sugerido = ["PRECIO SUG.", "DIF. SUG.", "% AJUSTE SUG."]
         for header_text in static_headers_sugerido:
             cell = worksheet.cell(row=table_start_row, column=current_header_col, value=header_text)
             cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
@@ -123,8 +123,8 @@ class PreciosReportGenerator(BaseReportGenerator):
 
         # New KPI headers - Optimizados para espacio horizontal
         static_headers_kpi = [
-            "PROMEDIO", "DESV. STD", "DISPERSIÓN", "RANKING",
-            "% VS PROM", "% VS MÍN", "% VS MÁX",
+            "PROMEDIO", "DESV. STD", "DISPERSI\u00d3N", "RANKING",
+            "% VS PROM", "% VS M\u00cdN", "% VS M\u00c1X",
             "% VS SUG", "+ BARATOS", "+ CAROS"
         ]
         for header_text in static_headers_kpi:
@@ -133,7 +133,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             cell.fill = kpi_fill
             current_header_col += 1
 
-        # 3. Cuerpo y Fórmulas normalizados
+        # 3. Cuerpo y F\u00f3rmulas normalizados
         currency_format = '#,##0.00'
         percentage_format = '0.00%'
         
@@ -238,7 +238,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             dif_sug_cell.number_format = currency_format
             dif_sug_cell.alignment = self._get_right_alignment()
 
-            # % SUG.
+            # % AJUSTE SUG.
             pct_sug_cell = worksheet.cell(row=current_row, column=col_idx + 2)
             pct_sug_cell.value = f'=IF(AND(ISNUMBER({base_cell_coord}), {base_cell_coord}<>0), ({sugerido_cell.coordinate}/{base_cell_coord})-1, 0)'
             pct_sug_cell.fill = sugerido_fill
@@ -247,7 +247,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             pct_sug_cell.alignment = self._get_right_alignment()
             
             # --- Nuevos KPIs ---
-            col_idx += 3 # Mover el índice de columna después de % SUG.
+            col_idx += 3 # Mover el \u00edndice de columna despu\u00e9s de % AJUSTE SUG.
 
             # PROMEDIO
             avg_cell = worksheet.cell(row=current_row, column=col_idx)
@@ -257,7 +257,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             avg_cell.fill = kpi_fill
             col_idx += 1
 
-            # DESVIACIÓN ESTÁNDAR
+            # DESVIACI\u00d3N EST\u00c1NDAR
             stdev_cell = worksheet.cell(row=current_row, column=col_idx)
             stdev_cell.value = f'=IFERROR(STDEV({helper_range_str}), "")'
             stdev_cell.number_format = currency_format
@@ -265,7 +265,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             stdev_cell.fill = kpi_fill
             col_idx += 1
 
-            # DISPERSIÓN
+            # DISPERSI\u00d3N
             dispersion_cell = worksheet.cell(row=current_row, column=col_idx)
             cv_formula = f"IF({avg_cell.coordinate}<>0, {stdev_cell.coordinate}/{avg_cell.coordinate}, 0)"
             dispersion_text_formula = f'IF({cv_formula}>=0.3, "ALTA", IF({cv_formula}>=0.15, "MEDIA", "BAJA"))'
@@ -291,7 +291,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             pct_vs_avg_cell.fill = kpi_fill
             col_idx += 1
 
-            # % DIF. VS MÍNIMO (nueva columna, diferente a % MIN)
+            # % DIF. VS M\u00cdNIMO (nueva columna, diferente a % MIN)
             pct_vs_min_cell = worksheet.cell(row=current_row, column=col_idx)
             pct_vs_min_cell.value = f'=IF(AND(ISNUMBER({base_cell_coord}), ISNUMBER({min_price_cell.coordinate}), {min_price_cell.coordinate}<>0), ({base_cell_coord}/{min_price_cell.coordinate})-1, 0)'
             pct_vs_min_cell.number_format = percentage_format
@@ -299,7 +299,7 @@ class PreciosReportGenerator(BaseReportGenerator):
             pct_vs_min_cell.fill = kpi_fill
             col_idx += 1
 
-            # % DIF. VS MÁXIMO (nueva columna, diferente a % MAX)
+            # % DIF. VS M\u00c1XIMO (nueva columna, diferente a % MAX)
             pct_vs_max_cell = worksheet.cell(row=current_row, column=col_idx)
             pct_vs_max_cell.value = f'=IF(AND(ISNUMBER({base_cell_coord}), ISNUMBER({max_price_cell.coordinate}), {max_price_cell.coordinate}<>0), ({base_cell_coord}/{max_price_cell.coordinate})-1, 0)'
             pct_vs_max_cell.number_format = percentage_format
@@ -315,14 +315,14 @@ class PreciosReportGenerator(BaseReportGenerator):
             pct_vs_sug_cell.fill = kpi_fill
             col_idx += 1
 
-            # COMPETIDORES MÁS BARATOS
+            # COMPETIDORES M\u00c1S BARATOS
             cheaper_competitors_cell = worksheet.cell(row=current_row, column=col_idx)
             cheaper_competitors_cell.value = f'=IF(ISNUMBER({base_cell_coord}), COUNTIF({helper_range_str}, "<" & {base_cell_coord}), "")'
             cheaper_competitors_cell.alignment = self._get_right_alignment()
             cheaper_competitors_cell.fill = kpi_fill
             col_idx += 1
 
-            # COMPETIDORES MÁS CAROS
+            # COMPETIDORES M\u00c1S CAROS
             more_expensive_competitors_cell = worksheet.cell(row=current_row, column=col_idx)
             more_expensive_competitors_cell.value = f'=IF(ISNUMBER({base_cell_coord}), COUNTIF({helper_range_str}, ">" & {base_cell_coord}), "")'
             more_expensive_competitors_cell.alignment = self._get_right_alignment()
@@ -337,12 +337,12 @@ class PreciosReportGenerator(BaseReportGenerator):
                 col_letter = get_column_letter(helper_col_start + i)
                 worksheet.column_dimensions[col_letter].hidden = True
 
-        # Aplicar estilos a la tabla usando el método base
+        # Aplicar estilos a la tabla usando el m\u00e9todo base
         self._apply_table_styles(worksheet, table_start_row, current_row - 1, len(headers))
 
         # 4. Ajustar columnas
         autosize_columns(worksheet)
 
     def _get_right_alignment(self) -> Alignment:
-        """Devuelve alineación derecha normalizada"""
+        """Devuelve alineaci\u00f3n derecha normalizada"""
         return DEFAULT_STYLES['right_alignment']

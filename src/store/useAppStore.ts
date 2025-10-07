@@ -18,7 +18,20 @@ interface ModuleStats {
   devoluciones: number;
   pedido: number;
   inventario: number;
-  comparador: number;
+  precios: number; // Renombrado de 'comparador' a 'precios' para consistencia
+}
+
+interface RawProduct {
+  codigo?: string | number;
+  nombre?: string;
+  ean?: string;
+  ean_14?: string;
+  linea?: string;
+  can_kg_um?: number;
+  stock_referencial?: number;
+  precio?: number;
+  u_por_caja?: number;
+  keywords?: string;
 }
 
 
@@ -33,14 +46,12 @@ export interface State {
     pedido: IForm;
     inventario: IForm;
     precios: IForm;
-  comparador: IForm;
   };
   listas: {
     devoluciones: IProductoEditado[];
     pedido: IProductoEditado[];
     inventario: IProductoEditado[];
     precios: IProductoEditado[];
-  comparador: IProductoEditado[];
   };
   loading: boolean;
   error: string | null;
@@ -58,15 +69,15 @@ interface Actions {
   actualizarFormulario: (tipo: keyof State['formState'], campo: keyof IForm, valor: string | number) => void;
   setMotivoDevolucion: (motivo: MotivoDevolucion) => void;
   agregarProductoToLista: (tipo: keyof State['listas'], producto: IProducto) => void;
-  actualizarProductoEnLista: (
+  actualizarProductoEnLista: <K extends keyof IProductoEditado>(
     tipo: keyof State['listas'],
     codigo: string,
-    campo: keyof IProductoEditado,
-    valor: string | number | Record<string, number>
+    campo: K,
+    valor: IProductoEditado[K]
   ) => void;
   eliminarProductoDeLista: (tipo: keyof State['listas'], codigo: string) => void;
   resetearModulo: (tipo: keyof State['listas']) => void;
-  fetchRuc: (ruc: string) => Promise<RucData>;
+  fetchRuc: (ruc: string) => Promise<RucDota>;
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
@@ -77,25 +88,22 @@ const initialState: Omit<State, keyof Actions> = {
     devoluciones: 75,
     pedido: 90,
     inventario: 60,
-    comparador: 45,
-
+    precios: 45,
   },
   incompleteTasks: 5,
   lastActivity: {},
-    formState: {
-      devoluciones: {},
-      pedido: {},
-      inventario: {},
-      precios: {},
-      comparador: {},
-    },
-    listas: {
-      devoluciones: [],
-      pedido: [],
-      inventario: [],
-      precios: [],
-      comparador: [],
-    },
+  formState: {
+    devoluciones: {} as IForm & { motivo?: MotivoDevolucion },
+    pedido: {} as IForm,
+    inventario: {} as IForm,
+    precios: {} as IForm,
+  },
+  listas: {
+    devoluciones: [],
+    pedido: [],
+    inventario: [],
+    precios: [],
+  },
   loading: false,
   error: null,
   rucCache: {},
@@ -103,10 +111,9 @@ const initialState: Omit<State, keyof Actions> = {
 };
 
 // --- 5. Adaptador de Datos para el nuevo JSON de productos ---
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapRawProductToIProducto = (rawProduct: any): IProducto => {
+const mapRawProductToIProducto = (rawProduct: RawProduct): IProducto => {
   return {
-    codigo: rawProduct.codigo || '',
+    codigo: String(rawProduct.codigo || ''),
     nombre: rawProduct.nombre || '',
     cod_ean: rawProduct.ean || '',
     ean_14: rawProduct.ean_14 || '',
@@ -142,8 +149,7 @@ export const useAppStore = create<State & Actions>()(
             const errorText = await response.text();
             throw new Error(`No se pudo cargar el catálogo de productos. Estado: ${response.status}, Mensaje: ${errorText}`);
           }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const rawData: any[] = await response.json();
+          const rawData: RawProduct[] = await response.json();
           // console.log('Datos crudos cargados desde la red:', rawData);
 
           // Adaptar los datos crudos al formato IProducto
@@ -222,27 +228,23 @@ export const useAppStore = create<State & Actions>()(
         }
       },
 
-      actualizarProductoEnLista: (tipo, codigo, campo, valor) => {
+      actualizarProductoEnLista: <K extends keyof IProductoEditado>(
+        tipo: keyof State['listas'],
+        codigo: string,
+        campo: K,
+        valor: IProductoEditado[K]
+      ) => {
         set((state) => ({
           listas: {
             ...state.listas,
             [tipo]: state.listas[tipo].map((p) => {
               if (p.codigo !== codigo) return p;
-              if (campo === 'precios' && typeof valor === 'object' && valor !== null) {
-                return { ...p, precios: valor as Record<string, number> };
+              // Special handling for numeric conversions
+              if (campo === 'cantidad' || campo === 'precio_sugerido') {
+                const numericValue = typeof valor === 'string' ? parseInt(valor, 10) : valor;
+                return { ...p, [campo]: isNaN(numericValue as number) ? 0 : numericValue };
               }
-              // Forzar precio_sugerido a número en el comparador y loguear
-              if (campo === 'precio_sugerido' && tipo === 'precios') {
-                const nuevoValor = typeof valor === 'number' ? valor : Number(valor);
-                // console.log(`[Comparador] Guardando precio_sugerido para ${codigo}:`, nuevoValor);
-                return { ...p, precio_sugerido: nuevoValor };
-              }
-              // Convertir cantidad a número entero
-              if (campo === 'cantidad') {
-                const cantidadValor = typeof valor === 'number' ? valor : parseInt(String(valor), 10) || 0;
-                return { ...p, cantidad: cantidadValor };
-              }
-              return { ...p, [campo]: valor as string | number };
+              return { ...p, [campo]: valor };
             }),
           },
         }));
@@ -259,10 +261,6 @@ export const useAppStore = create<State & Actions>()(
 
       resetearModulo: (tipo) => {
         set((state) => ({
-          listas: {
-            ...state.listas,
-            [tipo]: initialState.listas[tipo],
-          },
           formState: {
             ...state.formState,
             [tipo]: initialState.formState[tipo],

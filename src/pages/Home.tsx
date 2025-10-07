@@ -12,10 +12,10 @@
  * ✅ Accesibilidad completa mejorada
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModuleType } from '../enums';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 
@@ -23,17 +23,17 @@ import { Button } from '../components/ui/Button';
 const InteractiveBackground: React.FC = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
-      });
-    };
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    setMousePosition({
+      x: (e.clientX / window.innerWidth) * 100,
+      y: (e.clientY / window.innerHeight) * 100,
+    });
+  }, []);
 
+  useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  }, [handleMouseMove]);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -134,7 +134,7 @@ const OptimizedModuleCard: React.FC<ModuleCardProps> = ({
       <Card
         module={variant as ModuleType}
         hover={false}
-        className="h-full relative z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm"
+        className="h-full relative z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col"
       >
         {/* Header del módulo */}
         <div className="flex items-center justify-between mb-4">
@@ -317,11 +317,11 @@ const Home: React.FC = () => {
           <div className="devoluciones-card">
             <OptimizedModuleCard {...modulesData[0]} />
           </div>
-          <div className="pedidos-card">
-            <OptimizedModuleCard {...modulesData[2]} />
-          </div>
           <div className="inventario-card">
             <OptimizedModuleCard {...modulesData[1]} />
+          </div>
+          <div className="pedidos-card">
+            <OptimizedModuleCard {...modulesData[2]} />
           </div>
           <div className="comparador-card">
             <OptimizedModuleCard {...modulesData[3]} />

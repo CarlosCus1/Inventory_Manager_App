@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import ThemeToggle from './ThemeToggle';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 import LiveDateTime from './navbar/LiveDateTime';
 import NotificationBell from './navbar/NotificationBell';
 import SessionTimer from './navbar/SessionTimer';
@@ -237,7 +237,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 style={{
                   background: 'rgba(255, 255, 255, 0.15)', /* Increased opacity for more solid background */
                   border: '1px solid rgba(255, 255, 255, 0.3)', /* More visible border */
-                  color: 'white',
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
                 }}

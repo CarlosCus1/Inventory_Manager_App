@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppStore } from "../store/useAppStore";
 import type { IProducto } from "../interfaces";
 import { ModuleType } from '../enums';
@@ -142,7 +142,7 @@ function LineSelectorModal({
     return ordenados.filter((p: IProducto) => normalize(p.nombre ?? "").includes(term));
   }, [catalogo, selectedLinea, searchNombre]);
 
-  const toggleSelection = (codigo: string | number) => {
+  const toggleSelection = useCallback((codigo: string | number) => {
     setSelectedCodigos(prev => {
       const newSet = new Set(prev);
       if (newSet.has(codigo)) {
@@ -152,15 +152,15 @@ function LineSelectorModal({
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = useCallback(() => {
     if (selectedCodigos.size === productosDeLinea.length) {
       setSelectedCodigos(new Set());
     } else {
       setSelectedCodigos(new Set(productosDeLinea.map(p => p.codigo)));
     }
-  };
+  }, [selectedCodigos, productosDeLinea]);
 
   // Configuración de columnas para la tabla
   const columns: IColumn<IProducto>[] = useMemo(() => {
@@ -219,7 +219,7 @@ function LineSelectorModal({
     }
 
     return baseColumns;
-  }, [showStockRef, selectedCodigos, productosDeLinea]);
+  }, [showStockRef, selectedCodigos, productosDeLinea, toggleSelectAll, toggleSelection]);
 
   const handleConfirm = () => {
     if (!catalogo) return;

@@ -9,34 +9,36 @@ export function calculateDataWithPercentages(
     const p1 = precios[competidores[0]] || 0;
     const porcentajes: { [key: string]: string } = {};
 
-
-
     if (p1 > 0) {
+      // Calcular porcentajes contra competidores
       for (let i = 1; i < competidores.length; i++) {
-        const pi = precios[competidores[i]] || 0;
+        const competidorActual = competidores[i];
+        const pi = precios[competidorActual] || 0;
         if (pi > 0) {
+          // Fórmula: ((Base / Competidor) - 1) * 100
           const ratio = (p1 / pi) - 1;
-          porcentajes[`% vs ${competidores[i]}`] = `${(ratio * 100).toFixed(2)}%`;
+          porcentajes[`% vs ${competidorActual}`] = `${(ratio * 100).toFixed(2)}%`;
         } else {
-          porcentajes[`% vs ${competidores[i]}`] = 'N/A';
+          porcentajes[`% vs ${competidorActual}`] = 'N/A';
         }
       }
 
-      // Calcular % Descuento a Sugerido
+      // Calcular % Ajuste a Sugerido
       const precioSugerido = producto.precio_sugerido || 0;
-
-      if (precioSugerido > 0 && p1 > 0) {
-        const descuentoNecesario = ((p1 - precioSugerido) / p1) * 100;
-        porcentajes['% Descuento a Sugerido'] = `${descuentoNecesario.toFixed(2)}%`;
+      if (precioSugerido > 0) {
+        // Fórmula: ((Sugerido / Base) - 1) * 100
+        const ratioSugerido = (precioSugerido / p1) - 1;
+        porcentajes['% Ajuste a Sugerido'] = `${(ratioSugerido * 100).toFixed(2)}%`;
       } else {
-        porcentajes['% Descuento a Sugerido'] = 'N/A';
+        porcentajes['% Ajuste a Sugerido'] = 'N/A';
       }
 
     } else {
+      // Si no hay precio base, todos los cálculos son N/A
       for (let i = 1; i < competidores.length; i++) {
         porcentajes[`% vs ${competidores[i]}`] = 'N/A';
       }
-      porcentajes['% Descuento a Sugerido'] = 'N/A';
+      porcentajes['% Ajuste a Sugerido'] = 'N/A';
     }
 
     return { ...producto, ...porcentajes } as (IProductoEditado & Record<string, string | number | undefined>);
@@ -48,7 +50,7 @@ export function calculateSummary(
   competidores: string[]
 ) {
   const pctHeaders = competidores.slice(1).map((comp) => `% vs ${comp}`);
-  pctHeaders.push('% Descuento a Sugerido'); // Usar el nuevo encabezado de descuento
+  pctHeaders.push('% Ajuste a Sugerido'); // Usar el nuevo encabezado de ajuste
   const valores: number[] = [];
 
   for (const row of dataWithPercentages) {

@@ -2,7 +2,7 @@ import React from 'react';
 import { ModuleType } from '../../enums';
 
 interface Column<T> {
-  key: keyof T | string;
+  key: keyof T;
   header: string;
   render?: (item: T, index: number) => React.ReactNode;
   width?: string;
@@ -23,7 +23,7 @@ interface DataTableProps<T> {
   className?: string;
 }
 
-export function DataTable<T>({
+export function DataTable<T extends object>({
   data,
   columns,
   module,
@@ -152,7 +152,7 @@ export function DataTable<T>({
                       >
                         {column.render 
                           ? column.render(item, index)
-                          : String((item as any)[column.key] ?? '')
+                          : String(item[column.key] ?? '')
                         }
                       </td>
                     ))}

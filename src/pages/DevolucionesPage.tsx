@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DatosGeneralesForm } from '../components/DatosGeneralesForm';
 import { DataTable, type IColumn } from '../components/DataTable';
 import { useAppStore } from '../store/useAppStore';
 import { useSearch } from '../hooks/useSearch';
-import type { IProducto, FieldConfig } from '../interfaces';
+import type { IProducto, FieldConfig, IForm } from '../interfaces';
 import { LineSelectorModalTrigger } from '../components/LineSelectorModal';
 import PageHeader from '../components/PageHeader';
 import { useToast } from '../contexts/ToastContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 import { formatDecimal } from '../stringFormatters';
 import { exportXlsxApi } from '../utils/api';
 import type { DevolucionesExport, ProductoEditado } from '../api/schemas';
+
+// Tipo local para manejar el nombre del archivo en el blob de respuesta
+type BlobWithName = Blob & { name?: string };
 
 // --- 2. Definición del Componente de Página --- 
 export const DevolucionesPage: React.FC = () => {
@@ -20,9 +23,7 @@ export const DevolucionesPage: React.FC = () => {
   const formState = useAppStore((state) => state.formState.devoluciones);
   const lista = useAppStore((state) => state.listas.devoluciones);
   const agregarProductoToLista = useAppStore((state) => state.agregarProductoToLista);
-  const actualizarProductoEnLista = useCallback((codigo: string, campo: keyof ProductoEditado, valor: string | number) => {
-    useAppStore.getState().actualizarProductoEnLista('devoluciones', codigo, campo as any, valor);
-  }, []);
+  const actualizarProductoEnLista = useAppStore((state) => state.actualizarProductoEnLista);
   const eliminarProductoDeLista = useAppStore((state) => state.eliminarProductoDeLista);
   const resetearModulo = useAppStore((state) => state.resetearModulo);
 
@@ -64,7 +65,7 @@ export const DevolucionesPage: React.FC = () => {
           max={1000000}
           step={0.01}
           value={item.cantidad}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'cantidad', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('devoluciones', item.codigo, 'cantidad', Number(e.target.value))}
           className="input input-module-devoluciones input-qty w-28 md:w-32 text-gray-900 dark:text-gray-100"
         />
       )
@@ -80,7 +81,7 @@ export const DevolucionesPage: React.FC = () => {
           aria-label={`Observaciones para ${item.nombre}`}
           placeholder="Añadir observaciones"
           value={item.observaciones ?? ''}
-          onChange={(e) => actualizarProductoEnLista(item.codigo, 'observaciones', e.target.value)}
+          onChange={(e) => actualizarProductoEnLista('devoluciones', item.codigo, 'observaciones', e.target.value)}
           className="input input-module-devoluciones w-full text-gray-900 dark:text-gray-100"
         />
       )
@@ -104,15 +105,12 @@ export const DevolucionesPage: React.FC = () => {
   // --- G. Lógica de Exportación a Excel --- 
   const handleExport = async () => {
     const errors: string[] = [];
-    // Create a mutable copy of formState to handle sucursal default
-    const formData = { ...formState };
+    const formData = { ...formState } as IForm & { motivo?: string };
 
-    // Handle sucursal default value
     if (!formData.sucursal) {
       formData.sucursal = '[principal]';
     }
 
-    // Perform validation
     if (!formData.documento_cliente || !formData.cliente) {
       errors.push('El Documento y Nombre del cliente son obligatorios.');
     }
@@ -123,58 +121,54 @@ export const DevolucionesPage: React.FC = () => {
       errors.push('La Fecha es obligatoria.');
     }
 
-    // Display errors if any
     if (errors.length > 0) {
       errors.forEach(error => addToast(error, 'warning'));
       return;
     }
 
+    const validFormData = {
+      ...formData,
+      motivo: formData.motivo!,
+  };
+
     setIsSubmitting(true);
     try {
       const payload: DevolucionesExport = {
         tipo: 'devoluciones',
-        form: formData as any, // Send the potentially modified formData
+        form: validFormData,
         list: lista.map(item => {
-          const newItem = { ...item };
-          // Ensure cantidad_por_caja is present and u_por_caja is removed
-          if ('u_por_caja' in newItem) {
-            newItem.cantidad_por_caja = (newItem as any).u_por_caja; // Map if it exists
-            delete (newItem as any).u_por_caja; // Remove the old property
+          const newItem: Partial<ProductoEditado> & { u_por_caja?: unknown } = { ...item };
+          
+          if (typeof newItem.u_por_caja === 'number') {
+            newItem.cantidad_por_caja = newItem.u_por_caja;
+            delete newItem.u_por_caja;
           }
-          // Ensure cantidad_por_caja is an integer if present
+
           if (newItem.cantidad_por_caja !== null && newItem.cantidad_por_caja !== undefined) {
             newItem.cantidad_por_caja = Math.floor(Number(newItem.cantidad_por_caja));
           }
-          // Ensure cantidad_por_caja is always a number, defaulting to 0 if undefined
+
           newItem.peso = typeof newItem.peso === 'number' ? newItem.peso : 0;
           newItem.precio_referencial = typeof newItem.precio_referencial === 'number' ? newItem.precio_referencial : 0;
-
-          // Ensure cod_ean is a non-empty string
-          newItem.cod_ean = newItem.cod_ean || 'N/A'; // Set to 'N/A' if falsy
-
-          // Ensure ean_14 is a non-empty string
-          newItem.ean_14 = newItem.ean_14 || 'N/A'; // Set to 'N/A' if falsy
-
-          // Ensure keywords is an array
+          newItem.cod_ean = newItem.cod_ean || 'N/A';
+          newItem.ean_14 = newItem.ean_14 || 'N/A';
           if (!Array.isArray(newItem.keywords)) {
-            newItem.keywords = []; // Default to empty array if not string or array
+            newItem.keywords = [];
           }
-
-          // Ensure cantidad is an integer
           newItem.cantidad = Math.floor(Number(newItem.cantidad));
 
-          return newItem;
+          return newItem as ProductoEditado;
         }),
         usuario: {
           nombre: userName || '',
           correo: userEmail || ''
         }
       };
-      const blob = await exportXlsxApi(payload);
+      const blob: BlobWithName = await exportXlsxApi(payload);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = (blob as any).name || 'devoluciones.xlsx'; // Use blob.name
+      a.download = blob.name || 'devoluciones.xlsx';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -199,7 +193,6 @@ export const DevolucionesPage: React.FC = () => {
   // --- H. Renderizado del Componente --- 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen surface relative">
-      {/* Fondo radial decorativo */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 decorative-bg-radial">
         <div className="h-full w-full opacity-60 blur-3xl" />
       </div>
@@ -209,13 +202,10 @@ export const DevolucionesPage: React.FC = () => {
         themeColor="devoluciones"
       />
 
-      {/* Sección 1: Datos Generales */}
       <section className="section-card">
         <DatosGeneralesForm tipo="devoluciones" formState={formState} fieldConfig={fieldConfig} />
       </section>
 
-
-      {/* Sección 2: Búsqueda y Selección de Productos */}
       <section className="section-card">
         <h2 className="form-section-title title-devoluciones">Búsqueda y Selección</h2>
         <div className="mb-4 flex items-center">
@@ -259,13 +249,12 @@ export const DevolucionesPage: React.FC = () => {
           </button>
           <button
             onClick={handleExport}
-            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !formState.motivo}
+            disabled={isSubmitting || lista.length === 0 || !formState.documento_cliente || !formState.cliente || !(formState as any).motivo}
             className="btn btn-module-devoluciones ml-3"
           >
             {isSubmitting ? 'Generando...' : '▼ Reporte XLSX'}
           </button>
         </div>
-        {/* Lista de resultados de búsqueda */}
         {searchResults.length > 0 && (
           <ul className="surface surface-border rounded-md max-h-60 overflow-y-auto">
             {searchResults.map((producto: IProducto) => (
@@ -283,7 +272,6 @@ export const DevolucionesPage: React.FC = () => {
         )}
       </section>
 
-      {/* Sección 3: Reporte Final (Tabla de Productos) */}
       <section className="section-card">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
           <h2 className="form-section-title title-devoluciones mb-0">Reporte Final</h2>

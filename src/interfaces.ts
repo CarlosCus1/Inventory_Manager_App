@@ -134,13 +134,9 @@ export interface FieldConfig {
   showCodigoCliente?: boolean;
   showSucursal?: boolean;
   showFecha?: boolean;
-  
   showMotivo?: boolean;
   showMarcas?: boolean;
   showMontoOriginal?: boolean;
-  showPedidoPlanificador?: boolean;
-  showLineaPlanificadorColor?: boolean;
-
   showCargarRespaldo?: boolean;
 }
 
