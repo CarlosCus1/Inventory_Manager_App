@@ -41,9 +41,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const recordActivity = useAppStore((state) => state.recordActivity);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Session timer activity callback - will be set by SessionTimer component
-  const [, setSessionActivityCallback] = useState<(() => void) | null>(null);
-
   /**
     * Authentication handlers
     */
@@ -277,7 +274,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <SessionTimer
                     onTimeout={handleSessionTimeout}
                     onWarning={handleSessionWarning}
-                    onActivityCallback={setSessionActivityCallback}
                   />
 
                   <div className="p-4 border-b border-gray-200/50 dark:border-gray-600/50">

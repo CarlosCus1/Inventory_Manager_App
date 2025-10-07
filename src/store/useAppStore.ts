@@ -38,6 +38,7 @@ interface RawProduct {
 // --- 2. Definición de la forma del Estado (State) ---
 export interface State {
   catalogo: IProducto[];
+  catalogCount: number;
   moduleUsage: ModuleStats;
   incompleteTasks: number;
   lastActivity: { [key: string]: Date };
@@ -77,13 +78,14 @@ interface Actions {
   ) => void;
   eliminarProductoDeLista: (tipo: keyof State['listas'], codigo: string) => void;
   resetearModulo: (tipo: keyof State['listas']) => void;
-  fetchRuc: (ruc: string) => Promise<RucDota>;
+  fetchRuc: (ruc: string) => Promise<RucData>;
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
 // --- 4. Estado Inicial ---
 const initialState: Omit<State, keyof Actions> = {
   catalogo: [],
+  catalogCount: 0,
   moduleUsage: {
     devoluciones: 75,
     pedido: 90,
@@ -142,8 +144,9 @@ export const useAppStore = create<State & Actions>()(
         try {
           
 
-          const url = import.meta.env.VITE_PRODUCTOS_JSON_URL || '/productos_local.json';
-          // console.log(`Intentando cargar catálogo desde la red: ${url}`);
+          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001';
+          const url = `${backendUrl}/api/catalog`;
+          // console.log(`Intentando cargar catálogo desde el backend: ${url}`);
           const response = await fetch(url);
           if (!response.ok) {
             const errorText = await response.text();
@@ -159,7 +162,7 @@ export const useAppStore = create<State & Actions>()(
           await saveCatalogToIndexedDB(mappedData);
           // console.log('Catálogo adaptado y guardado en IndexedDB.');
 
-          set({ catalogo: mappedData, loading: false });
+          set({ catalogo: mappedData, catalogCount: mappedData.length, loading: false });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Un error desconocido ocurrió.';
           // console.error('Error al cargar el catálogo:', error);
@@ -260,11 +263,16 @@ export const useAppStore = create<State & Actions>()(
       },
 
       resetearModulo: (tipo) => {
+        console.log('Reseteando módulo:', tipo);
         set((state) => ({
           formState: {
             ...state.formState,
             [tipo]: initialState.formState[tipo],
-          }
+          },
+          listas: {
+            ...state.listas,
+            [tipo]: [],
+          },
         }));
       },
 

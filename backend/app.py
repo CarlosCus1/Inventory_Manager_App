@@ -210,6 +210,20 @@ def export_xlsx():
         app.logger.error(f"Error al exportar a XLSX: {e}")
         return jsonify({"error": f"Ocurrió un error interno: {str(e)}"}), 500
 
+@app.route('/api/catalog', methods=['GET'])
+def get_catalog():
+    """
+    Endpoint para obtener el catálogo desde Google Drive.
+    """
+    try:
+        catalog_url = "https://drive.google.com/uc?export=download&id=1zAaJnJxsmgw55-W5QNQfcD3dVlnU4lUx"
+        response = requests.get(catalog_url)
+        response.raise_for_status()
+        return jsonify(response.json()), response.status_code
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching catalog: {e}")
+        return jsonify({"error": "No se pudo obtener el catálogo desde Google Drive."}), 503
+
 # --- 6. Bloque de Ejecución Principal ---
 if __name__ == '__main__':
     # Configurar el parser de argumentos para leer el puerto
